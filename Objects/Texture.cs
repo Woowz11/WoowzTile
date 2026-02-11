@@ -44,7 +44,7 @@ public class Texture{
         set => Pixels[Y * Width + X] = value;
     }
 
-    public void Render(Image.ImageContext C, Palette Palette, int X, int Y){
+    public void Render(Image.ImageContext C, Palette Palette, int X = 0, int Y = 0){
         try{
             int W = (int)Width;
             int H = (int)Height;
@@ -102,6 +102,15 @@ public class Texture{
             }
         }catch(Exception e){
             throw new Exception("Произошла ошибка при рендере текстуры [" + this + "]!", e);
+        }
+    }
+
+    public void Render(Image.ImageContext C, Palette Palette, int X, int Y, uint TileWidth, uint TileHeight = 1){
+        if(TileWidth == 0 || TileHeight == 0){ return; }
+        for(int Y__ = 0; Y__ < TileHeight; Y__++){
+            for(int X__ = 0; X__ < TileWidth; X__++){
+                Render(C, Palette, X + X__ * (int)Width, Y + Y__ * (int)Height);
+            }
         }
     }
 }

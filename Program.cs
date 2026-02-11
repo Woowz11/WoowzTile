@@ -9,32 +9,47 @@ public class Program{
         try{
             WL.WoowzLib.Start(new WoowzLibInfo(Name: "WoowzTile"));
 
-            Window = new Window(BackgroundColor: ColorB.Gray);
+            __Window = new Window(BackgroundColor: ColorB.Gray);
 
-            Window.OnResize += (_, W, H) => {
+            __Window.OnResize += (_, W, H) => {
                 RenderWindow();
             };
             
             Screen = new Panel(Name: "Экран");
-            Window.Add(Screen);
+            __Window.Add(Screen);
 
             Screen.Anchor_X = 0;
             Screen.Anchor_Y = 0;
 
             Screen.Anchor_Height = 0.99f;
 
-            Scene = new Image(256, 256, ColorB.Black);
-            Screen.Image = Scene;
+            __Scene = new Image(256, 256, ColorB.Black);
+            Screen.Image = __Scene;
+
+            __Window.OnKeyboardDown += (_, Key, Code) => {
+                try{
+                    LoadedGame?.KeyPress(Key, true);   
+                }catch(Exception e){
+                    Logger.Error("Произошла ошибка при нажатии клавиши [" + Key + "]!", e);
+                }
+            };
+            __Window.OnKeyboardUp += (_, Key, Code) => {
+                try{
+                    LoadedGame?.KeyPress(Key, false);   
+                }catch(Exception e){
+                    Logger.Error("Произошла ошибка при отжатии клавиши [" + Key + "]!", e);
+                }
+            };
             
             LoadGame(new GOLUWorld());
             
             double Timer = 1000;
-            while(Window.Alive){
+            while(__Window.Alive){
                 WL.System.Tick.LimitFPS(1, 30, TD => {
                     __TD = TD;
                     
                     Timer += TD.DeltaTimeS;
-                    if(Timer > 0.25f){ Window.Title = WL.WoowzLib.ProjectInfo.Name + " [" + WL.Math.Round((float)TD.FPS, 2) + "]"; Timer = 0; }
+                    if(Timer > 0.25f){ __Window.Title = WL.WoowzLib.ProjectInfo.Name + " [" + WL.Math.Round((float)TD.FPS, 2) + "]"; Timer = 0; }
 
                     try{
                         LoadedGame?.Update(TD);   
@@ -56,15 +71,15 @@ public class Program{
         return 0;
     }
 
-    private static Window Window;
+    public static Window __Window;
     
     private static Panel Screen;
 
-    private static Image Scene;
+    public static Image __Scene;
 
     private static Game? LoadedGame;
 
-    public static TickData __TD;
+    private static TickData __TD;
     
     public static void RenderWindow(){
         try{
@@ -72,7 +87,7 @@ public class Program{
 
             if(LoadedGame != null){
                 try{
-                    Scene.Change(C => {
+                    __Scene.Change(C => {
                         C.Fill(LoadedGame.BackgroundColor());
                         LoadedGame.Render(__TD, C); 
                     });
@@ -80,9 +95,9 @@ public class Program{
                     Logger.Error("Произошла ошибка при рендере игры!", e);
                 }
                 
-                Window.Render();
+                __Window.Render();
             }else{
-                Window.RenderMessage("Игра не загружена!", ColorB.Blue);
+                __Window.RenderMessage("Игра не загружена!", ColorB.Blue);
             }
         }catch(Exception e){
             throw new Exception("Произошла ошибка при рендере!", e);
