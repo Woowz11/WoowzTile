@@ -1,10 +1,33 @@
 ﻿using WLO;
+using WoowzTile.Objects;
 
 namespace WoowzTile.Games;
 
 public class GOLUWorld : Game{
+    public Palette TestPalette;
+    public Texture TestTexture;
+
+    public Sprite TestSprite;
+    
     public override void Start(){
+        TestPalette = new Palette([
+            new KeyValuePair<byte, ColorB>(1, ColorB.Black)
+        ]);
         
+        TestTexture = new Texture(8, 8, 
+            [
+                0,1,0,0,1,1,1,1,
+                0,1,0,0,1,0,0,0,
+                0,1,0,0,1,0,0,0,
+                0,1,1,1,1,1,1,1,
+                0,0,0,0,1,0,0,1,
+                0,0,0,0,1,0,0,1,
+                0,1,1,1,1,0,0,1,
+                0,0,0,0,0,0,0,0,
+            ]
+        );
+
+        TestSprite = new Sprite(TestTexture, TestPalette);
     }
     
     public override void Stop(){
@@ -16,8 +39,10 @@ public class GOLUWorld : Game{
     }
     
     public override void Render(TickData TD, Image.ImageContext C){
-        C.For((X, Y, W, H) => {
-            C[X, Y] = new ColorB((byte)((float)X / W * 255), (byte)((float)Y / H * 255), 0);
-        });
+        TestSprite.Render(C);
+    }
+
+    public override ColorB BackgroundColor(){
+        return ColorB.White;
     }
 }

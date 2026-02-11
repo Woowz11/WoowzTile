@@ -22,4 +22,10 @@ public abstract class Game{
     /// Рендер
     /// </summary>
     public abstract void Render(TickData TD, Image.ImageContext C);
+    
+    /// <summary>
+    /// Цвет заднего фона
+    /// </summary>
+    /// <returns></returns>
+    public virtual ColorB BackgroundColor(){ return ColorB.Black; }
 }

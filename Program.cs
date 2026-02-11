@@ -21,7 +21,7 @@ public class Program{
             Screen.Anchor_X = 0;
             Screen.Anchor_Y = 0;
 
-            Screen.Anchor_Height = 0.9f;
+            Screen.Anchor_Height = 0.99f;
 
             Scene = new Image(512, 512, ColorB.Black);
             Screen.Image = Scene;
@@ -73,6 +73,7 @@ public class Program{
             if(LoadedGame != null){
                 try{
                     Scene.Change(C => {
+                        C.Fill(LoadedGame.BackgroundColor());
                         LoadedGame.Render(__TD, C); 
                     });
                 }catch(Exception e){
