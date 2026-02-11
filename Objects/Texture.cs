@@ -2,10 +2,42 @@
 
 namespace WoowzTile.Objects;
 
-public class Texture(uint Width, uint Height, byte[] Pixels){
-    public uint   Width  = Width;
-    public uint   Height = Height;
-    public byte[] Pixels = Pixels;
+public class Texture{
+    public Texture(uint Width, uint Height, byte[] Pixels){
+        this.Width  = Width;
+        this.Height = Height;
+        this.Pixels = Pixels;
+    }
+    
+    public Texture(string Chars, Dictionary<char, byte> Mapping){
+        if(string.IsNullOrEmpty(Chars)){ throw new Exception("Chars пустой!"); }
+
+        string[] Lines = Chars.Split(["\r\n", "\n"], StringSplitOptions.None);
+
+        Height = (uint)Lines.Length;
+        Width  = (uint)Lines[0].Length;
+
+        foreach (string Line in Lines){
+            if(Line.Length != Width){ throw new Exception("Все строки должны быть одной длины!"); }
+        }
+
+        Pixels = new byte[Width * Height];
+
+        for(int Y = 0; Y < Height; Y++){
+            string Line = Lines[Y];
+            for(int X = 0; X < Width; X++)
+            {
+                char C = Line[X];
+                if(!Mapping.TryGetValue(C, out byte Index)){ throw new Exception("Символ ['" + C + "'] не найден в Mapping!"); }
+
+                Pixels[Y * (int)Width + X] = Index;
+            }
+        }
+    }
+    
+    public uint   Width ;
+    public uint   Height;
+    public byte[] Pixels;
 
     public byte this[uint X, uint Y]{
         get => Pixels[Y * Width + X];
@@ -35,8 +67,8 @@ public class Texture(uint Width, uint Height, byte[] Pixels){
                 DrawY = 0;
             }
 
-            int MaxH = (int)C.Width  - DrawX;
-            int MaxW = (int)C.Height - DrawY;
+            int MaxW = (int)C.Width  - DrawX;
+            int MaxH = (int)C.Height - DrawY;
 
             if(W > MaxW){ W = MaxW; }
             if(H > MaxH){ H = MaxH; }

@@ -23,7 +23,7 @@ public class Program{
 
             Screen.Anchor_Height = 0.99f;
 
-            Scene = new Image(512, 512, ColorB.Black);
+            Scene = new Image(256, 256, ColorB.Black);
             Screen.Image = Scene;
             
             LoadGame(new GOLUWorld());
