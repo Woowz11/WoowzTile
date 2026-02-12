@@ -1,4 +1,5 @@
-﻿using WLO;
+﻿using WL;
+using WLO;
 
 namespace WoowzTile.Objects;
 
@@ -44,7 +45,7 @@ public class Texture{
         set => Pixels[Y * Width + X] = value;
     }
 
-    public void Render(Image.ImageContext C, Palette Palette, int X = 0, int Y = 0){
+    public void Render(Image.ImageContext C, Palette Palette, int X = 0, int Y = 0, bool FlipX = false, bool FlipY = false){
         try{
             int W = (int)Width;
             int H = (int)Height;
@@ -76,9 +77,12 @@ public class Texture{
             if(W <= 0 || H <= 0){ return; }
 
             for(int Y__ = 0; Y__ < H; Y__++){
-                int Row = (SrcY + Y__) * (int)Width;
+                int SrcY__ = FlipY ? (H - 1 - (SrcY + Y__))  : (SrcY + Y__);
+                int Row = SrcY__ * (int)Width;
                 for(int X__ = 0; X__ < W; X__++){
-                    byte PaletteIndex = Pixels[Row + (SrcX + X__)];
+                    int SrcX__ = FlipX ? (W - 1 - (SrcX + X__)) : (SrcX + X__);
+                    
+                    byte PaletteIndex = Pixels[Row + SrcX__];
                     ColorB Color = Palette[PaletteIndex];
 
                     if(Color.A == 0){ continue; }
@@ -86,18 +90,7 @@ public class Texture{
                     uint DstX = (uint)(DrawX + X__);
                     uint DstY = (uint)(DrawY + Y__);
 
-                    ColorB Dst = C[DstX, DstY];
-
-                    float A  = Color.A / 255F;
-                    float IA = 1 - A;
-                    
-                    ColorB Result = new ColorB(
-                        (byte)(Color.R * A + Dst.R * IA),
-                        (byte)(Color.G * A + Dst.G * IA),
-                        (byte)(Color.B * A + Dst.B * IA)
-                    );
-
-                    C[DstX, DstY] = Result;
+                    C.SetPixel(DstX, DstY, Color, ImageBlend.Alpha);
                 }
             }
         }catch(Exception e){
@@ -105,11 +98,11 @@ public class Texture{
         }
     }
 
-    public void Render(Image.ImageContext C, Palette Palette, int X, int Y, uint TileWidth, uint TileHeight = 1){
+    public void Render(Image.ImageContext C, Palette Palette, int X, int Y, uint TileWidth, uint TileHeight = 1, bool FlipX = false, bool FlipY = false){
         if(TileWidth == 0 || TileHeight == 0){ return; }
         for(int Y__ = 0; Y__ < TileHeight; Y__++){
             for(int X__ = 0; X__ < TileWidth; X__++){
-                Render(C, Palette, X + X__ * (int)Width, Y + Y__ * (int)Height);
+                Render(C, Palette, X + X__ * (int)Width, Y + Y__ * (int)Height, FlipX, FlipY);
             }
         }
     }

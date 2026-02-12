@@ -49,47 +49,11 @@ public abstract class Game{
     /// </summary>
     public static void RenderColliders(Image.ImageContext C){
         foreach(Collider Collider in Colliders){
-            int X0 = Collider.X;
-            int Y0 = Collider.Y;
-            int X1 = Collider.X + (int)Collider.W - 1;
-            int Y1 = Collider.Y + (int)Collider.H - 1;
-
-            for(int X = X0; X <= X1; X++){
-                if(X >= 0 && X < C.Width){
-                    if(Y0 >= 0 && Y0 < C.Height){ C[(uint)X, (uint)Y0] = ColorB.Red; }
-                    if(Y1 >= 0 && Y1 < C.Height){ C[(uint)X, (uint)Y1] = ColorB.Red; }
-                }
-            }
-
-            for(int Y = Y0 + 1; Y < Y1; Y++){
-                if(Y >= 0 && Y < C.Height){
-                    if(X0 >= 0 && X0 < C.Width){ C[(uint)X0, (uint)Y] = ColorB.Red; }
-                    if(X1 >= 0 && X1 < C.Width){ C[(uint)X1, (uint)Y] = ColorB.Red; }
-                }
-            }
+            C.Border(Collider.X, Collider.Y, Collider.W, Collider.H, 1, ColorB.Red);
         }
         
         foreach((Collider, bool) Collision in Collisions){
-            int X0 = Collision.Item1.X;
-            int Y0 = Collision.Item1.Y;
-            int X1 = Collision.Item1.X + (int)Collision.Item1.W  - 1;
-            int Y1 = Collision.Item1.Y + (int)Collision.Item1.H - 1;
-
-            ColorB Color = Collision.Item2 ? ColorB.Green : ColorB.Blue;
-            
-            for(int X = X0; X <= X1; X++){
-                if(X >= 0 && X < C.Width){
-                    if(Y0 >= 0 && Y0 < C.Height){ C[(uint)X, (uint)Y0] = Color; }
-                    if(Y1 >= 0 && Y1 < C.Height){ C[(uint)X, (uint)Y1] = Color; }
-                }
-            }
-
-            for(int Y = Y0 + 1; Y < Y1; Y++){
-                if(Y >= 0 && Y < C.Height){
-                    if(X0 >= 0 && X0 < C.Width){ C[(uint)X0, (uint)Y] = Color; }
-                    if(X1 >= 0 && X1 < C.Width){ C[(uint)X1, (uint)Y] = Color; }
-                }
-            }
+            C.Border(Collision.Item1.X, Collision.Item1.Y, Collision.Item1.W, Collision.Item1.H, 1, Collision.Item2 ? ColorB.Green : ColorB.Blue);
         }
     }
     

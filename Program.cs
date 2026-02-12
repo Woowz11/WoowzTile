@@ -23,7 +23,7 @@ public class Program{
 
             Screen.Anchor_Height = 0.99f;
 
-            __Scene = new Image(256, 256, ColorB.Black);
+            __Scene = new Image(256, ColorB.Black);
             Screen.Image = __Scene;
 
             __Window.OnKeyboardDown += (_, Key, Code) => {
