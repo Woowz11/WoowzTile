@@ -30,6 +30,16 @@ public abstract class Game{
     /// Цвет заднего фона
     /// </summary>
     public virtual ColorB BackgroundColor(){ return ColorB.Black; }
+
+    /// <summary>
+    /// Название игры
+    /// </summary>
+    public abstract string Name();
+
+    /// <summary>
+    /// Дополнительная информация в названии окна
+    /// </summary>
+    public virtual string WindowTitle(){ return Name(); }
     
     /// <summary>
     /// Нажатие клавиши

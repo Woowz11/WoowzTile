@@ -28,7 +28,11 @@ public class GOLUWorld : Game{
     public Texture Texture_Spikes;
     public Texture Texture_Spider;
     public Texture Texture_Spider_Walk;
-    
+
+    public override string Name(){ return "GOLUWorld"; }
+
+    public override string WindowTitle(){ return new Vector2I(PlayerX - WorldX, PlayerY - WorldY).ToShortString(); }
+
     public override void Start(){
         Palette_World = new Palette([
             new KeyValuePair<byte, ColorB>(1 , ColorB.Black),
@@ -552,32 +556,6 @@ Texture_Spider_Walk = new Texture(
     Mapping
 );
 
-for(int i = 0; i < 2; i++){
-    for(int j = 0; j < 2; j++){
-        AddScene(@"###'################################
-#'''#___''''''#''''''''''''#_______#
-''#'#_''''''''#''####'''''##_###____
-#'#'#___''''''#''____''''_##_#'#___#
-#'#'#####'''''#''####'''''##_______#
-#'#'''''''''''#''''''''''''#_______#
-#'####'################'#######'####
-#''''#''''''''''''#''''''''''''''''#
-####'####'#'''#'#'#'_#'''''######''#
-#__'''__#'#'#'#'#'#''#_''''#___##''#
-#'#'''#'#'#'#'#'#'#'_#_''''#'''''''#
-#''###''#'#'#'#''''''#_''''######''#
-#_''''''#'''#''_#'#'_#'''''#'_''#''#
-'''''''_#'#'#'__#'#''#_''''####'''''
-#'''''''#'''''''''#''''''''#'_''#''#
-###'################################
-", 2 + i * 35, 2 + j * 15);
-        
-        AddEntityScene(@"______________ssssssssssssssssssssssssssssssssssssssss", i * 35, 0);
-    }
-}
-
-AddEntityScene(@"___C_T_^^^^___ssssssssssssssssssssssssssssssssssssssss");
-
     }
     
     public override void Stop(){
@@ -604,16 +582,19 @@ AddEntityScene(@"___C_T_^^^^___ssssssssssssssssssssssssssssssssssssssss");
     
     private void Damage(uint Damage, int Range = 0){
         Health = WL.Math.SubU(Health, Damage);
+
+        SplatBlood(PlayerX - WorldX + WL.Math.Random.Fast_Int(-Range, Range), PlayerY - WorldY + WL.Math.Random.Fast_Int(-Range, Range));
         
-        __Tracks.Add((PlayerX - WorldX + WL.Math.Random.Fast_Int(-Range, Range), PlayerY - WorldY + WL.Math.Random.Fast_Int(-Range, Range), 1));
+        //Task.Run(() => Console.Beep(WL.Math.Random.Fast_Int(0, 10000), 10000));
     }
     
     public struct Entity{
-        public int      X;
-        public int      Y;
-        public byte     ID;
-        public byte     Info;
-        public Vector2I InfoVector;
+        public int             X;
+        public int             Y;
+        public byte            ID;
+        public byte            Info;
+        public Vector2I        InfoVector;
+        public TextureRotation Rotation;
     }
     
     public override void Update(TickData TD){
@@ -638,7 +619,7 @@ AddEntityScene(@"___C_T_^^^^___ssssssssssssssssssssssssssssssssssssssss");
             
             if(Entity.ID is 2 or 3 or 4){
                 if(Entity.ID == 4){
-                    int SpiderSpeed = WL.Math.Random.Fast_Bool(0.5f) ? 1 : 0;
+                    int SpiderSpeed = WL.Math.Random.Fast_Bool(0.8f) ? 1 : 0;
                     
                     byte Info = Entity.Info;
                     if(WL.Math.Random.Fast_Bool(Info == 1 ? 0.5f : 0.05f)){
@@ -654,28 +635,52 @@ AddEntityScene(@"___C_T_^^^^___ssssssssssssssssssssssssssssssssssssssss");
 
                     float Distance = Vector2I.Distance(new Vector2I(Entity.X, Entity.Y), new Vector2I(PlayerX__, PlayerY__));
 
+                    Vector2I MoveDirection = Vector2I.Zero;
+                    
+                    Vector2I Target = Entity.InfoVector;
+                    Vector2I EntityPositionOriginal = new Vector2I(Entity.X, Entity.Y);
+                    
                     if(Distance < 100 && !Dead){
 
-                        int TargetX = Info is 1 or 2 ? WorldX - PlayerX : PlayerX__;
-                        int TargetY = Info is 1 or 2 ? WorldY - PlayerY : PlayerY__;
+                        Target.X = Info is 1 or 2 ? WorldX - PlayerX : PlayerX__;
+                        Target.Y = Info is 1 or 2 ? WorldY - PlayerY : PlayerY__;
 
-                        Entity.X += WL.Math.Sign(TargetX - Entity.X) * SpiderSpeed;
-                        Entity.Y += WL.Math.Sign(TargetY - Entity.Y) * SpiderSpeed;
+                        MoveDirection.X = WL.Math.Sign(Target.X - Entity.X) * SpiderSpeed;
+                        MoveDirection.Y = WL.Math.Sign(Target.Y - Entity.Y) * SpiderSpeed;
+                        
+                        Entity.X += MoveDirection.X;
+                        Entity.Y += MoveDirection.Y;
                         Entity.Info = Info;
                         
                     }else{
-                        Vector2I Target = Entity.InfoVector;
-
                         if(WL.Math.Random.Fast_Bool(0.05f) || Target == Vector2I.Zero){
                             Target = new Vector2I(WL.Math.Random.Fast_Int(-1000, 1000), WL.Math.Random.Fast_Int(-1000, 1000));
                         }
+                        
+                        MoveDirection.X = WL.Math.Sign(Target.X - Entity.X) * SpiderSpeed;
+                        MoveDirection.Y = WL.Math.Sign(Target.Y - Entity.Y) * SpiderSpeed;
 
-                        Entity.X += WL.Math.Sign(Target.X - Entity.X) * SpiderSpeed;
-                        Entity.Y += WL.Math.Sign(Target.Y - Entity.Y) * SpiderSpeed;
+                        Entity.X += MoveDirection.X;
+                        Entity.Y += MoveDirection.Y;
                         Entity.Info = Info;
                         Entity.InfoVector = Target;
                     }
-                    
+
+                    if(MoveDirection != Vector2I.Zero){
+                        int DirectionX = 0;
+                        int DirectionY = 0;
+
+                        float DX = Target.X - EntityPositionOriginal.X;
+                        float DY = Target.Y - EntityPositionOriginal.Y;
+
+                        if(WL.Math.Abs(DX) > WL.Math.Abs(DY)){
+                            DirectionX = WL.Math.Sign(DX);
+                        }else{
+                            DirectionY = WL.Math.Sign(DY);
+                        }
+                        
+                        Entity.Rotation = DirectionX == 1 ? TextureRotation.Rotate270 : (DirectionX == -1 ? TextureRotation.Rotate90 : (DirectionY == -1 ? TextureRotation.Rotate180 : TextureRotation.None));
+                    }
                     __Entity[i] = Entity;
                 }
                 
@@ -698,7 +703,7 @@ AddEntityScene(@"___C_T_^^^^___ssssssssssssssssssssssssssssssssssssssss");
 
         if(Dead){
             if(WL.Math.Random.Fast_Bool(0.8f)){
-                __Tracks.Add((PlayerX - WorldX + WL.Math.Random.Fast_Int(-128, 128), PlayerY - WorldY + WL.Math.Random.Fast_Int(-128, 128), 1));
+                SplatBlood(PlayerX - WorldX + WL.Math.Random.Fast_Int(-128, 128), PlayerY - WorldY + WL.Math.Random.Fast_Int(-128, 128));
             }
         }
         
@@ -706,7 +711,7 @@ AddEntityScene(@"___C_T_^^^^___ssssssssssssssssssssssssssssssssssssssss");
         int PlayerOffset = (int)((Texture_Player.Width - PlayerSize) / 2);
         
         if(CanMove){
-            uint PlayerSpeed = (uint)((float)TD.DeltaTime / 10 * (Game.KeyPressed(Key.Shift) ? 1.5f : 1));
+            uint PlayerSpeed = (uint)(TD.DeltaTimeS * 100 * (Game.KeyPressed(Key.Shift) ? 1.5 : 1));
             if(Health < 30){ PlayerSpeed = (uint)(PlayerSpeed / 2); }
 
             bool D = Game.KeyPressed(Key.D);
@@ -792,11 +797,19 @@ AddEntityScene(@"___C_T_^^^^___ssssssssssssssssssssssssssssssssssssssss");
         }
     }
 
-    private readonly List<(int, int, byte)> __Tracks = [];
+    private readonly List<(int, int, byte, TextureRotation)> __Tracks = [];
     private void Track(){
         if(WL.Math.Random.Fast_Bool(0.1f)){
-            __Tracks.Add((PlayerX - WorldX, PlayerY - WorldY, (byte)(Health < 32 ? 1 : 0)));
+            if(Health < 32){
+                SplatBlood(PlayerX - WorldX, PlayerY - WorldY);
+            }else{
+                __Tracks.Add((PlayerX - WorldX, PlayerY - WorldY, 0, TextureRotation.None));
+            }
         }
+    }
+
+    private void SplatBlood(int X, int Y){
+        __Tracks.Add((X, Y, 1, WL.Math.Random.Fast_Bool(0.5f) ? (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.None :  TextureRotation.Rotate90) : (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.Rotate180 : TextureRotation.Rotate270)));
     }
 
     private void AddBlock(int X, int Y, byte Type){
@@ -941,9 +954,9 @@ AddEntityScene(@"___C_T_^^^^___ssssssssssssssssssssssssssssssssssssssss");
             }
         }
 
-        foreach((int, int, byte) Track in __Tracks){
+        foreach((int, int, byte, TextureRotation) Track in __Tracks){
             Texture Track__ = Track.Item3 == 1 ? Texture_Blood : Texture_Track;
-            Track__.Render(C, Palette_World, WorldX + Track.Item1, WorldY + Track.Item2);
+            Track__.Render(C, Palette_World, WorldX + Track.Item1, WorldY + Track.Item2, false, false, Track.Item4);
         }
         
         foreach(Entity Entity in __Entity){
@@ -954,10 +967,7 @@ AddEntityScene(@"___C_T_^^^^___ssssssssssssssssssssssssssssssssssssssss");
                     3 => Texture_Spikes
                 };
 
-                int OffsetX = 0;
-                int OffsetY = 0;
-
-                EntityTexture.Render(C, Palette_World, WorldX + Entity.X - OffsetX, WorldY + Entity.Y - OffsetY);
+                EntityTexture.Render(C, Palette_World, WorldX + Entity.X, WorldY + Entity.Y, false, false, Entity.Rotation);
             }
         }
         
@@ -1001,7 +1011,7 @@ AddEntityScene(@"___C_T_^^^^___ssssssssssssssssssssssssssssssssssssssss");
                     OffsetX = 8;
                     OffsetY = 8;
                 }
-                EntityTexture.Render(C, Palette_World, WorldX + Entity.X - OffsetX, WorldY + Entity.Y - OffsetY);
+                EntityTexture.Render(C, Palette_World, WorldX + Entity.X - OffsetX, WorldY + Entity.Y - OffsetY, false, false, Entity.Rotation);
             }
         }
         
@@ -1029,6 +1039,35 @@ AddEntityScene(@"___C_T_^^^^___ssssssssssssssssssssssssssssssssssssssss");
         return ColorB.White;
     }
 
+    private void StartLevel(byte Level){
+        ClearAllEntityScene();
+        ClearAllScene();
+        
+        for(int i = 0; i < 2; i++){
+            for(int j = 0; j < 2; j++){
+                AddScene(@"###'################################
+#'''#___''''''#''''''''''''#_______#
+''#'#_''''''''#''####'''''##_###____
+#'#'#___''''''#''____''''_##_#'#___#
+#'#'#####'''''#''####'''''##_______#
+#'#'''''''''''#''''''''''''#_______#
+#'####'################'#######'####
+#''''#''''''''''''#''''''''''''''''#
+####'####'#'''#'#'#'_#'''''######''#
+#__'''__#'#'#'#'#'#''#_''''#___##''#
+#'#'''#'#'#'#'#'#'#'_#_''''#'''''''#
+#''###''#'#'#'#''''''#_''''######''#
+#_''''''#'''#''_#'#'_#'''''#'_''#''#
+'''''''_#'#'#'__#'#''#_''''####'''''
+#'''''''#'''''''''#''''''''#'_''#''#
+###'################################
+", 2 + i * 35, 2 + j * 15);
+            }
+        }
+
+        AddEntityScene(@"___C_T_^^^^___________s__CTC");
+    }
+    
     private void StartGame(){
         InMainMenu = false;
         
@@ -1036,6 +1075,8 @@ AddEntityScene(@"___C_T_^^^^___ssssssssssssssssssssssssssssssssssssssss");
         __Tracks.Clear();
 
         Health = HealthMax;
+        
+        StartLevel(0);
     }
     
     private bool RenderColliders = false;

@@ -83,11 +83,17 @@ public class Texture{
 
             if(W <= 0 || H <= 0){ return; }
 
+            float CenterX = Width  / 2f;
+            float CenterY = Height / 2f;
+
             for(int y = 0; y < H; y++){
                 int SrcY = FlipY ? (H - 1 - (SrcYOffset + y)) : (SrcYOffset + y);
 
                 for(int x = 0; x < W; x++){
                     int SrcX = FlipX ? (W - 1 - (SrcXOffset + x)) : (SrcXOffset + x);
+
+                    float DX = SrcX - CenterX;
+                    float DY = SrcY - CenterY;
 
                     int RotX = 0, RotY = 0;
                     switch (Rotation){
@@ -96,16 +102,16 @@ public class Texture{
                             RotY = SrcY;
                             break;
                         case TextureRotation.Rotate90:
-                            RotX = H - 1 - SrcY;
-                            RotY = SrcX;
+                            RotX = (int)(CenterX + DY);
+                            RotY = (int)(CenterY - DX);
                             break;
                         case TextureRotation.Rotate180:
-                            RotX = W - 1 - SrcX;
-                            RotY = H - 1 - SrcY;
+                            RotX = (int)(CenterX - DX);
+                            RotY = (int)(CenterY - DY);
                             break;
                         case TextureRotation.Rotate270:
-                            RotX = SrcY;
-                            RotY = W - 1 - SrcX;
+                            RotX = (int)(CenterX - DY);
+                            RotY = (int)(CenterY + DX);
                             break;
                     }
 

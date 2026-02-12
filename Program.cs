@@ -44,15 +44,18 @@ public class Program{
             LoadGame(new GOLUWorld());
             
             double Timer = 1000;
+            float __FPS = -1;
             while(__Window.Alive){
-                WL.System.Tick.LimitFPS(1, 30, TD => {
+                WL.System.Tick.LimitFPS(1, 60, TD => {
                     __TD = TD;
                     
                     Timer += TD.DeltaTimeS;
-                    if(Timer > 0.25f){ __Window.Title = WL.WoowzLib.ProjectInfo.Name + " [" + WL.Math.Round((float)TD.FPS, 2) + "]"; Timer = 0; }
+                    if(Timer > 0.25f){ __FPS = WL.Math.Round((float)TD.FPS, 2); Timer = 0; }
 
                     try{
-                        LoadedGame?.Update(TD);   
+                        __Window.Title = WL.WoowzLib.ProjectInfo.Name + " [" + __FPS + "] [" + (LoadedGame?.WindowTitle() ?? "Игра не загружена!") + "]";
+                        
+                        LoadedGame?.Update(TD);
                     }catch(Exception e){
                         Logger.Error("Произошла ошибка при обновлении игры!", e);
                     }
