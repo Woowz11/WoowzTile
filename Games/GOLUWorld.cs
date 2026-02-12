@@ -23,6 +23,11 @@ public class GOLUWorld : Game{
     public Texture Texture_U;
     public Texture Texture_Author;
     public Texture Texture_Title;
+    public Texture Texture_Chair;
+    public Texture Texture_Table;
+    public Texture Texture_Spikes;
+    public Texture Texture_Spider;
+    public Texture Texture_Spider_Walk;
     
     public override void Start(){
         Palette_World = new Palette([
@@ -415,6 +420,138 @@ Texture_Title = new Texture(
     Mapping
 );
 
+Texture_Chair = new Texture(
+    @"................
+..██▓▓▓▓▓▓▓▓██..
+.█▒░░▒░░░░▒░░▒█.
+.█░__▒____▒__░█.
+.█___▒____▒___█.
+.█░__▒____▒__░█.
+.█▒░░▒░░░░▒░░▒█.
+.█▓▓▓▓▓▓▓▓▓▓▓▓█.
+.█▒░________░▒█.
+.█░__________░█.
+.█▒░________░▒█.
+..█▓▓▓▓▓▓▓▓▓▓█..
+..█.█......█.█..
+..█.((((((((.█..
+..█((((((((((█..
+................",
+    Mapping
+);
+
+Texture_Table = new Texture(
+    @".██████████████.
+█░____________░█
+█_░░░░░░░░░░░░_█
+█_░__________░_█
+█_░__________░_█
+█_░__________░_█
+█_░__________░_█
+█_░__________░_█
+█_░__________░_█
+█_░__________░_█
+█_░__________░_█
+█_░░░░░░░░░░░░_█
+█░____________░█
+.██████████████.
+.█((((((((((((█.
+.█((........((█.",
+    Mapping
+);
+
+Texture_Spikes = new Texture(
+    @".............█..
+.)..r...))..█▒█.
+...rRr)))...▓░▓.
+)).rR▓.....█▒_▒█
+..rR_▒█..).█▒░▒█
+..█R░▒█))..(▒▒▒(
+..(▒▒▒(.))r.(((.
+)).(((.))█Rr....
+)........▓R▓..).
+...█....█▒_▒█...
+..█▒█)).█▒░▒█)..
+..▓░▓.).(▒▒▒()).
+.█▒_▒█.).(((..).
+.█▒░▒█..........
+.(▒▒▒(...)......
+..(((.....).....",
+    Mapping
+);
+
+Texture_Spider = new Texture(
+    @"................................
+................................
+................................
+................................
+................................
+................................
+..............███...............
+............██▓▓▓██.............
+..........(█▓▒░░░▒▓█(...........
+..........(█▒rr░rr▒█(...........
+..........(█▒r░░░r▒█(...........
+....▓.....(█▒░░r░░▒█(.....▓.....
+.....█(...(█▒░░░░░▒█(...(█......
+.....(██..(██▒rrr▒██(..██(......
+......((██.(█▒▒▒▒▒█(.██((.......
+.........(██(█▒▓▒█(██(..........
+...▓██████████▓▒▓██████████▓....
+....(((((((██░▒▓▒░██(((((((.....
+.........████R░r░R████..........
+.......██((██rR░Rr██((██........
+......█((..█(█▒░▒█(█..((█.......
+.....▓....█(.(█▓█(.(█....▓......
+..........▓(..█(█..(▓...........
+..........▓(.......(▓...........
+..........▓(.......(▓...........
+...........▓.......▓............
+................................
+................................
+................................
+................................
+................................
+................................",
+    Mapping
+);
+
+Texture_Spider_Walk = new Texture(
+    @"................................
+................................
+................................
+................................
+................................
+................................
+..............███...............
+............██▓▓▓██.............
+..........(█▓▒░░░▒▓█(...........
+..........(█▒rr░rr▒█(...........
+..........(█▒r░░░r▒█(...........
+.......▓..(█▒░░r░░▒█(..▓........
+.......(█.(█▒░░░░░▒█(.█(........
+........█.(██▒rrr▒██(.█.........
+.........█.(█▒▒▒▒▒█(.█..........
+...▓████.(██(█▒▓▒█(██(.████▓....
+....((((██████▓▒▓██████((((.....
+........(((██░▒▓▒░██(((.........
+.........████R░r░R████..........
+.....▓███((██rR░Rr██((███▓......
+.......((..█(█▒░▒█(█..((........
+...........█((█▓█((█............
+...........▓(.█(█.(▓............
+...........▓(.....(▓............
+...........▓(.....(▓............
+...........▓.......▓............
+................................
+................................
+................................
+................................
+................................
+................................",
+    Mapping
+);
+
 for(int i = 0; i < 2; i++){
     for(int j = 0; j < 2; j++){
         AddScene(@"###'################################
@@ -434,8 +571,12 @@ for(int i = 0; i < 2; i++){
 #'''''''#'''''''''#''''''''#'_''#''#
 ###'################################
 ", 2 + i * 35, 2 + j * 15);
+        
+        AddEntityScene(@"______________ssssssssssssssssssssssssssssssssssssssss", i * 35, 0);
     }
 }
+
+AddEntityScene(@"___C_T_^^^^___ssssssssssssssssssssssssssssssssssssssss");
 
     }
     
@@ -458,6 +599,22 @@ for(int i = 0; i < 2; i++){
     private       uint Health    = HealthMax;
 
     private bool InMainMenu = true;
+
+    private bool Dead => Health == 0;
+    
+    private void Damage(uint Damage, int Range = 0){
+        Health = WL.Math.SubU(Health, Damage);
+        
+        __Tracks.Add((PlayerX - WorldX + WL.Math.Random.Fast_Int(-Range, Range), PlayerY - WorldY + WL.Math.Random.Fast_Int(-Range, Range), 1));
+    }
+    
+    public struct Entity{
+        public int      X;
+        public int      Y;
+        public byte     ID;
+        public byte     Info;
+        public Vector2I InfoVector;
+    }
     
     public override void Update(TickData TD){
         Game.ClearColliders();
@@ -465,80 +622,174 @@ for(int i = 0; i < 2; i++){
         if(InMainMenu){
             return;
         }
+
+        if(!Dead){
+            Health = Health >= HealthMax ? HealthMax : Health + (uint)(WL.Math.Random.Fast_Bool(0.01f) ? 1 : 0);
+        }
         
         foreach((int, int, byte) Block in __Blocks){
             if(Block.Item3 == 1){
                 Game.AddCollider(new Collider(WorldX + Block.Item1, WorldY + Block.Item2, 16, 16));
             }
         }
-
-        uint CameraSpeed = (uint)((float)TD.DeltaTime / 10 * (Game.KeyPressed(Key.Shift) ? 2 : 1));
-
-        bool D = Game.KeyPressed(Key.D);
-        bool A = Game.KeyPressed(Key.A);
-        bool W = Game.KeyPressed(Key.W);
-        bool S = Game.KeyPressed(Key.S);
-        MovingDirection = new Vector2I(
-            A && D ? 0 : (A ? 1 : (D ? -1 : 0)),
-            W && S ? 0 : (W ? 1 : (S ? -1 : 0))
-        );
-
-        Vector2F DesiredMove = new Vector2F();
-
-        uint PlayerSize = (uint)(Texture_Player.Width * 0.8f);
-        int PlayerOffset = (int)((Texture_Player.Width - PlayerSize) / 2);
-
-        if(MovingDirection.X != 0 && MovingDirection.Y != 0){
-            for(uint i = 1; i <= CameraSpeed; i++){
-                int TestX = (int)(PlayerX - MovingDirection.X * i + PlayerOffset);
-                int TestY = (int)(PlayerY - MovingDirection.Y * i + PlayerOffset);
-
-                Collider TestCollider = new Collider(TestX, TestY, PlayerSize, PlayerSize);
-
-                if(!Collision(TestCollider)){
-                    DesiredMove.X = MovingDirection.X * i;
-                    DesiredMove.Y = MovingDirection.Y * i;
-                }else{
-                    TestCollider.X = TestX;
-                    TestCollider.Y = PlayerY + PlayerOffset;
-                    if(!Collision(TestCollider)){
-                        DesiredMove.X = MovingDirection.X * i;
-                        DesiredMove.Y = 0;
-                    }else{
-                        TestCollider.X = PlayerX + PlayerOffset;
-                        TestCollider.Y = TestY;
-                        if(!Collision(TestCollider)){
-                            DesiredMove.X = 0;
-                            DesiredMove.Y = MovingDirection.Y * i;
+        
+        for(int i = 0; i < __Entity.Count; i++){
+            Entity Entity = __Entity[i];
+            
+            if(Entity.ID is 2 or 3 or 4){
+                if(Entity.ID == 4){
+                    int SpiderSpeed = WL.Math.Random.Fast_Bool(0.5f) ? 1 : 0;
+                    
+                    byte Info = Entity.Info;
+                    if(WL.Math.Random.Fast_Bool(Info == 1 ? 0.5f : 0.05f)){
+                        if(WL.Math.Random.Fast_Bool(0.05f)){
+                            Info = 2;
                         }else{
-                            break;
+                            Info = (byte)(Info == 1 ? 0 : 1);
                         }
                     }
 
-                    break;
+                    int PlayerX__ = PlayerX - WorldX;
+                    int PlayerY__ = PlayerY - WorldY;
+
+                    float Distance = Vector2I.Distance(new Vector2I(Entity.X, Entity.Y), new Vector2I(PlayerX__, PlayerY__));
+
+                    if(Distance < 100 && !Dead){
+
+                        int TargetX = Info is 1 or 2 ? WorldX - PlayerX : PlayerX__;
+                        int TargetY = Info is 1 or 2 ? WorldY - PlayerY : PlayerY__;
+
+                        Entity.X += WL.Math.Sign(TargetX - Entity.X) * SpiderSpeed;
+                        Entity.Y += WL.Math.Sign(TargetY - Entity.Y) * SpiderSpeed;
+                        Entity.Info = Info;
+                        
+                    }else{
+                        Vector2I Target = Entity.InfoVector;
+
+                        if(WL.Math.Random.Fast_Bool(0.05f) || Target == Vector2I.Zero){
+                            Target = new Vector2I(WL.Math.Random.Fast_Int(-1000, 1000), WL.Math.Random.Fast_Int(-1000, 1000));
+                        }
+
+                        Entity.X += WL.Math.Sign(Target.X - Entity.X) * SpiderSpeed;
+                        Entity.Y += WL.Math.Sign(Target.Y - Entity.Y) * SpiderSpeed;
+                        Entity.Info = Info;
+                        Entity.InfoVector = Target;
+                    }
+                    
+                    __Entity[i] = Entity;
                 }
-            }
-        }else{
-            for(uint i = 1; i < CameraSpeed + 1; i++){
-                if(!Collision(new Collider((int)(PlayerX - (MovingDirection.X * i) + PlayerOffset), PlayerY + PlayerOffset, PlayerSize, PlayerSize))){
-                    DesiredMove.X = MovingDirection.X * i;
-                }else{
-                    break;   
+                
+                uint Size = 16;
+                if(Entity.ID == 2){
+                    Size = 14;
                 }
+
+                CollisionLayer Layer = CollisionLayer.L1;
+                if(Entity.ID == 3){
+                    Layer = CollisionLayer.L2;
+                }else if(Entity.ID == 4){
+                    Layer = CollisionLayer.L3;
+                }
+                Game.AddCollider(new Collider(WorldX + Entity.X + (int)((16 - Size)/2), WorldY + Entity.Y + (int)((16 - Size)/2), Size, Size, Layer));
             }
+        }
+
+        bool CanMove = !Dead;
+
+        if(Dead){
+            if(WL.Math.Random.Fast_Bool(0.8f)){
+                __Tracks.Add((PlayerX - WorldX + WL.Math.Random.Fast_Int(-128, 128), PlayerY - WorldY + WL.Math.Random.Fast_Int(-128, 128), 1));
+            }
+        }
         
-            for(uint i = 1; i < CameraSpeed + 1; i++){
-                if(!Collision(new Collider(PlayerX + PlayerOffset, (int)(PlayerY - (MovingDirection.Y * i) + PlayerOffset), PlayerSize, PlayerSize))){
-                    DesiredMove.Y = MovingDirection.Y * i;
-                }else{
-                    break;   
+        uint PlayerSize = (uint)(Texture_Player.Width * 0.8f);
+        int PlayerOffset = (int)((Texture_Player.Width - PlayerSize) / 2);
+        
+        if(CanMove){
+            uint PlayerSpeed = (uint)((float)TD.DeltaTime / 10 * (Game.KeyPressed(Key.Shift) ? 1.5f : 1));
+            if(Health < 30){ PlayerSpeed = (uint)(PlayerSpeed / 2); }
+
+            bool D = Game.KeyPressed(Key.D);
+            bool A = Game.KeyPressed(Key.A);
+            bool W = Game.KeyPressed(Key.W);
+            bool S = Game.KeyPressed(Key.S);
+            MovingDirection = new Vector2I(A && D ? 0 : (A ? 1 : (D ? -1 : 0)), W && S ? 0 : (W ? 1 : (S ? -1 : 0)));
+
+            Vector2F DesiredMove = new Vector2F();
+
+            const CollisionLayer WallCollider = CollisionLayer.L1;
+            if(MovingDirection.X != 0 && MovingDirection.Y != 0){
+                for(uint i = 1; i <= PlayerSpeed; i++){
+                    int TestX = (int)(PlayerX - MovingDirection.X * i + PlayerOffset);
+                    int TestY = (int)(PlayerY - MovingDirection.Y * i + PlayerOffset);
+
+                    Collider TestCollider = new Collider(TestX, TestY, PlayerSize, PlayerSize, CollisionLayer.L1, WallCollider);
+
+                    if(!Collision(TestCollider)){
+                        DesiredMove.X = MovingDirection.X * i;
+                        DesiredMove.Y = MovingDirection.Y * i;
+                    }
+                    else{
+                        TestCollider.X = TestX;
+                        TestCollider.Y = PlayerY + PlayerOffset;
+                        if(!Collision(TestCollider)){
+                            DesiredMove.X = MovingDirection.X * i;
+                            DesiredMove.Y = 0;
+                        }
+                        else{
+                            TestCollider.X = PlayerX + PlayerOffset;
+                            TestCollider.Y = TestY;
+                            if(!Collision(TestCollider)){
+                                DesiredMove.X = 0;
+                                DesiredMove.Y = MovingDirection.Y * i;
+                            }
+                            else{
+                                break;
+                            }
+                        }
+
+                        break;
+                    }
+                }
+            }
+            else{
+                for(uint i = 1; i < PlayerSpeed + 1; i++){
+                    if(!Collision(new Collider((int)(PlayerX - (MovingDirection.X * i) + PlayerOffset), PlayerY + PlayerOffset, PlayerSize, PlayerSize, CollisionLayer.L1, WallCollider))){
+                        DesiredMove.X = MovingDirection.X * i;
+                    }
+                    else{
+                        break;
+                    }
+                }
+
+                for(uint i = 1; i < PlayerSpeed + 1; i++){
+                    if(!Collision(new Collider(PlayerX + PlayerOffset, (int)(PlayerY - (MovingDirection.Y * i) + PlayerOffset), PlayerSize, PlayerSize, CollisionLayer.L1, WallCollider))){
+                        DesiredMove.Y = MovingDirection.Y * i;
+                    }
+                    else{
+                        break;
+                    }
+                }
+            }
+
+            WorldPosition += DesiredMove;
+
+            if(DesiredMove.X != 0 || DesiredMove.Y != 0){
+                Track();
+
+                if(Collision(new Collider((int)(PlayerX + PlayerOffset), PlayerY + PlayerOffset, PlayerSize, PlayerSize, CollisionLayer.L1, CollisionLayer.L2))){
+                    if(WL.Math.Random.Fast_Bool(0.5f)){
+                        Damage((uint)(WL.Math.Random.Fast_0_1() * 5));
+                    }
                 }
             }
         }
         
-        WorldPosition += DesiredMove;
-        
-        if(DesiredMove.X != 0 || DesiredMove.Y != 0){ Track(); }
+        if(Collision(new Collider((int)(PlayerX + PlayerOffset), PlayerY + PlayerOffset, PlayerSize, PlayerSize, CollisionLayer.L1, CollisionLayer.L3))){
+            if(WL.Math.Random.Fast_Bool(0.8f)){
+                Damage((uint)(WL.Math.Random.Fast_0_1() * 20), Dead ? 16 : 0);
+            }
+        }
     }
 
     private readonly List<(int, int, byte)> __Tracks = [];
@@ -571,7 +822,7 @@ for(int i = 0; i < 2; i++){
         }
     }
     private readonly List<(int, int, byte)> __Blocks = [];
-
+    
     private void ClearAllScene(){
         __Blocks.Clear();
     }
@@ -606,9 +857,64 @@ for(int i = 0; i < 2; i++){
         }
     }
     
-    private float BlinkTimer    = 0;
-    private bool  PlayerFlipped = false;
+    private void AddEntity(int X, int Y, byte Type, byte Info = 0, Vector2I InfoPosition = default){
+        int FinalX = X * 16;
+        int FinalY = Y * 16;
+        Entity Entity = new Entity{X = FinalX, Y = FinalY, ID = Type, Info = Info, InfoVector = InfoPosition};
+
+        if(Type != 0){
+            __Entity.Add(Entity);
+        }
+    }
+    private readonly List<Entity> __Entity = [];
+    
+    private void ClearAllEntityScene(){
+        __Entity.Clear();
+    }
+    
+    private void AddEntityScene(string SceneMap, int X = 0, int Y = 0){
+        try{
+            if(string.IsNullOrEmpty(SceneMap)){ return; }
+            
+            int X__ = X;
+            int Y__ = Y;
+
+            foreach(char C in SceneMap){
+                switch(C){
+                    case '\r': 
+                        continue;
+                    case '\n':
+                        Y__++;
+                        X__ = X;
+                        continue;
+                    case 'C':
+                        AddEntity(X__, Y__, 1);
+                        break;
+                    case 'T':
+                        AddEntity(X__, Y__, 2);
+                        break;
+                    case '^':
+                        AddEntity(X__, Y__, 3);
+                        break;
+                    case 's':
+                        AddEntity(X__, Y__, 4);
+                        break;
+                }
+
+                X__++;
+            }
+        }catch(Exception e){
+            throw new Exception("Произошла ошибка при загрузке Entity сцены!", e);
+        }
+    }
+    
+    private float BlinkTimer     = 0;
+    private float AnimationTimer = 0;
+    private bool  PlayerFlipped  = false;
     public override void Render(TickData TD, Image.ImageContext C){
+        AnimationTimer += (float)TD.DeltaTimeS;
+        if(AnimationTimer > 1){ AnimationTimer = 0; }
+        
         if(InMainMenu){
             Texture_Author.Render(C, Palette_World, (int)(C.Width - Texture_Author.Width) - 3, 3);
             
@@ -640,10 +946,25 @@ for(int i = 0; i < 2; i++){
             Track__.Render(C, Palette_World, WorldX + Track.Item1, WorldY + Track.Item2);
         }
         
+        foreach(Entity Entity in __Entity){
+            if(Entity.ID is 1 or 2 or 3){
+                Texture EntityTexture = Entity.ID switch{
+                    1 => Texture_Chair,
+                    2 => Texture_Table,
+                    3 => Texture_Spikes
+                };
+
+                int OffsetX = 0;
+                int OffsetY = 0;
+
+                EntityTexture.Render(C, Palette_World, WorldX + Entity.X - OffsetX, WorldY + Entity.Y - OffsetY);
+            }
+        }
+        
         Texture Player = Texture_Player;
         BlinkTimer += (float)TD.DeltaTimeS;
 
-        if(BlinkTimer > 3){
+        if(BlinkTimer > 3 || Dead){
             Player = Texture_Player_Blink;
             if(BlinkTimer > 3.25f){
                 BlinkTimer = 0;
@@ -664,6 +985,23 @@ for(int i = 0; i < 2; i++){
             if(Block.Item3 == 1){
                 Texture BlockTexture = Texture_Wall;
                 BlockTexture.Render(C, Palette_World, WorldX + Block.Item1, WorldY + Block.Item2);
+            }
+        }
+        
+        foreach(Entity Entity in __Entity){
+            if(Entity.ID is 4){
+                Texture EntityTexture = Entity.ID switch{
+                    4 => (AnimationTimer > 0.5f ? Texture_Spider_Walk : Texture_Spider)
+                };
+
+                int OffsetX = 0;
+                int OffsetY = 0;
+
+                if(Entity.ID == 4){
+                    OffsetX = 8;
+                    OffsetY = 8;
+                }
+                EntityTexture.Render(C, Palette_World, WorldX + Entity.X - OffsetX, WorldY + Entity.Y - OffsetY);
             }
         }
         
@@ -696,6 +1034,8 @@ for(int i = 0; i < 2; i++){
         
         WorldPosition = Vector2F.Zero;
         __Tracks.Clear();
+
+        Health = HealthMax;
     }
     
     private bool RenderColliders = false;

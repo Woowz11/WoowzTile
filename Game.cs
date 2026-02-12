@@ -49,7 +49,25 @@ public abstract class Game{
     /// </summary>
     public static void RenderColliders(Image.ImageContext C){
         foreach(Collider Collider in Colliders){
-            C.Border(Collider.X, Collider.Y, Collider.W, Collider.H, 1, ColorB.Red);
+            CollisionLayer Layer = Collider.Layer;
+            
+            ColorB Color;
+
+            switch(Layer){
+                case CollisionLayer.None:
+                    Color = ColorB.Black.SetA(128);
+                    break;
+                case CollisionLayer.All:
+                    Color = ColorB.White;
+                    break;
+                default:
+                    int Index = Collider.GetLayerIndex(Layer);
+                    float HUE = (Index % 16) / 16f;
+                    Color = ColorB.FromHSV(HUE, 0.8f, 1f);
+                    break;
+            }
+            
+            C.Border(Collider.X, Collider.Y, Collider.W, Collider.H, 1, Color);
         }
         
         foreach((Collider, bool) Collision in Collisions){
@@ -80,6 +98,8 @@ public abstract class Game{
         bool Result = false;
 
         foreach(Collider Collider__ in Colliders){
+            if(!Collider.CanCollide(Collider__)){ continue; }
+            
             if(Collider__.Intersects(Collider)){ Result = true; break; }
         }
         
