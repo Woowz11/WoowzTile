@@ -89,7 +89,7 @@ public abstract class Game{
     /// Очистить коллайдеры
     /// </summary>
     public static void ClearColliders(){
-        Colliders.Clear();
+        Colliders .Clear();
         Collisions.Clear();
     }
     private static readonly List<Collider> Colliders = [];
@@ -104,13 +104,18 @@ public abstract class Game{
     /// <summary>
     /// Проверяет, есть ли столкновения с коллайдерами
     /// </summary>
-    public static bool Collision(Collider Collider){
+    public static bool Collision(Collider Collider, out Collider? HitCollider){
+        HitCollider = null;
         bool Result = false;
 
         foreach(Collider Collider__ in Colliders){
             if(!Collider.CanCollide(Collider__)){ continue; }
-            
-            if(Collider__.Intersects(Collider)){ Result = true; break; }
+
+            if(Collider__.Intersects(Collider)){
+                HitCollider = Collider__;
+                Result = true;
+                break;
+            }
         }
         
         Collisions.Add((Collider, Result));

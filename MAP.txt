@@ -1,0 +1,15 @@
+['_'] = 1,
+['#'] = 2,
+['\''] = 3,
+['A'] = 4,
+['B'] = 5,
+['S'] = 6,
+['W'] = 7
+
+new KeyValuePair<byte, ColorB>(1 , ColorB.White),
+new KeyValuePair<byte, ColorB>(2 , ColorB.Black),
+new KeyValuePair<byte, ColorB>(3 , ColorB.Red),
+new KeyValuePair<byte, ColorB>(4 , ColorB.Red),
+new KeyValuePair<byte, ColorB>(5 , ColorB.Red),
+new KeyValuePair<byte, ColorB>(6 , ColorB.Red),
+new KeyValuePair<byte, ColorB>(7 , ColorB.Red)

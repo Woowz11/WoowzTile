@@ -8,7 +8,7 @@ public class Program{
         try{
             WL.WoowzLib.Start(new WoowzLibInfo(Name: "WoowzTile"));
 
-            __Window = new Window(BackgroundColor: ColorB.Gray);
+            __Window = new Window(BackgroundColor: ColorB.Gray, Width: 256, Height: 256);
 
             __Window.OnResize += (_, W, H) => {
                 RenderWindow();
@@ -20,7 +20,7 @@ public class Program{
             Screen.Anchor_X = 0;
             Screen.Anchor_Y = 0;
 
-            Screen.Anchor_Height = 0.99f;
+            Screen.Anchor_Height = 1;
 
             __Scene = new Image(256, ColorB.Black);
             Screen.Image = __Scene;

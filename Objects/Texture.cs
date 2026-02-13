@@ -52,8 +52,10 @@ public class Texture{
         set => Pixels[Y * Width + X] = value;
     }
 
-    public void Render(Image.ImageContext C, Palette Palette, int X = 0, int Y = 0, bool FlipX = false, bool FlipY = false, TextureRotation Rotation = TextureRotation.None){
+    public void Render(Image.ImageContext C, Palette Palette, int X = 0, int Y = 0, bool FlipX = false, bool FlipY = false, TextureRotation Rotation = TextureRotation.None, ColorB? MultiplyColor = null){
         try{
+            MultiplyColor ??= ColorB.White;
+
             int W = (int)Width;
             int H = (int)Height;
 
@@ -127,7 +129,7 @@ public class Texture{
 
                     if(DstX >= C.Width || DstY >= C.Height){ continue; }
 
-                    C.SetPixel(DstX, DstY, Color, ImageBlend.Alpha);
+                    C.SetPixel(DstX, DstY, Color * MultiplyColor.Value, ImageBlend.Alpha);
                 }
             }
         }catch(Exception e){
@@ -135,11 +137,11 @@ public class Texture{
         }
     }
 
-    public void Render(Image.ImageContext C, Palette Palette, int X, int Y, uint TileWidth, uint TileHeight = 1, bool FlipX = false, bool FlipY = false){
+    public void Render(Image.ImageContext C, Palette Palette, int X, int Y, uint TileWidth, uint TileHeight = 1, bool FlipX = false, bool FlipY = false, TextureRotation Rotation = TextureRotation.None, ColorB? MultiplyColor = null){
         if(TileWidth == 0 || TileHeight == 0){ return; }
         for(int Y__ = 0; Y__ < TileHeight; Y__++){
             for(int X__ = 0; X__ < TileWidth; X__++){
-                Render(C, Palette, X + X__ * (int)Width, Y + Y__ * (int)Height, FlipX, FlipY);
+                Render(C, Palette, X + X__ * (int)Width, Y + Y__ * (int)Height, FlipX, FlipY, Rotation, MultiplyColor);
             }
         }
     }

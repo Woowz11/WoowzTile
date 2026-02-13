@@ -26,11 +26,13 @@ public enum CollisionLayer : uint{
 }
 
 public struct Collider{
-    public Collider(int X, int Y, uint W, uint H, CollisionLayer Layer = CollisionLayer.L1, CollisionLayer Mask = CollisionLayer.All){
+    public Collider(int X, int Y, uint W, uint H, byte Info = 0, int InfoSecond = 0, CollisionLayer Layer = CollisionLayer.L1, CollisionLayer Mask = CollisionLayer.All){
         this.X = X;
         this.Y = Y;
         this.W = W;
         this.H = H;
+        this.Info = Info;
+        this.InfoSecond = InfoSecond;
         this.Layer = Layer;
         this.Mask = Mask;
     }
@@ -40,9 +42,12 @@ public struct Collider{
     public uint W;
     public uint H;
 
+    public byte Info;
+    public int InfoSecond;
+    
     public CollisionLayer Layer;
     public CollisionLayer Mask;
-
+    
     public bool CanCollide(Collider Other) => (Mask & Other.Layer) != 0 && (Other.Mask & Layer) != 0;
 
     public static int GetLayerIndex(CollisionLayer Layer){
