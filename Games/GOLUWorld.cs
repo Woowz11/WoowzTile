@@ -1,19 +1,22 @@
 ﻿using WL;
 using WLO;
 using WoowzTile.Objects;
+using Char = WoowzTile.Objects.Char;
 
 namespace WoowzTile.Games;
 
 public class GOLUWorld : Game{
     public Palette Palette_World;
+
+    public Font Font;
     
     public Texture Texture_Ground;
-    public Texture Texture_Wall;
+    public Texture Texture_Metal;
     public Texture Texture_Player;
     public Texture Texture_Player_Blink;
     public Texture Texture_Player_Blood;
     public Texture Texture_Player_Blood_Blink;
-    public Texture Texture_GroundPlanks;
+    public Texture Texture_Planks;
     public Texture Texture_Track;
     public Texture Texture_Blood;
     public Texture Texture_Health;
@@ -27,8 +30,39 @@ public class GOLUWorld : Game{
     public Texture Texture_Table;
     public Texture Texture_Spikes;
     public Texture Texture_Spider;
-    public Texture Texture_Spider_Walk;
-
+    public Texture Texture_Spider_Anim;
+    public Texture Texture_Asphalt;
+    public Texture Texture_Bricks;
+    public Texture Texture_Sand;
+    public Texture Texture_Water;
+    public Texture Texture_Water_Top;
+    public Texture Texture_Water_Anim;
+    public Texture Texture_Water_Top_Anim;
+    public Texture Texture_Tree;
+    public Texture Texture_Tree_Leaves;
+    public Texture Texture_FirstAidKit;
+    public Texture Texture_FirstAidKit_Icon;
+    public Texture Texture_Player_Healed;
+    
+    /*
+     * Блоки:
+     * '_' - Пустота
+     * '#' - Блок металла (стена)
+     * ''' - Доски (пол)
+     * 'A' - Асфальт (пол)
+     * 'B' - Кирпичи (блок)
+     * 'S' - Песок (пол)
+     * 'W' - Вода (блок)
+     * 
+     * Сущности:
+     * '_' - Пустота
+     * 'C' - Стул
+     * 'T' - Стол
+     * '^' - Шипы
+     * 's' - Паук (моб)
+     * '!' - Дерево
+     */
+    
     public override string Name(){ return "GOLUWorld"; }
 
     public override string WindowTitle(){ return new Vector2I(PlayerX - WorldX, PlayerY - WorldY).ToShortString(); }
@@ -44,7 +78,8 @@ public class GOLUWorld : Game{
             new KeyValuePair<byte, ColorB>(7 , ColorB.Red.SetA(64)),
             new KeyValuePair<byte, ColorB>(8 , ColorB.Red),
             new KeyValuePair<byte, ColorB>(9 , ColorB.DarkRed),
-            new KeyValuePair<byte, ColorB>(10, ColorB.DarkMagenta)
+            new KeyValuePair<byte, ColorB>(10, ColorB.DarkMagenta),
+            new KeyValuePair<byte, ColorB>(11, ColorB.LightRed)
         ]);
 
         Dictionary<char, byte> Mapping = new Dictionary<char, byte>{
@@ -58,8 +93,597 @@ public class GOLUWorld : Game{
             [')'] = 7,
             ['R'] = 8,
             ['r'] = 9,
-            ['m'] = 10
+            ['m'] = 10,
+            ['l'] = 11
         };
+        
+        Font = new Font(new Char(new Texture(
+@"████████
+█..██..█
+█.█..█.█
+█....█.█
+█...█..█
+█......█
+█...█..█
+████████", Mapping)),
+        [
+            new KeyValuePair<char, Char>(
+' ' ,
+new Char(new Texture(
+@".....
+.....
+.....
+.....
+.....
+.....
+.....
+.....", Mapping))),
+            
+new KeyValuePair<char, Char>(
+'1' ,
+new Char(new Texture(
+@"..█..
+.██..
+█.█..
+..█..
+..█..
+..█..
+..█..
+█████", Mapping))),
+
+new KeyValuePair<char, Char>(
+'2' ,
+new Char(new Texture(
+@".███.
+█...█
+....█
+...█.
+..█..
+.█...
+█....
+█████", Mapping))),
+
+new KeyValuePair<char, Char>(
+'3' ,
+new Char(new Texture(
+@".███.
+█...█
+....█
+.███.
+....█
+....█
+█...█
+.███.", Mapping))),
+
+new KeyValuePair<char, Char>(
+'4' ,
+new Char(new Texture(
+@"█...█
+█...█
+█...█
+█████
+....█
+....█
+....█
+....█", Mapping))),
+
+new KeyValuePair<char, Char>(
+'5' ,
+new Char(new Texture(
+@"█████
+█....
+█....
+████.
+....█
+....█
+....█
+████.", Mapping))),
+
+new KeyValuePair<char, Char>(
+'6' ,
+new Char(new Texture(
+@".███.
+█...█
+█....
+████.
+█...█
+█...█
+█...█
+.███.", Mapping))),
+
+new KeyValuePair<char, Char>(
+'7' ,
+new Char(new Texture(
+@"█████
+....█
+....█
+...█.
+.████
+...█.
+...█.
+...█.", Mapping))),
+
+new KeyValuePair<char, Char>(
+'8' ,
+new Char(new Texture(
+@".███.
+█...█
+█...█
+.███.
+█...█
+█...█
+█...█
+.███.", Mapping))),
+
+new KeyValuePair<char, Char>(
+'9' ,
+new Char(new Texture(
+@".███.
+█...█
+█...█
+█...█
+.████
+....█
+█...█
+.███.", Mapping))),
+
+new KeyValuePair<char, Char>(
+'0' ,
+new Char(new Texture(
+@".███.
+█...█
+█...█
+█.█.█
+█.█.█
+█...█
+█...█
+.███.", Mapping))),
+
+new KeyValuePair<char, Char>(
+'А' ,
+new Char(new Texture(
+@".███.
+█...█
+█...█
+█████
+█...█
+█...█
+█...█
+█...█", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Б' ,
+new Char(new Texture(
+@"█████
+█....
+█....
+████.
+█...█
+█...█
+█...█
+████.", Mapping))),
+
+new KeyValuePair<char, Char>(
+'В' ,
+new Char(new Texture(
+@"████.
+█...█
+█...█
+████.
+█...█
+█...█
+█...█
+████.", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Г' ,
+new Char(new Texture(
+@"█████
+█....
+█....
+█....
+█....
+█....
+█....
+█....", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Д' ,
+new Char(new Texture(
+@".█████.
+.█...█.
+.█...█.
+.█...█.
+.█...█.
+███████
+█.....█
+█.....█", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Е' ,
+new Char(new Texture(
+@"█████
+█....
+█....
+█████
+█....
+█....
+█....
+█████", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Ё' ,
+new Char(new Texture(
+@"█...█
+.....
+█████
+█....
+█████
+█....
+█....
+█████", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Ж' ,
+new Char(new Texture(
+@"█..█..█
+█..█..█
+█..█..█
+.█████.
+█..█..█
+█..█..█
+█..█..█
+█..█..█", Mapping))),
+
+new KeyValuePair<char, Char>(
+'З' ,
+new Char(new Texture(
+@".███.
+█...█
+....█
+..██.
+....█
+....█
+█...█
+.███.", Mapping))),
+
+new KeyValuePair<char, Char>(
+'И' ,
+new Char(new Texture(
+@"█...█
+█...█
+█..██
+█.█.█
+██..█
+█...█
+█...█
+█...█", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Й' ,
+new Char(new Texture(
+@".███.
+.....
+█...█
+█..██
+█.█.█
+██..█
+█...█
+█...█", Mapping))),
+
+new KeyValuePair<char, Char>(
+'К' ,
+new Char(new Texture(
+@"█...█
+█...█
+█..█.
+███..
+█..█.
+█...█
+█...█
+█...█", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Л' ,
+new Char(new Texture(
+@".█████
+.█...█
+.█...█
+.█...█
+.█...█
+.█...█
+█....█
+█....█", Mapping))),
+
+new KeyValuePair<char, Char>(
+'М' ,
+new Char(new Texture(
+@"█...█
+██.██
+█.█.█
+█...█
+█...█
+█...█
+█...█
+█...█", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Н' ,
+new Char(new Texture(
+@"█...█
+█...█
+█...█
+█████
+█...█
+█...█
+█...█
+█...█", Mapping))),
+
+new KeyValuePair<char, Char>(
+'О' ,
+new Char(new Texture(
+@".███.
+█...█
+█...█
+█...█
+█...█
+█...█
+█...█
+.███.", Mapping))),
+
+new KeyValuePair<char, Char>(
+'П' ,
+new Char(new Texture(
+@"█████
+█...█
+█...█
+█...█
+█...█
+█...█
+█...█
+█...█", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Р' ,
+new Char(new Texture(
+@"████.
+█...█
+█...█
+████.
+█....
+█....
+█....
+█....", Mapping))),
+
+new KeyValuePair<char, Char>(
+'С' ,
+new Char(new Texture(
+@".███.
+█...█
+█....
+█....
+█....
+█....
+█...█
+.███.", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Т' ,
+new Char(new Texture(
+@"█████
+..█..
+..█..
+..█..
+..█..
+..█..
+..█..
+..█..", Mapping))),
+
+new KeyValuePair<char, Char>(
+'У' ,
+new Char(new Texture(
+@"█...█
+█...█
+█...█
+.████
+....█
+....█
+█...█
+.███.", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Ф' ,
+new Char(new Texture(
+@".███.
+█.█.█
+█.█.█
+.███.
+..█..
+..█..
+..█..
+..█..", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Х' ,
+new Char(new Texture(
+@"█...█
+█...█
+.█.█.
+..█..
+.█.█.
+█...█
+█...█
+█...█", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Ц' ,
+new Char(new Texture(
+@"█...█.
+█...█.
+█...█.
+█...█.
+█...█.
+█...█.
+██████
+.....█", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Ч' ,
+new Char(new Texture(
+@"█...█
+█...█
+█...█
+.████
+....█
+....█
+....█
+....█", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Ш' ,
+new Char(new Texture(
+@"█..█..█
+█..█..█
+█..█..█
+█..█..█
+█..█..█
+█..█..█
+█..█..█
+███████", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Щ' ,
+new Char(new Texture(
+@"█..█..█.
+█..█..█.
+█..█..█.
+█..█..█.
+█..█..█.
+█..█..█.
+████████
+.......█", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Ъ' ,
+new Char(new Texture(
+@"███....
+..█....
+..█....
+..████.
+..█...█
+..█...█
+..█...█
+..████.", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Ы' ,
+new Char(new Texture(
+@"█.....█
+█.....█
+█.....█
+████..█
+█...█.█
+█...█.█
+█...█.█
+████..█", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Ь' ,
+new Char(new Texture(
+@"█....
+█....
+█....
+████.
+█...█
+█...█
+█...█
+████.", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Э' ,
+new Char(new Texture(
+@".███.
+█...█
+....█
+..███
+....█
+....█
+█...█
+.███.", Mapping))),
+
+new KeyValuePair<char, Char>(
+'Ю' ,
+new Char(new Texture(
+@"█..███.
+█.█...█
+█.█...█
+███...█
+█.█...█
+█.█...█
+█.█...█
+█..███.", Mapping))),
+        
+new KeyValuePair<char, Char>(
+'Я' ,
+new Char(new Texture(
+@".████
+█...█
+█...█
+.████
+█...█
+█...█
+█...█
+█...█", Mapping))),
+
+new KeyValuePair<char, Char>(
+'[' ,
+new Char(new Texture(
+@"███
+█..
+█..
+█..
+█..
+█..
+█..
+███", Mapping))),
+
+new KeyValuePair<char, Char>(
+']' ,
+new Char(new Texture(
+@"███
+..█
+..█
+..█
+..█
+..█
+..█
+███", Mapping))),
+            
+new KeyValuePair<char, Char>(
+'.' ,
+new Char(new Texture(
+    @"...
+...
+...
+...
+...
+...
+...
+.█.", Mapping))),
+
+new KeyValuePair<char, Char>(
+',' ,
+new Char(new Texture(
+    @"...
+...
+...
+...
+...
+...
+██.
+.█.", Mapping))),
+            
+        ]);
         
         Texture_Ground = new Texture(
             @"__░__▒__░░____▒_
@@ -81,7 +705,7 @@ _░____▒__░____░▒
             Mapping
         );
         
-        Texture_GroundPlanks = new Texture(
+        Texture_Planks = new Texture(
             @"__░░__▒___░░░░__
 ░_____▒░░░_____░
 ▒▒▒▒▒▒▒▒▒▒▒▓▒▒▒▒
@@ -100,8 +724,48 @@ ____░░▒░░░______
 ______▒______░__",
             Mapping
         );
+        
+        Texture_Asphalt = new Texture(
+            @"▓▒▓▓▓▓▒▓▓▒▓▓▓▓▒▓
+▓▓▓▓▓▓▒▓▓▓▒▓▓▓▒▓
+▓▓▓▒▓▓▓▓▓▓▓▓▓▓▓▓
+▓▒▓▓▒▓▓▒▓▓▓▓▓▓▓▒
+▓▓▓▓▓▓▓▓▒▓▓▓▒▓▒▓
+▒▓▓▓▓▓▓▓▓▓▓▓▓▒▓▓
+▓▒▒▓▓▓▓▒▓▓▒▓▓▒▓▓
+▓▓▓▒▒▓▓▓▓▓▓▓▓▓▒▓
+▓▓▓▓▓▓▓▓▓▒▓▓▓▓▓▒
+▓▓▓▓▓▓▒▓▓▓▓▒▓▓▓▓
+▒▓▓▓▒▓▓▓▓▓▓▓▒▓▓▒
+▓▓▒▓▓▓▓▓▓▓▒▓▓▓▓▓
+▓▒▓▓▓▓▓▓▒▓▓▓▓▓▒▓
+▓▓▓▓▓▒▓▓▓▓▒▓▓▓▓▒
+▓▓▓▓▓▒▓▓▓▓▓▒▓▓▓▓
+▓▒▓▓▓▓▒▓▓▓▓▓▓▓▓▓",
+            Mapping
+        );
+        
+        Texture_Sand = new Texture(
+            @"░░░░_░░░░░░░░▒░░
+▒░░░░░░░▒░░░░░░░
+░░░░▒░░░░░░░░░░_
+░▓░░░░░░░░░▒░▓░░
+░░▒░░░░░_░░░░░░░
+░░░░░░░░░░░░░░▒░
+░░░░░░░▒░░░_░░░░
+▒░░░░░░░░░░░░░░░
+░░░░▒░░░░▓░░░▒░░
+░░_░░░░░░░░░░░░░
+░░░░░░▒░░░▒░░░_░
+░▒░░░░░░░░░░░░░░
+░░░░░▓░░░░░░░░▒░
+░░░▒░░░░_░▒░░░░░
+░░░░░░░░░░░░░░░_
+░░_░░░▒░░░░░░░░░",
+            Mapping
+        );
 
-Texture_Wall = new Texture(
+Texture_Metal = new Texture(
 @"████████████████
 █▓▒▒▒░░░░░▒▒▒▒██
 █▒___________░▓█
@@ -119,6 +783,106 @@ Texture_Wall = new Texture(
 ██▓▒▒▒▒▒▒▒▒▒▒▓▓█
 ████████████████",
 Mapping
+);
+
+Texture_Bricks = new Texture(
+    @"░░▒▓▒░░░░░▒▓▒░░░
+_░░▓░░___░░▓░░__
+▒▒▒▓▒▒▒▒▒▒▒▓▒▒▒▒
+████████████████
+▒░░░░░▒▓▒░░░░░▒▓
+░░___░░▓░░___░░▓
+▒▒▒▒▒▒▒▓▒▒▒▒▒▒▒▓
+████████████████
+░░▒▓▒░░░░░▒▓▒░░░
+_░░▓░░___░░▓░░__
+▒▒▒▓▒▒▒▒▒▒▒▓▒▒▒▒
+████████████████
+▒░░░░░▒▓▒░░░░░▒▓
+░░___░░▓░░___░░▓
+▒▒▒▒▒▒▒▓▒▒▒▒▒▒▒▓
+████████████████",
+    Mapping
+);
+
+Texture_Water = new Texture(
+    @"RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRlllllllRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRlllllllR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR",
+    Mapping
+);
+
+Texture_Water_Top = new Texture(
+    @"▒▒▓▓▓▓▒▒▒░░▒▓▓▒▒
+░░░░░▒▒▒▒▒░░░░░░
+▒▒▒░░░▒▒░░░░▒▒▒▒
+rrrrrrrrrrrrrrrr
+RRRrrRRRRRRRrrrR
+RrRRRRRRRRrRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRlllllllR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR",
+    Mapping
+);
+
+Texture_Water_Anim = new Texture(
+    @"RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+lllllllllllRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRllllllllll
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR",
+    Mapping
+);
+
+Texture_Water_Top_Anim = new Texture(
+    @"▒▒▓▓▓▓▒▒▒░░▒▓▓▒▒
+░░░░░▒▒▒▒▒░░░░░░
+▒▒▒░░░▒▒░░░░▒▒▒▒
+rrrrrrrrrrrrrrrr
+RRRrrRRRRRRRrrrR
+RrRRRRRRRRrRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRllllllllll
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR
+RRRRRRRRRRRRRRRR",
+    Mapping
 );
 
 Texture_Player = new Texture(
@@ -198,6 +962,82 @@ rRR▓▓████rr▓▓_R█
 .█R__▒▒▒▒▒R__▒█.
 ..r▓▓░░__░RR▓r..
 ...█████rrrrr...",
+    Mapping
+);
+
+Texture_Player_Healed = new Texture(
+    @"..██▓▓▓▓▓▓▓▓██..
+.█░░_▓▓▓░____░█.
+█▒▒░░__░▓░____░█
+.█▓▓▓▓░_░▓▓█_░▒█
+......▓░___░████
+.......▓░░░_░▒▒█
+........▓▓▓░▒▒▒█
+...........▓▓▓██
+................
+................
+................
+................
+................
+................
+................
+................",
+    Mapping
+);
+
+Texture_Tree = new Texture(
+    @".█▓▒▒▓▓▓▓▒▓▒▒▓█.
+.█▓▒▒▒▒▒▓▓▒▒▒▓█.
+.█▓▒▒▒▒▒▒▒▒▒▓▓█.
+.█▓▒▒▒▒▒▒▒▒▒▓▓█.
+.█▓▒▒▒▒▒▒▒▒▒▓▓█.
+.█▓▒▒░▒▒▒▒░▒▓▓█.
+.█▓▒▒░▒░░░░▒▓▓█.
+.█▓▓▒░▒_░░░▒▓▓█.
+.█▓▓▒░▒_░▒░▒▒▓█.
+.█▓▓▒░▒_░▒░▒▒▓█.
+.█▓▓▒░░_░▒░▒▒▓█.
+.█▓▓▒░░_░▒░▒▒▓█.
+.█▓▒▒░░_░▒░▒▒▓█.
+..█▓▒░▒░░▒░▒▓█..
+...█▓▒▒▒▒▒▒▓█...
+.....█▓▓▓▓█.....",
+    Mapping
+);
+
+Texture_Tree_Leaves = new Texture(
+    @"................................
+................................
+................................
+................................
+................................
+................................
+................................
+............███████.............
+......████.█▓▒▒▒░▒▓█.███........
+.....█▓_░▒██░░▒▒▒░_▒█▒▒▓██......
+....█░▒▒▒_▒█▒▓▒▒▒░__░__▒▒▓█.....
+...█▓_▒▒▒_█.█▓▒▒▒___▒█▓▒░░▓█....
+....█▓▒▒▒_░█▒___▒__▒█▓░░__░▓█...
+.....█▒___▒___░░__▒▓░__▒__░▒█...
+.....█░_▒▒█░_░▒▒▒▓▓▓▒▒█▓░░▒▓█...
+....█▒____▒█▒▒▒▒▒▓▓__▒█▓▒▒▓█....
+...█▒_____▓▓▒__▓▓▒▒__█▒▒▓▓█.....
+...█▓_▒▒▒▓__░_▒▒_____▒░████.....
+....█▓▓░░__█▒░_▒▒▒___░░█.█▓█....
+.....██░__▒█▓▒▒▒▒▒▓█__▒▓█▒▒▓█...
+....█▒__▒▒▓▓█▒▒▓▓██▓___▒░__▒█...
+...█▒▒_░▓▓▒░_███▒▒_________▒█...
+....█▓▒▓▓▓▒__▒_________▓▒░▓█....
+....██▓▒____░▒▒▒▒▒▒▒_░░▒▓▓██....
+...█▒▒██▒▒▓▓█▒▒░░▒▓██▒▓▓██▒▒█...
+...█▒▒_░▓▓▒░_███▒▒_________▒█...
+....█▓▒▓▓▓▒__▒_________▓▒░▓█....
+.....█▓▒____░▒▒▒▒▒▒▒_░░▒▓▓█.....
+......██▒▒▓▓█▒▒░░▒▓██▒▓▓██......
+.......(████(█░░▒▓█((███(.......
+.........(((((████((((..........
+............((((((((............",
     Mapping
 );
 
@@ -520,7 +1360,7 @@ Texture_Spider = new Texture(
     Mapping
 );
 
-Texture_Spider_Walk = new Texture(
+Texture_Spider_Anim = new Texture(
     @"................................
 ................................
 ................................
@@ -556,6 +1396,64 @@ Texture_Spider_Walk = new Texture(
     Mapping
 );
 
+Texture_FirstAidKit = new Texture(
+    @"................
+................
+....█████████...
+...█▒▒▒░░▒▒▒▒█..
+..█░░░____▒▓█▓█.
+.██▒▒░░░░░▒█▒▒█.
+.█▒▓▒▒▒▒▓▒██░▒█.
+.█░▓████▓█▒▒░▒█.
+.█░▓░___▓_▒▒░▒█.
+.█░__░r░__░░░▒█.
+.█░__rRR___▒░█..
+..█░__R___▒▒▒█..
+...█▒▒__░▒▓██...
+....███████.....
+................
+................",
+    Mapping
+);
+
+Texture_FirstAidKit_Icon = new Texture(
+    @"..................................
+..................................
+..................................
+..................................
+..................................
+..........███████████████.........
+........██▓▓▒▒▒▒▒▒▒▒▒▒▒▓▓███......
+.......█▒▒▒▒▒▒░░░░░▒▒▒▒▒▒▒▒▒█.....
+......█▒░░░░░░░░░░░░░░░░░▒▓▓█.....
+.....█▒░░___________░░░▒▒▓███.....
+.....█░░░░░░_________░▒▒▓███▓█....
+....██░░░░░░░░░░░░░░░░▒▓███▓▒█....
+...███▒▒▒▒░░░░░░░░░░░░▒▓██▒▒▒█....
+...█▓█▒▓▓▒▒▒▒▒▒▒░░░░▒▒▒▓█▒▒▒▒█....
+...█▒▒█▓▓▒▒▒▒▒▒▒▒▒▓▓▒▒███▒░░▒█....
+...█▒▒▒▓▓▒▒▒▒▒▒▒▒▒▓▓▒█▒█▒░░░▒█....
+...█▒░░▓▓█████████▓▓█▒▒█▒░░░▒█....
+...█░░░▓▓▒▒░░░░░▒▒▓▓▒▒▒█▒░░░▒█....
+...█░░░░░░░░░░░░░░▓▓░▒▒█▒░░░▒█....
+...█░░░░░░░__rR______░▒█▒░░░▒█....
+...█▒___░░__rRR_______▒█▒░░░▒█....
+....█______░rRR░______░█░░░░▒█....
+....█░___rrrRRRRrr_____█░░░░▒█....
+....█░░___rrrRRRrr_____█▒░░▒█.....
+....█▒░_____░RRr░______█▒░░▒█.....
+....█▒▒______Rr░______░█▒░▒▒█.....
+....█▓▒░_____Rr______░▒█▒▒▒█......
+.....██▒▒░__________░▒▒█▓▒█.......
+.......██▒▒▒░_____░░▒▒▓███........
+.........███████████████..........
+..................................
+..................................
+..................................
+..................................",
+    Mapping
+);
+
     }
     
     public override void Stop(){
@@ -573,19 +1471,40 @@ Texture_Spider_Walk = new Texture(
     private bool     Moving => MovingDirection != Vector2I.Zero;
     private Vector2I MovingDirection = Vector2I.Zero;
 
-    private const uint HealthMax = 100;
-    private       uint Health    = HealthMax;
+    private const uint HealthMax   = 100;
+    private const uint HealthSmall = 30;
+    private       uint Health      = HealthMax;
 
     private bool InMainMenu = true;
+    /// <summary>
+    /// Номер интерфейса
+    /// 0 - Ничего
+    /// 1 - Инвентарь
+    /// </summary>
+    private byte Interface  = 0;
 
     private bool Dead => Health == 0;
+
+    private bool StopTime = false;
+
+    private const byte MaxSlots = 12;
+    private byte SelectedItem   = 0;
+
+    private byte[] Inventory = new byte[(int)MaxSlots];
+
+    private float LastHealed = 0;
     
     private void Damage(uint Damage, int Range = 0){
         Health = WL.Math.SubU(Health, Damage);
 
         SplatBlood(PlayerX - WorldX + WL.Math.Random.Fast_Int(-Range, Range), PlayerY - WorldY + WL.Math.Random.Fast_Int(-Range, Range));
-        
-        //Task.Run(() => Console.Beep(WL.Math.Random.Fast_Int(0, 10000), 10000));
+    }
+    
+    private void Heal(uint Heal){
+        Health += Heal;
+        if(Health > HealthMax){ Health = HealthMax; }
+
+        LastHealed = 60;
     }
     
     public struct Entity{
@@ -604,12 +1523,18 @@ Texture_Spider_Walk = new Texture(
             return;
         }
 
+        StopTime = Interface != 0;
+
+        if(StopTime){ return; }
+        
         if(!Dead){
-            Health = Health >= HealthMax ? HealthMax : Health + (uint)(WL.Math.Random.Fast_Bool(0.01f) ? 1 : 0);
+            Health = Health >= HealthMax ? HealthMax : Health + (uint)(WL.Math.Random.Fast_Bool(0.001f) ? 1 : 0);
+        }else{
+            Interface = 0;
         }
         
         foreach((int, int, byte) Block in __Blocks){
-            if(Block.Item3 == 1){
+            if(Block.Item3 is 1 or 4 or 6){
                 Game.AddCollider(new Collider(WorldX + Block.Item1, WorldY + Block.Item2, 16, 16));
             }
         }
@@ -617,7 +1542,7 @@ Texture_Spider_Walk = new Texture(
         for(int i = 0; i < __Entity.Count; i++){
             Entity Entity = __Entity[i];
             
-            if(Entity.ID is 2 or 3 or 4){
+            if(Entity.ID is 2 or 3 or 4 or 5){
                 if(Entity.ID == 4){
                     int SpiderSpeed = WL.Math.Random.Fast_Bool(0.8f) ? 1 : 0;
                     
@@ -684,9 +1609,10 @@ Texture_Spider_Walk = new Texture(
                     __Entity[i] = Entity;
                 }
                 
-                uint Size = 16;
-                if(Entity.ID == 2){
-                    Size = 14;
+                uint SizeX = 16;
+                uint SizeY = 16;
+                if(Entity.ID is 2 or 5){
+                    SizeX = SizeY = 10;
                 }
 
                 CollisionLayer Layer = CollisionLayer.L1;
@@ -695,7 +1621,7 @@ Texture_Spider_Walk = new Texture(
                 }else if(Entity.ID == 4){
                     Layer = CollisionLayer.L3;
                 }
-                Game.AddCollider(new Collider(WorldX + Entity.X + (int)((16 - Size)/2), WorldY + Entity.Y + (int)((16 - Size)/2), Size, Size, Layer));
+                Game.AddCollider(new Collider(WorldX + Entity.X + (int)((16 - SizeX)/2), WorldY + Entity.Y + (int)((16 - SizeY)/2), SizeX, SizeY, Layer));
             }
         }
 
@@ -712,7 +1638,7 @@ Texture_Spider_Walk = new Texture(
         
         if(CanMove){
             uint PlayerSpeed = (uint)(TD.DeltaTimeS * 100 * (Game.KeyPressed(Key.Shift) ? 1.5 : 1));
-            if(Health < 30){ PlayerSpeed = (uint)(PlayerSpeed / 2); }
+            if(Health < HealthSmall){ PlayerSpeed = (uint)(PlayerSpeed / 2); }
 
             bool D = Game.KeyPressed(Key.D);
             bool A = Game.KeyPressed(Key.A);
@@ -800,7 +1726,7 @@ Texture_Spider_Walk = new Texture(
     private readonly List<(int, int, byte, TextureRotation)> __Tracks = [];
     private void Track(){
         if(WL.Math.Random.Fast_Bool(0.1f)){
-            if(Health < 32){
+            if(Health < HealthSmall){
                 SplatBlood(PlayerX - WorldX, PlayerY - WorldY);
             }else{
                 __Tracks.Add((PlayerX - WorldX, PlayerY - WorldY, 0, TextureRotation.None));
@@ -861,6 +1787,18 @@ Texture_Spider_Walk = new Texture(
                     case '\'':
                         AddBlock(X__, Y__, 2);
                         break;
+                    case 'A':
+                        AddBlock(X__, Y__, 3);
+                        break;
+                    case 'B':
+                        AddBlock(X__, Y__, 4);
+                        break;
+                    case 'S':
+                        AddBlock(X__, Y__, 5);
+                        break;
+                    case 'W':
+                        AddBlock(X__, Y__, 6);
+                        break;
                 }
 
                 X__++;
@@ -912,6 +1850,9 @@ Texture_Spider_Walk = new Texture(
                     case 's':
                         AddEntity(X__, Y__, 4);
                         break;
+                    case '!':
+                        AddEntity(X__, Y__, 5);
+                        break;
                 }
 
                 X__++;
@@ -925,10 +1866,16 @@ Texture_Spider_Walk = new Texture(
     private float AnimationTimer = 0;
     private bool  PlayerFlipped  = false;
     public override void Render(TickData TD, Image.ImageContext C){
-        AnimationTimer += (float)TD.DeltaTimeS;
+        if(!StopTime){
+            AnimationTimer += (float)TD.DeltaTimeS;
+            
+            if(!Dead){ LastHealed -= (float)TD.DeltaTimeS; }
+        }
         if(AnimationTimer > 1){ AnimationTimer = 0; }
         
         if(InMainMenu){
+            Font.Render(C, Palette_World, ((float)TD.DeltaTick * 6) + "\n" + ((float)TD.DeltaTick * 5) + "\n" + ((float)TD.DeltaTick * 4) + "\n" + ((float)TD.DeltaTick * 3) + "\n" + ((float)TD.DeltaTick * 2) + "\n" + (float)TD.DeltaTick, 5, (int)C.Height - 100);
+            
             Texture_Author.Render(C, Palette_World, (int)(C.Width - Texture_Author.Width) - 3, 3);
             
             Texture_G.Render(C, Palette_World, (int)(C.Width/2 - Texture_G.Width/2 - Texture_G.Width*1.5F), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2) * 10));
@@ -948,8 +1895,13 @@ Texture_Spider_Walk = new Texture(
         Texture_Ground.Render(C, Palette_World, WorldX - 16 * 16, WorldY - 16 * 16, 64, 64);
         
         foreach((int, int, byte) Block in __Blocks){
-            if(Block.Item3 == 2){
-                Texture BlockTexture = Texture_GroundPlanks;
+            if(Block.Item3 is 2 or 3 or 5 or 6){
+                Texture BlockTexture = Block.Item3 switch{
+                    2 => Texture_Planks,
+                    3 => Texture_Asphalt,
+                    5 => Texture_Sand,
+                    6 => (__Blocks.Any(B => B.Item1 == Block.Item1 && B.Item2 == Block.Item2 - 16 && B.Item3 == Block.Item3) ? (AnimationTimer > 0.5f ? Texture_Water_Anim : Texture_Water) : (AnimationTimer > 0.5f ? Texture_Water_Top_Anim : Texture_Water_Top))
+                };
                 BlockTexture.Render(C, Palette_World, WorldX + Block.Item1, WorldY + Block.Item2);
             }
         }
@@ -960,11 +1912,12 @@ Texture_Spider_Walk = new Texture(
         }
         
         foreach(Entity Entity in __Entity){
-            if(Entity.ID is 1 or 2 or 3){
+            if(Entity.ID is 1 or 2 or 3 or 5){
                 Texture EntityTexture = Entity.ID switch{
                     1 => Texture_Chair,
                     2 => Texture_Table,
-                    3 => Texture_Spikes
+                    3 => Texture_Spikes,
+                    5 => Texture_Tree
                 };
 
                 EntityTexture.Render(C, Palette_World, WorldX + Entity.X, WorldY + Entity.Y, false, false, Entity.Rotation);
@@ -981,7 +1934,7 @@ Texture_Spider_Walk = new Texture(
             }
         }
 
-        if(Health < 30){
+        if(Health < HealthSmall){
             if(Player == Texture_Player){ Player = Texture_Player_Blood; }
             else if(Player == Texture_Player_Blink){ Player = Texture_Player_Blood_Blink; }
         }
@@ -989,19 +1942,37 @@ Texture_Spider_Walk = new Texture(
         if(MovingDirection.X != 0){
             PlayerFlipped = MovingDirection.X > 0;
         }
+        
+        byte Item = Inventory[SelectedItem];
+        if(Item > 0){
+            Texture ItemTexture = Item switch{
+                1 => Texture_FirstAidKit
+            };
+            
+            ItemTexture.Render(C, Palette_World, PlayerX, PlayerY - 11, PlayerFlipped);
+        }
+        
         Player.Render(C, Palette_World, PlayerX, PlayerY, PlayerFlipped);
 
+        if(LastHealed > 0){
+            Texture_Player_Healed.Render(C, Palette_World, PlayerX, PlayerY, PlayerFlipped);
+        }
+
         foreach((int, int, byte) Block in __Blocks){
-            if(Block.Item3 == 1){
-                Texture BlockTexture = Texture_Wall;
+            if(Block.Item3 is 1 or 4){
+                Texture BlockTexture = Block.Item3 switch{
+                    1 => Texture_Metal,
+                    4 => Texture_Bricks
+                };
                 BlockTexture.Render(C, Palette_World, WorldX + Block.Item1, WorldY + Block.Item2);
             }
         }
         
         foreach(Entity Entity in __Entity){
-            if(Entity.ID is 4){
+            if(Entity.ID is 4 or 5){
                 Texture EntityTexture = Entity.ID switch{
-                    4 => (AnimationTimer > 0.5f ? Texture_Spider_Walk : Texture_Spider)
+                    4 => (AnimationTimer > 0.5f ? Texture_Spider_Anim : Texture_Spider),
+                    5 => Texture_Tree_Leaves
                 };
 
                 int OffsetX = 0;
@@ -1010,6 +1981,9 @@ Texture_Spider_Walk = new Texture(
                 if(Entity.ID == 4){
                     OffsetX = 8;
                     OffsetY = 8;
+                }else if(Entity.ID == 5){
+                    OffsetX = 8 + (int)(WL.Math.Sin((float)TD.DeltaTick * 2 + Entity.X * 432) * 2);
+                    OffsetY = 24 + (int)(WL.Math.Sin((float)TD.DeltaTick * 3 + Entity.Y * 12) * 2);;
                 }
                 EntityTexture.Render(C, Palette_World, WorldX + Entity.X - OffsetX, WorldY + Entity.Y - OffsetY, false, false, Entity.Rotation);
             }
@@ -1030,9 +2004,77 @@ Texture_Spider_Walk = new Texture(
             C.Fill(20, (int)C.Height - 16, Health, 8, ColorB.Red);
             C.Fill(20, (int)C.Height - 16 + 3, Health, 8 - 6, ColorB.LightRed);
 
+            Font.Render(C, Palette_World, Health.ToString(), 20, (int)C.Height - 16);
+            
             Texture_Health.Render(C, Palette_World, 3, (int)C.Height - 21);
+
+            switch(Interface){
+                case 1:{
+                    C.Fill(ColorB.Black.SetA(128), ImageBlend.Alpha);
+                    C.Fill(10, 20, C.Width - 20, C.Height - 40);
+                    C.Border(10, 20, C.Width - 20, C.Height - 40, 1, ColorB.Black);
+                    
+                    RenderSlot(C, 0, 0, 0);
+                    RenderSlot(C, 1, 1, 0);
+                    RenderSlot(C, 2, 2, 0);
+                    RenderSlot(C, 3, 3, 0);
+                    RenderSlot(C, 4, 4, 0);
+                    RenderSlot(C, 5, 5, 0);
+                    
+                    RenderSlot(C, 6, 0, 1);
+                    RenderSlot(C, 7, 1, 1);
+                    RenderSlot(C, 8, 2, 1);
+                    RenderSlot(C, 9, 3, 1);
+                    RenderSlot(C, 10, 4, 1);
+                    RenderSlot(C, 11, 5, 1);
+
+                    C.Fill(20, 110, C.Width - 40, C.Height - 140, ColorB.Gray);
+                    C.Border(20, 110, C.Width - 40, C.Height - 140, 1, ColorB.Black);
+                    
+                    if(Item > 0){
+                        string Name = Item switch{
+                            1 => "АПТЕЧКА"
+                        };
+                        
+                        string Description = Item switch{
+                            1 => "ЛЕЧИТ БЕДНЫЙ КУБИК ГУЛУ"
+                        };
+                        
+                        Font.Render(C, Palette_World, "[" + Item + "] " + Name, 20 + 2, 110 + 2);
+                        
+                        C.Fill(20, 110 + 11, C.Width - 40, 1, ColorB.Black);
+                        
+                        Font.Render(C, Palette_World, Description, 20 + 2, 110 + 2 + 11);
+                    }
+                    break;
+                }
+            }
             
         #endregion
+    }
+
+    private void RenderSlot(Image.ImageContext C, byte ID, int X, int Y){
+        int X__ = 20 + X * 36;
+        int Y__ = 30 + Y * 36;
+        C.Fill(X__, Y__, 34, 34, ColorB.Gray);
+        C.Fill(X__ + 4, Y__ + 4, 34 - 4 * 2, 34 - 4 * 2, ColorB.Black.SetA(64), ImageBlend.Alpha);
+        C.Fill(X__ + 8, Y__ + 8, 34 - 8 * 2, 34 - 8 * 2, ColorB.Black.SetA(64), ImageBlend.Alpha);
+        C.Fill(X__ + 12, Y__ + 12, 34 - 12 * 2, 34 - 12 * 2, ColorB.Black.SetA(64), ImageBlend.Alpha);
+        C.Border(X__, Y__, 34, 34, 1, SelectedItem == ID ? ColorB.Red : ColorB.Black);
+
+        if(SelectedItem == ID){
+            C.Border(X__ - 1, Y__ - 1, 34 + 2, 34 + 2, 1, ColorB.Red.SetA(128), ImageBlend.Alpha);
+        }
+
+        byte Item = Inventory[ID];
+        
+        if(Item > 0){
+            Texture ItemTexture = Item switch{
+                1 => Texture_FirstAidKit_Icon
+            };
+            
+            ItemTexture.Render(C, Palette_World, X__, Y__);
+        }
     }
 
     public override ColorB BackgroundColor(){
@@ -1042,30 +2084,62 @@ Texture_Spider_Walk = new Texture(
     private void StartLevel(byte Level){
         ClearAllEntityScene();
         ClearAllScene();
-        
-        for(int i = 0; i < 2; i++){
-            for(int j = 0; j < 2; j++){
-                AddScene(@"###'################################
-#'''#___''''''#''''''''''''#_______#
-''#'#_''''''''#''####'''''##_###____
-#'#'#___''''''#''____''''_##_#'#___#
-#'#'#####'''''#''####'''''##_______#
-#'#'''''''''''#''''''''''''#_______#
-#'####'################'#######'####
-#''''#''''''''''''#''''''''''''''''#
-####'####'#'''#'#'#'_#'''''######''#
-#__'''__#'#'#'#'#'#''#_''''#___##''#
-#'#'''#'#'#'#'#'#'#'_#_''''#'''''''#
-#''###''#'#'#'#''''''#_''''######''#
-#_''''''#'''#''_#'#'_#'''''#'_''#''#
-'''''''_#'#'#'__#'#''#_''''####'''''
-#'''''''#'''''''''#''''''''#'_''#''#
-###'################################
-", 2 + i * 35, 2 + j * 15);
-            }
-        }
 
-        AddEntityScene(@"___C_T_^^^^___________s__CTC");
+        if(Level == 1){
+
+            AddScene(
+                @"
+AAAAAAAAAABBBBBBBSSSSSSS________
+_________________________WWWWW__
+________________________WWWWWWWW
+________________________WWWWWWW_
+_________________________WWWW__");
+            
+            AddEntityScene(
+@"
+________________________________
+________________________________
+_____________________!__________
+___________________!___!________
+_____________________!__!_______");
+            
+            AddScene(@"#'''#####
+#'''#''''
+#'''#''''
+#'''#''''
+#########
+''''#'''#
+''''#'''#
+#####'''#
+____#'#__
+#'''#'###
+#'''''''#
+#'''''''#
+##'##'''#
+#'''#'''#
+#'''#'''#
+#'''#'''#
+######'##
+", 2, 2);
+
+            AddEntityScene(@"_________
+_________
+_________
+_________
+____s____
+_________
+_________
+_________
+^____^___
+_____^___
+_^^^_____
+_________
+_________
+__C__C___
+__T__Cs__
+__s__C___
+_________", 2, 2);
+        }
     }
     
     private void StartGame(){
@@ -1075,8 +2149,21 @@ Texture_Spider_Walk = new Texture(
         __Tracks.Clear();
 
         Health = HealthMax;
+        Interface = 0;
+
+        SelectedItem = 0;
+
+        LastHealed = 0;
         
-        StartLevel(0);
+        Array.Clear(Inventory, 0, Inventory.Length);
+        Inventory[0] = 1;
+        Inventory[1] = 1;
+        Inventory[2] = 1;
+        Inventory[3] = 1;
+        Inventory[4] = 1;
+        Inventory[5] = 1;
+        
+        StartLevel(1);
     }
     
     private bool RenderColliders = false;
@@ -1087,7 +2174,64 @@ Texture_Spider_Walk = new Texture(
             }else{
                 if(Key == Key.C){ RenderColliders = !RenderColliders; }
 
-                if(Key == Key.Escape){ InMainMenu = true; }
+                if(Key == Key.Escape){
+                    if(Interface == 0){ StartLevel(0); InMainMenu = true; }else{ Interface = 0; }
+                }
+
+                if(!Dead){
+                    if(Key == Key.Tab){ Interface = (byte)(Interface == 0 ? 1 : 0); }
+                    
+                    if(Key == Key.Enter){ UseItem(); }
+                }
+
+                if(Interface == 1){
+                    if(Key == Key.D){
+                        if(SelectedItem > 5){
+                            if(SelectedItem < 11){ SelectedItem++; }
+                        }else{
+                            if(SelectedItem < 5){ SelectedItem++; }
+                        }
+                    }
+
+                    if(Key == Key.A){
+                        if(SelectedItem > 5){
+                            if(SelectedItem > 6){ SelectedItem--; }
+                        }else{
+                            if(SelectedItem > 0){ SelectedItem--; }
+                        }
+                    }
+
+                    if(Key == Key.S){
+                        if(SelectedItem + 6 < MaxSlots){ SelectedItem += 6; }
+                    }
+                    
+                    if(Key == Key.W){
+                        if(SelectedItem - 6 > -1){ SelectedItem -= 6; }
+                    }
+                }
+            }
+        }
+    }
+
+    private void UseItem(){
+        byte Item = Inventory[SelectedItem];
+
+        if(Item > 0){
+            bool RemoveItem = false;
+            
+            switch(Item){
+                case 1:{
+                    if(Health == HealthMax){ return; }
+                    
+                    Heal(50);
+                    
+                    RemoveItem = true;
+                    break;
+                }
+            }
+
+            if(RemoveItem){
+                Inventory[SelectedItem] = 0;
             }
         }
     }
