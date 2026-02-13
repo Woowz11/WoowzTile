@@ -1,6 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
 using WLO;
-using WoowzTile.Games;
 
 namespace WoowzTile;
 
@@ -41,7 +40,7 @@ public class Program{
                 }
             };
             
-            LoadGame(new GOLUWorld());
+            LoadGame(new GOLUWorld.GOLUWorld());
             
             double Timer = 1000;
             float __FPS = -1;

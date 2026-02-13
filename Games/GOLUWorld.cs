@@ -1,9 +1,44 @@
 ﻿using WL;
 using WLO;
+using WoowzTile;
 using WoowzTile.Objects;
 using Char = WoowzTile.Objects.Char;
 
-namespace WoowzTile.Games;
+namespace GOLUWorld;
+
+public enum T_Block : byte{
+    Empty = 0,
+    Metal = 1,
+    Ground_Planks = 2,
+    Ground_Asphalt = 3,
+    Bricks = 4,
+    Ground_Sand = 5,
+    Water = 6
+}
+
+public enum T_Entity : byte{
+    Empty = 0,
+    Chair = 1,
+    Table = 2,
+    Spikes = 3,
+    Mob_Spider = 4,
+    Tree = 5
+}
+
+public enum T_Item : byte{
+    Empty = 0,
+    FirstAidKit = 1
+}
+
+public enum T_Interface : byte{
+    None = 0,
+    Inventory = 1
+}
+
+public enum T_Decal : byte{
+    Track = 0,
+    Blood = 1
+}
 
 public class GOLUWorld : Game{
     public Palette Palette_World;
@@ -1476,12 +1511,7 @@ Texture_FirstAidKit_Icon = new Texture(
     private       uint Health      = HealthMax;
 
     private bool InMainMenu = true;
-    /// <summary>
-    /// Номер интерфейса
-    /// 0 - Ничего
-    /// 1 - Инвентарь
-    /// </summary>
-    private byte Interface  = 0;
+    private T_Interface Interface = T_Interface.None;
 
     private bool Dead => Health == 0;
 
@@ -1490,7 +1520,7 @@ Texture_FirstAidKit_Icon = new Texture(
     private const byte MaxSlots = 12;
     private byte SelectedItem   = 0;
 
-    private byte[] Inventory = new byte[(int)MaxSlots];
+    private T_Item[] Inventory = new T_Item[MaxSlots];
 
     private float LastHealed = 0;
     
@@ -1506,11 +1536,17 @@ Texture_FirstAidKit_Icon = new Texture(
 
         LastHealed = 60;
     }
+
+    public struct Block{
+        public int     X;
+        public int     Y;
+        public T_Block ID;
+    }
     
     public struct Entity{
         public int             X;
         public int             Y;
-        public byte            ID;
+        public T_Entity        ID;
         public byte            Info;
         public Vector2I        InfoVector;
         public TextureRotation Rotation;
@@ -1533,17 +1569,17 @@ Texture_FirstAidKit_Icon = new Texture(
             Interface = 0;
         }
         
-        foreach((int, int, byte) Block in __Blocks){
-            if(Block.Item3 is 1 or 4 or 6){
-                Game.AddCollider(new Collider(WorldX + Block.Item1, WorldY + Block.Item2, 16, 16));
+        foreach(Block Block in __Blocks){
+            if(Block.ID is T_Block.Metal or T_Block.Bricks or T_Block.Water){
+                Game.AddCollider(new Collider(WorldX + Block.X, WorldY + Block.Y, 16, 16));
             }
         }
         
         for(int i = 0; i < __Entity.Count; i++){
             Entity Entity = __Entity[i];
             
-            if(Entity.ID is 2 or 3 or 4 or 5){
-                if(Entity.ID == 4){
+            if(Entity.ID is T_Entity.Table or T_Entity.Spikes or T_Entity.Mob_Spider or T_Entity.Tree){
+                if(Entity.ID == T_Entity.Mob_Spider){
                     int SpiderSpeed = WL.Math.Random.Fast_Bool(0.8f) ? 1 : 0;
                     
                     byte Info = Entity.Info;
@@ -1611,14 +1647,14 @@ Texture_FirstAidKit_Icon = new Texture(
                 
                 uint SizeX = 16;
                 uint SizeY = 16;
-                if(Entity.ID is 2 or 5){
+                if(Entity.ID is T_Entity.Table or T_Entity.Tree){
                     SizeX = SizeY = 10;
                 }
 
                 CollisionLayer Layer = CollisionLayer.L1;
-                if(Entity.ID == 3){
+                if(Entity.ID == T_Entity.Spikes){
                     Layer = CollisionLayer.L2;
-                }else if(Entity.ID == 4){
+                }else if(Entity.ID == T_Entity.Mob_Spider){
                     Layer = CollisionLayer.L3;
                 }
                 Game.AddCollider(new Collider(WorldX + Entity.X + (int)((16 - SizeX)/2), WorldY + Entity.Y + (int)((16 - SizeY)/2), SizeX, SizeY, Layer));
@@ -1723,44 +1759,43 @@ Texture_FirstAidKit_Icon = new Texture(
         }
     }
 
-    private readonly List<(int, int, byte, TextureRotation)> __Tracks = [];
+    private readonly List<(int, int, T_Decal, TextureRotation)> __Tracks = [];
     private void Track(){
         if(WL.Math.Random.Fast_Bool(0.1f)){
             if(Health < HealthSmall){
                 SplatBlood(PlayerX - WorldX, PlayerY - WorldY);
             }else{
-                __Tracks.Add((PlayerX - WorldX, PlayerY - WorldY, 0, TextureRotation.None));
+                __Tracks.Add((PlayerX - WorldX, PlayerY - WorldY, T_Decal.Track, TextureRotation.None));
             }
         }
     }
 
     private void SplatBlood(int X, int Y){
-        __Tracks.Add((X, Y, 1, WL.Math.Random.Fast_Bool(0.5f) ? (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.None :  TextureRotation.Rotate90) : (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.Rotate180 : TextureRotation.Rotate270)));
+        __Tracks.Add((X, Y, T_Decal.Blood, WL.Math.Random.Fast_Bool(0.5f) ? (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.None :  TextureRotation.Rotate90) : (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.Rotate180 : TextureRotation.Rotate270)));
     }
 
-    private void AddBlock(int X, int Y, byte Type){
-        int FinalX = X * 16;
-        int FinalY = Y * 16;
-        (int, int, byte) Block = (FinalX, FinalY, Type);
+    private void AddBlock(Block Block__){
+        Block__.X *= 16;
+        Block__.Y *= 16;
 
-        int Index = __Blocks.FindIndex(B => B.Item1 == FinalX && B.Item2 == FinalY);
+        int Index = __Blocks.FindIndex(B => B.X == Block__.X && B.Y == Block__.Y);
         
         if(Index != -1){
-            if(Type == 0){
+            if(Block__.ID == T_Block.Empty){
                 __Blocks.RemoveAt(Index);
             }else{
-                (int, int, byte) OldBlock = __Blocks[Index];
-                if(OldBlock.Item3 != Type){
-                    __Blocks[Index] = Block;
+                Block OldBlock = __Blocks[Index];
+                if(OldBlock.ID != Block__.ID){
+                    __Blocks[Index] = Block__;
                 }
             }
         }else{
-            if(Type != 0){
-                __Blocks.Add(Block);
+            if(Block__.ID != T_Block.Empty){
+                __Blocks.Add(Block__);
             }
         }
     }
-    private readonly List<(int, int, byte)> __Blocks = [];
+    private readonly List<Block> __Blocks = [];
     
     private void ClearAllScene(){
         __Blocks.Clear();
@@ -1772,8 +1807,9 @@ Texture_FirstAidKit_Icon = new Texture(
             
             int X__ = X;
             int Y__ = Y;
-
+            
             foreach(char C in SceneMap){
+                T_Block ID = T_Block.Empty;
                 switch(C){
                     case '\r': 
                         continue;
@@ -1782,25 +1818,29 @@ Texture_FirstAidKit_Icon = new Texture(
                         X__ = X;
                         continue;
                     case '#':
-                        AddBlock(X__, Y__, 1);
+                        ID = T_Block.Metal;
                         break;
                     case '\'':
-                        AddBlock(X__, Y__, 2);
+                        ID = T_Block.Ground_Planks;
                         break;
                     case 'A':
-                        AddBlock(X__, Y__, 3);
+                        ID = T_Block.Ground_Asphalt;
                         break;
                     case 'B':
-                        AddBlock(X__, Y__, 4);
+                        ID = T_Block.Bricks;
                         break;
                     case 'S':
-                        AddBlock(X__, Y__, 5);
+                        ID = T_Block.Ground_Sand;
                         break;
                     case 'W':
-                        AddBlock(X__, Y__, 6);
+                        ID = T_Block.Water;
                         break;
                 }
 
+                if(ID != T_Block.Empty){
+                    AddBlock(new Block{ X = X__, Y = Y__, ID = ID});
+                }
+                
                 X__++;
             }
         }catch(Exception e){
@@ -1808,13 +1848,12 @@ Texture_FirstAidKit_Icon = new Texture(
         }
     }
     
-    private void AddEntity(int X, int Y, byte Type, byte Info = 0, Vector2I InfoPosition = default){
-        int FinalX = X * 16;
-        int FinalY = Y * 16;
-        Entity Entity = new Entity{X = FinalX, Y = FinalY, ID = Type, Info = Info, InfoVector = InfoPosition};
+    private void AddEntity(Entity Entity__){
+        Entity__.X *= 16;
+        Entity__.Y *= 16;
 
-        if(Type != 0){
-            __Entity.Add(Entity);
+        if(Entity__.ID != T_Entity.Empty){
+            __Entity.Add(Entity__);
         }
     }
     private readonly List<Entity> __Entity = [];
@@ -1831,6 +1870,7 @@ Texture_FirstAidKit_Icon = new Texture(
             int Y__ = Y;
 
             foreach(char C in SceneMap){
+                T_Entity ID = T_Entity.Empty;
                 switch(C){
                     case '\r': 
                         continue;
@@ -1839,20 +1879,24 @@ Texture_FirstAidKit_Icon = new Texture(
                         X__ = X;
                         continue;
                     case 'C':
-                        AddEntity(X__, Y__, 1);
+                        ID = T_Entity.Chair;
                         break;
                     case 'T':
-                        AddEntity(X__, Y__, 2);
+                        ID = T_Entity.Table;
                         break;
                     case '^':
-                        AddEntity(X__, Y__, 3);
+                        ID = T_Entity.Spikes;
                         break;
                     case 's':
-                        AddEntity(X__, Y__, 4);
+                        ID = T_Entity.Mob_Spider;
                         break;
                     case '!':
-                        AddEntity(X__, Y__, 5);
+                        ID = T_Entity.Tree;
                         break;
+                }
+
+                if(ID != T_Entity.Empty){
+                    AddEntity(new Entity{ X = X__, Y = Y__, ID = ID});
                 }
 
                 X__++;
@@ -1894,30 +1938,30 @@ Texture_FirstAidKit_Icon = new Texture(
         
         Texture_Ground.Render(C, Palette_World, WorldX - 16 * 16, WorldY - 16 * 16, 64, 64);
         
-        foreach((int, int, byte) Block in __Blocks){
-            if(Block.Item3 is 2 or 3 or 5 or 6){
-                Texture BlockTexture = Block.Item3 switch{
-                    2 => Texture_Planks,
-                    3 => Texture_Asphalt,
-                    5 => Texture_Sand,
-                    6 => (__Blocks.Any(B => B.Item1 == Block.Item1 && B.Item2 == Block.Item2 - 16 && B.Item3 == Block.Item3) ? (AnimationTimer > 0.5f ? Texture_Water_Anim : Texture_Water) : (AnimationTimer > 0.5f ? Texture_Water_Top_Anim : Texture_Water_Top))
+        foreach(Block Block in __Blocks){
+            if(Block.ID is T_Block.Ground_Planks or T_Block.Ground_Asphalt or T_Block.Ground_Sand or T_Block.Water){
+                Texture BlockTexture = Block.ID switch{
+                    T_Block.Ground_Planks  => Texture_Planks,
+                    T_Block.Ground_Asphalt => Texture_Asphalt,
+                    T_Block.Ground_Sand    => Texture_Sand,
+                    T_Block.Water          => (__Blocks.Any(B => B.X == Block.X && B.Y == Block.Y - 16 && B.ID == Block.ID) ? (AnimationTimer > 0.5f ? Texture_Water_Anim : Texture_Water) : (AnimationTimer > 0.5f ? Texture_Water_Top_Anim : Texture_Water_Top))
                 };
-                BlockTexture.Render(C, Palette_World, WorldX + Block.Item1, WorldY + Block.Item2);
+                BlockTexture.Render(C, Palette_World, WorldX + Block.X, WorldY + Block.Y);
             }
         }
 
-        foreach((int, int, byte, TextureRotation) Track in __Tracks){
-            Texture Track__ = Track.Item3 == 1 ? Texture_Blood : Texture_Track;
+        foreach((int, int, T_Decal, TextureRotation) Track in __Tracks){
+            Texture Track__ = Track.Item3 == T_Decal.Blood ? Texture_Blood : Texture_Track;
             Track__.Render(C, Palette_World, WorldX + Track.Item1, WorldY + Track.Item2, false, false, Track.Item4);
         }
         
         foreach(Entity Entity in __Entity){
-            if(Entity.ID is 1 or 2 or 3 or 5){
+            if(Entity.ID is T_Entity.Chair or T_Entity.Table or T_Entity.Spikes or T_Entity.Tree){
                 Texture EntityTexture = Entity.ID switch{
-                    1 => Texture_Chair,
-                    2 => Texture_Table,
-                    3 => Texture_Spikes,
-                    5 => Texture_Tree
+                    T_Entity.Chair  => Texture_Chair,
+                    T_Entity.Table  => Texture_Table,
+                    T_Entity.Spikes => Texture_Spikes,
+                    T_Entity.Tree   => Texture_Tree
                 };
 
                 EntityTexture.Render(C, Palette_World, WorldX + Entity.X, WorldY + Entity.Y, false, false, Entity.Rotation);
@@ -1943,10 +1987,10 @@ Texture_FirstAidKit_Icon = new Texture(
             PlayerFlipped = MovingDirection.X > 0;
         }
         
-        byte Item = Inventory[SelectedItem];
-        if(Item > 0){
+        T_Item Item = Inventory[SelectedItem];
+        if(Item != T_Item.Empty){
             Texture ItemTexture = Item switch{
-                1 => Texture_FirstAidKit
+                T_Item.FirstAidKit => Texture_FirstAidKit
             };
             
             ItemTexture.Render(C, Palette_World, PlayerX, PlayerY - 11, PlayerFlipped);
@@ -1958,30 +2002,30 @@ Texture_FirstAidKit_Icon = new Texture(
             Texture_Player_Healed.Render(C, Palette_World, PlayerX, PlayerY, PlayerFlipped);
         }
 
-        foreach((int, int, byte) Block in __Blocks){
-            if(Block.Item3 is 1 or 4){
-                Texture BlockTexture = Block.Item3 switch{
-                    1 => Texture_Metal,
-                    4 => Texture_Bricks
+        foreach(Block Block in __Blocks){
+            if(Block.ID is T_Block.Metal or T_Block.Bricks){
+                Texture BlockTexture = Block.ID switch{
+                    T_Block.Metal  => Texture_Metal,
+                    T_Block.Bricks => Texture_Bricks
                 };
-                BlockTexture.Render(C, Palette_World, WorldX + Block.Item1, WorldY + Block.Item2);
+                BlockTexture.Render(C, Palette_World, WorldX + Block.X, WorldY + Block.Y);
             }
         }
         
         foreach(Entity Entity in __Entity){
-            if(Entity.ID is 4 or 5){
+            if(Entity.ID is T_Entity.Mob_Spider or T_Entity.Tree){
                 Texture EntityTexture = Entity.ID switch{
-                    4 => (AnimationTimer > 0.5f ? Texture_Spider_Anim : Texture_Spider),
-                    5 => Texture_Tree_Leaves
+                    T_Entity.Mob_Spider => (AnimationTimer > 0.5f ? Texture_Spider_Anim : Texture_Spider),
+                    T_Entity.Tree       => Texture_Tree_Leaves
                 };
 
                 int OffsetX = 0;
                 int OffsetY = 0;
 
-                if(Entity.ID == 4){
+                if(Entity.ID == T_Entity.Mob_Spider){
                     OffsetX = 8;
                     OffsetY = 8;
-                }else if(Entity.ID == 5){
+                }else if(Entity.ID == T_Entity.Tree){
                     OffsetX = 8 + (int)(WL.Math.Sin((float)TD.DeltaTick * 2 + Entity.X * 432) * 2);
                     OffsetY = 24 + (int)(WL.Math.Sin((float)TD.DeltaTick * 3 + Entity.Y * 12) * 2);;
                 }
@@ -2009,7 +2053,7 @@ Texture_FirstAidKit_Icon = new Texture(
             Texture_Health.Render(C, Palette_World, 3, (int)C.Height - 21);
 
             switch(Interface){
-                case 1:{
+                case T_Interface.Inventory:{
                     C.Fill(ColorB.Black.SetA(128), ImageBlend.Alpha);
                     C.Fill(10, 20, C.Width - 20, C.Height - 40);
                     C.Border(10, 20, C.Width - 20, C.Height - 40, 1, ColorB.Black);
@@ -2031,16 +2075,16 @@ Texture_FirstAidKit_Icon = new Texture(
                     C.Fill(20, 110, C.Width - 40, C.Height - 140, ColorB.Gray);
                     C.Border(20, 110, C.Width - 40, C.Height - 140, 1, ColorB.Black);
                     
-                    if(Item > 0){
+                    if(Item != T_Item.Empty){
                         string Name = Item switch{
-                            1 => "АПТЕЧКА"
+                            T_Item.FirstAidKit => "АПТЕЧКА"
                         };
                         
                         string Description = Item switch{
-                            1 => "ЛЕЧИТ БЕДНЫЙ КУБИК ГУЛУ"
+                            T_Item.FirstAidKit => "ЛЕЧИТ БЕДНЫЙ КУБИК ГУЛУ"
                         };
                         
-                        Font.Render(C, Palette_World, "[" + Item + "] " + Name, 20 + 2, 110 + 2);
+                        Font.Render(C, Palette_World, "[" + (byte)Item + "] " + Name, 20 + 2, 110 + 2);
                         
                         C.Fill(20, 110 + 11, C.Width - 40, 1, ColorB.Black);
                         
@@ -2066,11 +2110,11 @@ Texture_FirstAidKit_Icon = new Texture(
             C.Border(X__ - 1, Y__ - 1, 34 + 2, 34 + 2, 1, ColorB.Red.SetA(128), ImageBlend.Alpha);
         }
 
-        byte Item = Inventory[ID];
+        T_Item Item = Inventory[ID];
         
-        if(Item > 0){
+        if(Item != 0){
             Texture ItemTexture = Item switch{
-                1 => Texture_FirstAidKit_Icon
+                T_Item.FirstAidKit => Texture_FirstAidKit_Icon
             };
             
             ItemTexture.Render(C, Palette_World, X__, Y__);
@@ -2156,12 +2200,9 @@ _________", 2, 2);
         LastHealed = 0;
         
         Array.Clear(Inventory, 0, Inventory.Length);
-        Inventory[0] = 1;
-        Inventory[1] = 1;
-        Inventory[2] = 1;
-        Inventory[3] = 1;
-        Inventory[4] = 1;
-        Inventory[5] = 1;
+        Inventory[0] = T_Item.FirstAidKit;
+        Inventory[1] = T_Item.FirstAidKit;
+        Inventory[2] = T_Item.FirstAidKit;
         
         StartLevel(1);
     }
@@ -2175,16 +2216,16 @@ _________", 2, 2);
                 if(Key == Key.C){ RenderColliders = !RenderColliders; }
 
                 if(Key == Key.Escape){
-                    if(Interface == 0){ StartLevel(0); InMainMenu = true; }else{ Interface = 0; }
+                    if(Interface == T_Interface.None){ StartLevel(0); InMainMenu = true; }else{ Interface = T_Interface.None; }
                 }
 
                 if(!Dead){
-                    if(Key == Key.Tab){ Interface = (byte)(Interface == 0 ? 1 : 0); }
+                    if(Key == Key.Tab){ Interface = Interface == T_Interface.None ? T_Interface.Inventory : T_Interface.None; }
                     
                     if(Key == Key.Enter){ UseItem(); }
                 }
 
-                if(Interface == 1){
+                if(Interface == T_Interface.Inventory){
                     if(Key == Key.D){
                         if(SelectedItem > 5){
                             if(SelectedItem < 11){ SelectedItem++; }
@@ -2214,13 +2255,13 @@ _________", 2, 2);
     }
 
     private void UseItem(){
-        byte Item = Inventory[SelectedItem];
+        T_Item Item = Inventory[SelectedItem];
 
-        if(Item > 0){
+        if(Item != T_Item.Empty){
             bool RemoveItem = false;
             
             switch(Item){
-                case 1:{
+                case T_Item.FirstAidKit:{
                     if(Health == HealthMax){ return; }
                     
                     Heal(50);
