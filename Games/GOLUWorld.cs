@@ -27,7 +27,8 @@ public enum T_Entity : byte{
     Mob_Spider = 4,
     Tree = 5,
     Item = 6,
-    Crate = 7
+    Crate = 7,
+    Grass = 8
 }
 
 public enum T_Item : byte{
@@ -101,6 +102,7 @@ public struct Entity{
 public class GOLUWorld : Game{
     public const string Version = "0.1";
     
+    private static Palette Palette_Default;
     private static Palette Palette_World;
     private static Palette Palette_White;
 
@@ -151,6 +153,7 @@ public class GOLUWorld : Game{
     private static Texture Texture_Cloud;
     private static Texture Texture_GOLU;
     private static Texture Texture_Crate;
+    private static Texture Texture_TallGrass;
     
     /*
      * Блоки:
@@ -163,6 +166,7 @@ public class GOLUWorld : Game{
      * 'W' - Вода (блок)
      * 'b' - Чёрный блок (блок)
      * '^' - Трава (пол)
+     * 'Д' - [ГЕНЕРАТОР] Случайно, трава или пустота
      * 
      * Сущности:
      * '_' - Пустота
@@ -172,7 +176,8 @@ public class GOLUWorld : Game{
      * 's' - Паук (моб)
      * '!' - Дерево
      * '#' - Ящик (толкаемый блок)
-     * 'Д' - [ГЕНЕРАТОР] Случайно, дерево или пустота
+     * '~' - Трава
+     * 'Д' - [ГЕНЕРАТОР] Случайно, дерево или трава или пустота
      *
      * Коллизии:
      * L1 - Мир и игрок
@@ -187,7 +192,7 @@ public class GOLUWorld : Game{
     public override string WindowTitle(){ return new Vector2I(PlayerX - WorldX, PlayerY - WorldY).ToShortString() + " | " + Emotion_Happiness + " | " + InsideCollision + " (" + CollisionInfo + ", " + CollisionInfoSecond + ") | " + Seed; }
 
     public override void Start(){
-        Palette_World = new Palette([
+        Palette_Default = new Palette([
             new KeyValuePair<byte, ColorB>(1 , ColorB.Black),
             new KeyValuePair<byte, ColorB>(2 , ColorB.DarkGray),
             new KeyValuePair<byte, ColorB>(3 , ColorB.Gray),
@@ -202,7 +207,9 @@ public class GOLUWorld : Game{
             new KeyValuePair<byte, ColorB>(12, ColorB.Green)
         ]);
 
-        Palette_White = new Palette(Palette_World.Colors.Select(KV => new KeyValuePair<byte, ColorB>(KV.Key, ColorB.White)));
+        Palette_World = new Palette(Palette_Default.Colors);
+        
+        Palette_White = new Palette(Palette_Default.Colors.Select(KV => new KeyValuePair<byte, ColorB>(KV.Key, ColorB.White)));
 
         Dictionary<char, byte> Mapping = new Dictionary<char, byte>{
             ['.'] = 0,
@@ -1214,6 +1221,18 @@ new Char(new Texture(
 .█.
 ...", Mapping))),
             
+new KeyValuePair<char, Char>(
+'с' ,
+new Char(new Texture(
+@".......
+.██.██.
+███████
+███████
+███████
+.█████.
+..███..
+...█...", Mapping))),
+            
         ]);
 
         Texture_GOLU = new Texture(@"░░░░░░░░░░░░░░░░░░░░░░░░░░░░▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░▓▓░░░░░▓░▓▓▓▓▓▓▓▓░░░░░________________░▓▓▓▓░░░░░▓▓░░__░░░░░░░░░░
@@ -1902,6 +1921,26 @@ Texture_Tree_Leaves = new Texture(
 ........▒▒▒...........▒_▒▒.....▒▒_▒.............
 ........▒▒.............▒▒.......▒▒▒.............
 ................................................",
+    Mapping
+);
+
+Texture_TallGrass = new Texture(
+    @"................
+...▓............
+....▓....▒......
+▓...▓....▒..▒...
+.▓.▒.▓..▒..▓▒.▓.
+..▓▒░▓_.▒_▓.▒▓..
+..▓.▒█_.▒░▓▒░▓..
+..█.▒█░▒(█▓▒▓...
+...▓▒(█▒_█░▒▓...
+...▓░▒█▒_█░█....
+..(█_▒▓▒░█░█....
+.((▓_▒░▒░▓▒█(...
+.(▓░░▒░░.░▒█((..
+..((░░░(..░.▓(..
+.....((((..((...
+................",
     Mapping
 );
 
@@ -2708,7 +2747,7 @@ Texture_FirstAidKit_Icon = new Texture(
 
         if(Dead){
             if(WL.Math.Random.Fast_Bool(0.8f)){
-                __Tracks.Add((PlayerX - WorldX + WL.Math.Random.Fast_Int(-128, 128), PlayerY - WorldY + WL.Math.Random.Fast_Int(-128, 128), WL.Math.Random.Fast_Bool() ? T_Decal.One : T_Decal.Zero, TextureRotation.None));
+                __Decals.Add((PlayerX - WorldX + WL.Math.Random.Fast_Int(-128, 128), PlayerY - WorldY + WL.Math.Random.Fast_Int(-128, 128), WL.Math.Random.Fast_Bool() ? T_Decal.One : T_Decal.Zero, TextureRotation.None));
             }
 
             Rotten += (float)TD.DeltaTimeS;
@@ -2718,7 +2757,7 @@ Texture_FirstAidKit_Icon = new Texture(
         int PlayerOffset = (int)((Texture_Player_Body.Width - PlayerSize) / 2);
         
         if(CanMove){
-            uint PlayerSpeed = (uint)(WL.Math.Max(1, (float)TD.DeltaTimeS * 100 * (KeyPressed(Key.Shift) ? 1.5f : 1)));
+            uint PlayerSpeed = (uint)(WL.Math.Max(1, (float)TD.DeltaTimeS * 100 * (KeyPressed(Key.Shift) ? 1.5f : (KeyPressed(Key.Alt) ? 0.3f : 1))));
             if(Health < HealthSmall){ PlayerSpeed = (uint)(PlayerSpeed / 2); }
 
             bool D = KeyPressed(Key.D);
@@ -2828,19 +2867,19 @@ Texture_FirstAidKit_Icon = new Texture(
         }
     }
 
-    private readonly List<(int, int, T_Decal, TextureRotation)> __Tracks = [];
+    private readonly List<(int, int, T_Decal, TextureRotation)> __Decals = [];
     private void Track(){
         if(WL.Math.Random.Fast_Bool(0.1f)){
             if(Health < HealthSmall){
                 SplatBlood(PlayerX - WorldX, PlayerY - WorldY);
             }else{
-                __Tracks.Add((PlayerX - WorldX + WL.Math.Random.Fast_Int(-5, 5), PlayerY - WorldY  + WL.Math.Random.Fast_Int(-5, 5), T_Decal.Track, TextureRotation.None));
+                __Decals.Add((PlayerX - WorldX + WL.Math.Random.Fast_Int(-5, 5), PlayerY - WorldY  + WL.Math.Random.Fast_Int(-5, 5), T_Decal.Track, TextureRotation.None));
             }
         }
     }
 
     private void SplatBlood(int X, int Y){
-        __Tracks.Add((X, Y, T_Decal.Blood, WL.Math.Random.Fast_Bool(0.5f) ? (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.None :  TextureRotation.Rotate90) : (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.Rotate180 : TextureRotation.Rotate270)));
+        __Decals.Add((X, Y, T_Decal.Blood, WL.Math.Random.Fast_Bool(0.5f) ? (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.None :  TextureRotation.Rotate90) : (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.Rotate180 : TextureRotation.Rotate270)));
     }
 
     private void AddBlock(Block Block__){
@@ -2877,6 +2916,9 @@ Texture_FirstAidKit_Icon = new Texture(
             int X__ = X;
             int Y__ = Y;
             
+            uint Seed1__ = __Seed + 1222;
+            uint Seed2__ = __Seed + 6848;
+            
             foreach(char C in SceneMap){
                 T_Block ID = T_Block.Empty;
                 switch(C){
@@ -2909,6 +2951,10 @@ Texture_FirstAidKit_Icon = new Texture(
                         break;
                     case '^':
                         ID = T_Block.Ground_Grass;
+                        break;
+                    case 'Д':
+                        Seed1__ += 121;
+                        ID = WL.Math.Random.Fast_Bool(0.5f, ref Seed1__) ? T_Block.Ground_Grass  : T_Block.Empty;
                         break;
                 }
 
@@ -2946,7 +2992,8 @@ Texture_FirstAidKit_Icon = new Texture(
             int X__ = X;
             int Y__ = Y;
 
-            uint Seed__ = __Seed;
+            uint Seed1__ = __Seed;
+            uint Seed2__ = __Seed + 999696;
             
             foreach(char C in SceneMap){
                 T_Entity ID = T_Entity.Empty;
@@ -2972,12 +3019,16 @@ Texture_FirstAidKit_Icon = new Texture(
                     case '!':
                         ID = T_Entity.Tree;
                         break;
-                    case 'Д':
-                        Seed__ += 1667;
-                        ID = WL.Math.Random.Fast_Bool(0.2f, ref Seed__) ? T_Entity.Tree : T_Entity.Empty;
-                        break;
                     case '#':
                         ID = T_Entity.Crate;
+                        break;
+                    case '~':
+                        ID = T_Entity.Grass;
+                        break;
+                    case 'Д':
+                        Seed1__ += 1667;
+                        Seed2__ += 551;
+                        ID = WL.Math.Random.Fast_Bool(0.2f, ref Seed1__) ? T_Entity.Tree : (WL.Math.Random.Fast_Bool(0.4f, ref Seed2__) ? T_Entity.Grass : T_Entity.Empty);
                         break;
                 }
 
@@ -3030,7 +3081,7 @@ Texture_FirstAidKit_Icon = new Texture(
         if(AnimationTimer > 1){ AnimationTimer = 0; }
         
         void Button(byte ButtonID, string ButtonText, int X, int Y, bool Always = false){
-            void __RenderText(int X__, int Y__, bool Selected, bool Overlay) => Font.Render(C, Selected ? Palette_White : Palette_World, ButtonText, X + X__, Y + Y__, Overlay ? ColorB.Red : null);
+            void __RenderText(int X__, int Y__, bool Selected, bool Overlay) => Font.Render(C, Selected ? Palette_White : Palette_Default, ButtonText, X + X__, Y + Y__, Overlay ? ColorB.Red : null);
 
             if(MenuSelectedButton == ButtonID || Always){
                 __RenderText( 1,  0, true, true);
@@ -3047,19 +3098,19 @@ Texture_FirstAidKit_Icon = new Texture(
         }
         
         if(InMainMenu){
-            Texture_GOLU.RenderTiles(C, Palette_World, -(int)(WL.Math.DCos((float)TD.DeltaTick / 2) * 128), -(int)(WL.Math.DSin((float)TD.DeltaTick / 2) * 128), 3, 3, MultiplyColor: ColorB.White.SetA(64));
+            Texture_GOLU.RenderTiles(C, Palette_Default, -(int)(WL.Math.DCos((float)TD.DeltaTick / 2) * 128), -(int)(WL.Math.DSin((float)TD.DeltaTick / 2) * 128), 3, 3, MultiplyColor: ColorB.White.SetA(64));
             
             C.Border(0, 0, C.Width, C.Height, 1, ColorB.Black);
             
             if(Interface == T_Interface.None){
-                Texture_Author.Render(C, Palette_World, (int)(C.Width - Texture_Author.Width) - 3, (int)(C.Height - Texture_Author.Height) - 3);
-                Font.Render(C, Palette_World, Version, 3, (int)(C.Height - 8 - 3));
+                Texture_Author.Render(C, Palette_Default, (int)(C.Width - Texture_Author.Width) - 3, (int)(C.Height - Texture_Author.Height) - 3);
+                Font.Render(C, Palette_Default, Version, 3, (int)(C.Height - 8 - 3));
 
                 void RenderGOLU(float SinOffset, ColorB MultiplyColor){
-                    Texture_G.Render(C, Palette_World, (int)(C.Width/2 - Texture_G.Width/2 - Texture_G.Width*1.5F), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + SinOffset) * 10), MultiplyColor: MultiplyColor);
-                    Texture_O.Render(C, Palette_World, (int)(C.Width/2 - Texture_G.Width/2 - Texture_G.Width/2), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 1 + SinOffset) * 10), MultiplyColor: MultiplyColor);
-                    Texture_L.Render(C, Palette_World, (int)(C.Width/2 - Texture_G.Width/2 + Texture_G.Width/2), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 2 + SinOffset) * 10), MultiplyColor: MultiplyColor);
-                    Texture_U.Render(C, Palette_World, (int)(C.Width/2 - Texture_G.Width/2 + Texture_G.Width*1.5F), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 3 + SinOffset) * 10), MultiplyColor: MultiplyColor);
+                    Texture_G.Render(C, Palette_Default, (int)(C.Width/2 - Texture_G.Width/2 - Texture_G.Width*1.5F), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + SinOffset) * 10), MultiplyColor: MultiplyColor);
+                    Texture_O.Render(C, Palette_Default, (int)(C.Width/2 - Texture_G.Width/2 - Texture_G.Width/2), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 1 + SinOffset) * 10), MultiplyColor: MultiplyColor);
+                    Texture_L.Render(C, Palette_Default, (int)(C.Width/2 - Texture_G.Width/2 + Texture_G.Width/2), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 2 + SinOffset) * 10), MultiplyColor: MultiplyColor);
+                    Texture_U.Render(C, Palette_Default, (int)(C.Width/2 - Texture_G.Width/2 + Texture_G.Width*1.5F), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 3 + SinOffset) * 10), MultiplyColor: MultiplyColor);
                 }
                 RenderGOLU(-0.2f, ColorB.Black.SetA((byte)(255 * 0.2f)));
                 RenderGOLU(-0.4f, ColorB.Black.SetA((byte)(255 * 0.2f)));
@@ -3069,7 +3120,7 @@ Texture_FirstAidKit_Icon = new Texture(
 
                 C.Fill((int)(C.Width / 2 - Texture_G.Width / 2 - Texture_G.Width * 1.5F), 75, 127, 2, ColorB.Black);
                 
-                Texture_Title.Render(C, Palette_World, (int)(C.Width/2 - Texture_Title.Width/2), 80);
+                Texture_Title.Render(C, Palette_Default, (int)(C.Width/2 - Texture_Title.Width/2), 80);
                 
                 Button(0, "ЗАГРУЗИТЬ", (int)(C.Width / 2 - Font.TextSize("ЗАГРУЗИТЬ").X / 2), 150 + (0 * 13));
                 Button(1, "НОВАЯ", (int)(C.Width / 2 - Font.TextSize("НОВАЯ").X / 2), 150 + (1 * 13));
@@ -3079,6 +3130,7 @@ Texture_FirstAidKit_Icon = new Texture(
                 string[] HelpInfo = [
                     "[W,S,A,D] - ДВИЖЕНИЕ",
                     "[SHIFT] - БЕГ",
+                    "[ALT] - КРАСТЬСЯ",
                     "[E] - ВЗАИМОДЕЙСТВОВАТЬ",
                     "[BACKSPACE] - ВЫБРОСИТЬ",
                     "[TAB] - ИНВЕНТАРЬ",
@@ -3092,7 +3144,7 @@ Texture_FirstAidKit_Icon = new Texture(
                 for(int i = 0; i < HelpInfo.Length; i++){
                     string HelpInfoMessage = HelpInfo[i];
                     
-                    Font.Render(C, Palette_World, HelpInfoMessage, 30, 30 + i * 12);
+                    Font.Render(C, Palette_Default, HelpInfoMessage, 30, 30 + i * 12);
                 }
                 
                 Button(0, "ОБРАТНО", (int)(C.Width / 2 - Font.TextSize("ОБРАТНО").X / 2), 150 + (5 * 13), true);
@@ -3122,7 +3174,7 @@ Texture_FirstAidKit_Icon = new Texture(
             }
         }
 
-        foreach((int, int, T_Decal, TextureRotation) Track in __Tracks){
+        foreach((int, int, T_Decal, TextureRotation) Track in __Decals){
             Texture DecalTexture = Track.Item3 switch{
                 T_Decal.Track => Texture_Track,
                 T_Decal.Blood => Texture_Blood,
@@ -3130,26 +3182,32 @@ Texture_FirstAidKit_Icon = new Texture(
                 T_Decal.One   => Texture_One
             };
             
-            RenderQueue.Add(new Renderable{ Texture = DecalTexture, X = WorldX + Track.Item1, Y = WorldY + Track.Item2, Rotation = Track.Item4, Z = RenderLayer_Bottom + 2});
+            RenderQueue.Add(new Renderable{ Texture = DecalTexture, Palette = Palette_Default, X = WorldX + Track.Item1, Y = WorldY + Track.Item2, Rotation = Track.Item4, Z = RenderLayer_Bottom + 2});
         }
         
         foreach(Entity Entity in __Entity){
-            if(Entity.ID is T_Entity.Chair or T_Entity.Table or T_Entity.Spikes or T_Entity.Tree or T_Entity.Item or T_Entity.Crate){
+            if(Entity.ID is T_Entity.Chair or T_Entity.Table or T_Entity.Spikes or T_Entity.Tree or T_Entity.Item or T_Entity.Crate or T_Entity.Grass){
                 Texture EntityTexture = Entity.ID switch{
                     T_Entity.Chair  => Texture_Chair,
                     T_Entity.Table  => Texture_Table,
                     T_Entity.Spikes => Texture_Spikes,
                     T_Entity.Tree   => Texture_Tree,
                     T_Entity.Item   => ItemTexture((T_Item)Entity.Info),
-                    T_Entity.Crate  => Texture_Crate
+                    T_Entity.Crate  => Texture_Crate,
+                    T_Entity.Grass  => Texture_TallGrass
                 };
 
+                int OffsetX = 0;
                 int OffsetY = 0;
                 if(Entity.ID == T_Entity.Tree){
                     OffsetY = -48;
                 }
 
-                RenderQueue.Add(new Renderable{ Texture = EntityTexture, X = WorldX + Entity.X, Y = WorldY + Entity.Y + OffsetY, Rotation = Entity.Rotation, Z = RenderLayer_Object(Entity.Y)});
+                if(Entity.ID == T_Entity.Grass){
+                    OffsetX = (int)(WL.Math.Sin(WorldDeltaTick * 2 + (Entity.X) * 754) * 2);
+                }
+
+                RenderQueue.Add(new Renderable{ Texture = EntityTexture, Palette = Palette_Default, X = WorldX + Entity.X + OffsetX, Y = WorldY + Entity.Y + OffsetY, Rotation = Entity.Rotation, Z = RenderLayer_Object(Entity.Y)});
 
                 if(Entity.ID == T_Entity.Tree){
                     void __RenderLeaves(int X__, int Y__){
@@ -3161,7 +3219,7 @@ Texture_FirstAidKit_Icon = new Texture(
 
                         __X__ += (int)(WL.Math.Sin(WorldDeltaTick * 2 + (Entity.X + __X__) * 432) * 2);
                         __Y__ += (int)(WL.Math.Sin(WorldDeltaTick * 2 + (Entity.Y + __Y__) * 12) * 2);
-                        RenderQueue.Add(new Renderable{ Texture = Texture_Tree_Leaves, X = WorldX + Entity.X + __X__, Y = WorldY + Entity.Y + __Y__, Rotation = Entity.Rotation, Z = RenderLayer_Object(Entity.Y) + (X__ + Y__)});
+                        RenderQueue.Add(new Renderable{ Texture = Texture_Tree_Leaves, Palette = Palette_Default, X = WorldX + Entity.X + __X__, Y = WorldY + Entity.Y + __Y__, Rotation = Entity.Rotation, Z = RenderLayer_Object(Entity.Y) + (X__ + Y__)});
                     }
                     __RenderLeaves(0, 0);
                     __RenderLeaves(2, 0);
@@ -3192,7 +3250,7 @@ Texture_FirstAidKit_Icon = new Texture(
             
             int __PlayerZ = 0;
             void __RenderPlayerPart(Texture T, ColorB? Color, int OffsetY = 0){
-                RenderQueue.Add(new Renderable{ Texture = T, X = PlayerX, Y = PlayerY + OffsetY, FlipX = PlayerFlipped, MultiplyColor = Color, Z = RenderLayer_Object(PlayerY - WorldY + 1) + __PlayerZ});
+                RenderQueue.Add(new Renderable{ Texture = T, Palette = Palette_Default, X = PlayerX, Y = PlayerY + OffsetY, FlipX = PlayerFlipped, MultiplyColor = Color, Z = RenderLayer_Object(PlayerY - WorldY + 1) + __PlayerZ});
                 __PlayerZ++;
             }
             
@@ -3244,7 +3302,7 @@ Texture_FirstAidKit_Icon = new Texture(
                     OffsetY = 8;
                 }
                 
-                RenderQueue.Add(new Renderable{ Texture = EntityTexture, X = WorldX + Entity.X - OffsetX, Y = WorldY + Entity.Y - OffsetY, Rotation = Entity.Rotation, Z = RenderLayer_Top(Entity.Y)});
+                RenderQueue.Add(new Renderable{ Texture = EntityTexture, Palette = Palette_Default, X = WorldX + Entity.X - OffsetX, Y = WorldY + Entity.Y - OffsetY, Rotation = Entity.Rotation, Z = RenderLayer_Top(Entity.Y)});
             }
         }
 
@@ -3257,14 +3315,28 @@ Texture_FirstAidKit_Icon = new Texture(
         }
         
         if(RenderColliders){ RenderColliders(C); }
+
+        if(InsideCollision == CollisionLayer.L4){
+            T_Item ItemOnGround = (T_Item)CollisionInfo;
+            if(ItemOnGround != T_Item.Empty){
+                Entity ItemOnGroundEntity = __Entity[CollisionInfoSecond];
+                string ItemName__ = ItemName(ItemOnGround);
+                Vector2U ItemNameSize__ = Font.TextSize(ItemName__);
+                int X__ = ItemOnGroundEntity.X + WorldX - (int)(ItemNameSize__.X / 2);
+                int Y__ = ItemOnGroundEntity.Y + WorldY;
+                C.Fill(X__ - 1, Y__ - 1, ItemNameSize__.X + 2, ItemNameSize__.Y + 2, ColorB.White.SetA(192), ImageBlend.Alpha);
+                C.Border(X__ - 2, Y__ - 2, ItemNameSize__.X + 4, ItemNameSize__.Y + 4, 1, ColorB.White);
+                Font.Render(C, Palette_Default, ItemName__, X__, Y__);
+            }
+        }
         
         void RenderThoughts(int X, int Y){
             if(string.IsNullOrWhiteSpace(Thoughts)){ return; }
             Vector2U ThoughtsSize = Font.TextSize(Thoughts);
             int X__ = (int)(X - ThoughtsSize.X / 2);
             uint Height__ = ThoughtsSize.Y + 14;
-            Texture_Cloud.Render9Slice(C, Palette_World, 10, X__, Y - (int)Height__, ThoughtsSize.X + 16, Height__);
-            void __RenderText(int __X, int __Y, bool Overlay) => Font.Render(C, Overlay ? Palette_White : Palette_World, Thoughts, X__ + 9 + __X, Y + 8 - (int)Height__ + __Y);
+            Texture_Cloud.Render9Slice(C, Palette_Default, 10, X__, Y - (int)Height__, ThoughtsSize.X + 16, Height__);
+            void __RenderText(int __X, int __Y, bool Overlay) => Font.Render(C, Overlay ? Palette_White : Palette_Default, Thoughts, X__ + 9 + __X, Y + 8 - (int)Height__ + __Y);
             __RenderText( 1,  0, true);
             __RenderText(-1,  0, true);
             __RenderText( 0,  1, true);
@@ -3293,9 +3365,9 @@ Texture_FirstAidKit_Icon = new Texture(
             C.Fill(20, (int)C.Height - 16, Health, 8, ColorB.Red);
             C.Fill(20, (int)C.Height - 16 + 3, Health, 8 - 6, ColorB.LightRed);
 
-            Font.Render(C, Palette_World, Health.ToString(), 20, (int)C.Height - 16);
+            Font.Render(C, Palette_Default, Health.ToString(), 20, (int)C.Height - 16);
             
-            Texture_Health.Render(C, Palette_World, 3, (int)C.Height - 21);
+            Texture_Health.Render(C, Palette_Default, 3, (int)C.Height - 21);
 
             void RenderSlot(Image.ImageContext C, byte ID, int X, int Y){
                 int X__ = 20 + X * 36;
@@ -3317,7 +3389,7 @@ Texture_FirstAidKit_Icon = new Texture(
                         T_Item.FirstAidKit => Texture_FirstAidKit_Icon
                     };
             
-                    ItemTexture.Render(C, Palette_World, X__, Y__);
+                    ItemTexture.Render(C, Palette_Default, X__, Y__);
                 }
             }
             
@@ -3346,19 +3418,17 @@ Texture_FirstAidKit_Icon = new Texture(
                     C.Border(20, 110, C.Width - 40, C.Height - 140, 1, ColorB.Black);
                     
                     if(Item != T_Item.Empty){
-                        string Name = Item switch{
-                            T_Item.FirstAidKit => "АПТЕЧКА"
-                        };
+                        string Name = ItemName(Item);
                         
                         string Description = Item switch{
-                            T_Item.FirstAidKit => "ЛЕЧИТ БЕДНЫЙ КУБИК ГУЛУ (+ 50)"
+                            T_Item.FirstAidKit => "ЛЕЧИТ БЕДНЫЙ КУБИК ГУЛУ (+ с50)"
                         };
                         
-                        Font.Render(C, Palette_World, "[" + (byte)Item + "] " + Name, 20 + 2, 110 + 2);
+                        Font.Render(C, Palette_Default, "[" + (byte)Item + "] " + Name, 20 + 2, 110 + 2);
                         
                         C.Fill(20, 110 + 11, C.Width - 40, 1, ColorB.Black);
                         
-                        Font.Render(C, Palette_World, Description, 20 + 2, 110 + 2 + 11);
+                        Font.Render(C, Palette_Default, Description, 20 + 2, 110 + 2 + 11);
                     }
                     break;
                 }
@@ -3381,6 +3451,14 @@ Texture_FirstAidKit_Icon = new Texture(
         };
     }
 
+    private static string ItemName(T_Item Item){
+        if(Item == T_Item.Empty){ throw new Exception("Указан пустой предмет, невозможно получить его название!"); }
+        
+        return Item switch{
+            T_Item.FirstAidKit => "АПТЕЧКА"
+        };
+    }
+
     public override ColorB BackgroundColor(){
         return ColorB.White;
     }
@@ -3389,6 +3467,10 @@ Texture_FirstAidKit_Icon = new Texture(
         ClearAllEntityScene();
         ClearAllScene();
 
+        __Decals.Clear();
+        
+        WorldPosition = Vector2F.Zero;
+        
         WorldDeltaTick = 0;
 
         if(Level == T_Level.Calm){
@@ -3408,7 +3490,7 @@ Texture_FirstAidKit_Icon = new Texture(
         InMainMenu = false;
         
         WorldPosition = Vector2F.Zero;
-        __Tracks.Clear();
+        __Decals.Clear();
 
         Health = HealthMax;
         Interface = 0;
@@ -3456,6 +3538,13 @@ Texture_FirstAidKit_Icon = new Texture(
                 }
             }else{
                 if(Key == Key.C){ RenderColliders = !RenderColliders; }
+
+                void UpdSeed(){
+                    if(KeyPressed(Key.Shift)){ Seed = 0; }
+                }
+                
+                if(Key == Key.D1){ UpdSeed(); StartLevel(T_Level.Calm); }
+                if(Key == Key.D2){ UpdSeed(); StartLevel(T_Level.Industrial); }
 
                 if(Key == Key.Escape || (Interface == T_Interface.Menu && MenuSelectedButton == 0 && __Enter)){
                     if(Interface == T_Interface.None){ Interface = T_Interface.Menu; }else{ Interface = T_Interface.None; MenuSelectedButton = 0; }
@@ -3604,15 +3693,15 @@ Texture_FirstAidKit_Icon = new Texture(
         void GenerateCalm(){
             Structure GrassBunch = new Structure(
                 @"__________
-___^^^_^__
-__^^^^^___
-__^^^^^_^_
-_^^^^^^^__
-__^^^^^^__
-_^^^^^^^__
-__^^^^^___
-___^^_^___
-__________",
+__ДД^ДДД__
+_Д^^^^^Д__
+_Д^^^^^ДД_
+_^^^^^^^Д_
+_Д^^^^^^Д_
+_Д^^^^^^Д_
+_Д^^^^^ДД_
+__ДДДДДД__
+___ДДД____",
                 @"__________
 ___Д_Д____
 __Д_Д_Д___
@@ -3622,12 +3711,17 @@ ___Д_Д_Д__
 __Д_Д_Д___
 ___Д_Д_Д__
 ____Д_____
-_________s"
+__________"
             );
-            
-            __GenerateStructure(5, 5, GrassBunch, Seed);
-            
-            AddScene("^^^^^^\n''''''\nAAAAAA####");
+
+            for(int x = 0; x < 10; x++){
+                for(int y = 0; y < 10; y++){
+                    uint UniqueXY = (uint)((x + y) * (x * y + 1));
+                    uint __Seed1 = Seed + UniqueXY + 222223;
+                    uint __Seed2 = Seed + UniqueXY + 212224;
+                    __GenerateStructure(WL.Math.Random.Fast_Int(-30, 30, ref __Seed1), WL.Math.Random.Fast_Int(-30, 30, ref __Seed2), GrassBunch, Seed + UniqueXY);
+                }   
+            }
         }
         
         switch(Level){

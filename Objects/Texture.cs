@@ -23,8 +23,8 @@ public class Texture{
 
             string[] Lines = Chars.Split(["\r\n", "\n"], StringSplitOptions.None);
 
-            Height = (uint)Lines.Length;
-            Width = (uint)Lines[0].Length;
+            Height = (uint)Lines   .Length;
+            Width  = (uint)Lines[0].Length;
 
             foreach(string Line in Lines){
                 if(Line.Length != Width){ throw new Exception("Все строки должны быть одной длины!"); }
