@@ -29,21 +29,47 @@ public class Font{
 
     public readonly Char UnknownChar;
 
-    public void Render(Image.ImageContext C, Palette Palette, string Text, int X, int Y){
-        try{
-            int X__ = X;
-            int Y__ = Y;
+    private void ProcessText(string Text, int StartX, int StartY, Action<Char, int, int> OnChar){
+        int X__ = StartX;
+        int Y__ = StartY;
 
-            foreach(char c in Text){
-                if(c == '\r'){ continue; }
-                if(c == '\n'){ X__ = X; Y__ += (int)UnknownChar.Texture.Height + 1; continue; }
-                
-                Char C__ = Chars.GetValueOrDefault(c, UnknownChar);
-                
-                C__.Texture.Render(C, Palette, X__, Y__);
-
-                X__ += (int)C__.Texture.Width + 1;
+        foreach(char c in Text){
+            if(c == '\r'){ continue; }
+            if(c == '\n'){
+                X__ = StartX;
+                Y__ += (int)UnknownChar.Texture.Height + 1;
+                continue;
             }
+
+            Char C__ = Chars.GetValueOrDefault(c, UnknownChar);
+
+            OnChar(C__, X__, Y__);
+
+            X__ += (int)C__.Texture.Width + 1;
+        }
+    }
+    
+    public Vector2U TextSize(string Text){
+        if(string.IsNullOrEmpty(Text)){ return Vector2U.Zero; }
+
+        int MaxX = 0;
+        int MaxY = 0;
+
+        ProcessText(Text, 0, 0,
+            (C__, X__, Y__) => {
+                int Right = X__ + (int)C__.Texture.Width;
+                int Bottom = Y__ + (int)C__.Texture.Height;
+
+                if(Right > MaxX){ MaxX = Right; }
+                if(Bottom > MaxY){ MaxY = Bottom; }
+            });
+        
+        return new Vector2U((uint)MaxX, (uint)MaxY);
+    }
+    
+    public void Render(Image.ImageContext C, Palette Palette, string Text, int X, int Y, ColorB? MultiplyColor = null){
+        try{
+            ProcessText(Text, X, Y, ((C__, X__, Y__) => C__.Texture.Render(C, Palette, X__, Y__, MultiplyColor: MultiplyColor)));
         }catch(Exception e){
             throw new Exception("Произошла ошибка при рендере текста!\nТекст: \"" + Text + "\"", e);
         }

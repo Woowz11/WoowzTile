@@ -127,4 +127,11 @@ public abstract class Game{
     /// Размер сцены
     /// </summary>
     public static Vector2U SceneSize = Program.__Scene.Size;
+
+    /// <summary>
+    /// Выйти из запущеной игры
+    /// </summary>
+    public static void Quit(){
+        Program.LoadGame(null);
+    }
 }
