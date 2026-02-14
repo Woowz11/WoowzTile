@@ -33,7 +33,8 @@ public enum T_Entity : byte{
 
 public enum T_Item : byte{
     Empty = 0,
-    FirstAidKit = 1
+    FirstAidKit = 1,
+    GPS = 2
 }
 
 public enum T_Interface : byte{
@@ -100,7 +101,9 @@ public struct Entity{
 }
 
 public class GOLUWorld : Game{
-    public const string Version = "0.1";
+    public const string Version = "0.2";
+
+    private static readonly Dictionary<T_Block, byte> MapBlocksColor = [];
     
     private static Palette Palette_Default;
     private static Palette Palette_World;
@@ -154,6 +157,9 @@ public class GOLUWorld : Game{
     private static Texture Texture_GOLU;
     private static Texture Texture_Crate;
     private static Texture Texture_TallGrass;
+    private static Texture Texture_Debug;
+    private static Texture Texture_GPS;
+    private static Texture Texture_GPS_Icon;
     
     /*
      * Блоки:
@@ -206,6 +212,14 @@ public class GOLUWorld : Game{
             new KeyValuePair<byte, ColorB>(11, ColorB.LightRed),
             new KeyValuePair<byte, ColorB>(12, ColorB.Green)
         ]);
+
+        MapBlocksColor.Add(T_Block.Ground_Grass, 4);
+        MapBlocksColor.Add(T_Block.Ground_Asphalt, 2);
+        MapBlocksColor.Add(T_Block.Ground_Planks, 4);
+        MapBlocksColor.Add(T_Block.Bricks, 3);
+        MapBlocksColor.Add(T_Block.Metal, 3);
+        MapBlocksColor.Add(T_Block.Ground_Sand, 3);
+        MapBlocksColor.Add(T_Block.Water, 8);
 
         Palette_World = new Palette(Palette_Default.Colors);
         
@@ -2395,6 +2409,26 @@ Texture_Crate = new Texture(
     Mapping
 );
 
+Texture_Debug = new Texture(
+    @"▓██████████████▓
+███▓▓▓▓▓▓▓▓▓▓███
+██░____▒▒____░██
+█▓_░██░▒▒░██░_▓█
+█▓_█Rr█▒▒█rR█_▓█
+█▓_█rR█▓▓█Rr█_▓█
+█▓_██░▒▓▓▒░██_▓█
+█▓_░░▒▒▓▓▒▒░░_▓█
+█▓_░▒▒▓██▓▒▒░_▓█
+█▓_▒████████▒_▓█
+█▓_██████████_▓█
+█▓░█▓█▒██▒█▓█░▓█
+█▓░▒▒▒░░░░▒▒▒░▓█
+██░░░______░░░██
+███▓▓▓▓▓▓▓▓▓▓███
+▓██████████████▓",
+    Mapping
+);
+
 Texture_FirstAidKit = new Texture(
     @"................
 ................
@@ -2416,40 +2450,94 @@ Texture_FirstAidKit = new Texture(
 );
 
 Texture_FirstAidKit_Icon = new Texture(
-    @"..................................
-..................................
-..................................
-..................................
-..................................
-..........███████████████.........
-........██▓▓▒▒▒▒▒▒▒▒▒▒▒▓▓███......
-.......█▒▒▒▒▒▒░░░░░▒▒▒▒▒▒▒▒▒█.....
-......█▒░░░░░░░░░░░░░░░░░▒▓▓█.....
-.....█▒░░___________░░░▒▒▓███.....
-.....█░░░░░░_________░▒▒▓███▓█....
-....██░░░░░░░░░░░░░░░░▒▓███▓▒█....
-...███▒▒▒▒░░░░░░░░░░░░▒▓██▒▒▒█....
-...█▓█▒▓▓▒▒▒▒▒▒▒░░░░▒▒▒▓█▒▒▒▒█....
-...█▒▒█▓▓▒▒▒▒▒▒▒▒▒▓▓▒▒███▒░░▒█....
-...█▒▒▒▓▓▒▒▒▒▒▒▒▒▒▓▓▒█▒█▒░░░▒█....
-...█▒░░▓▓█████████▓▓█▒▒█▒░░░▒█....
-...█░░░▓▓▒▒░░░░░▒▒▓▓▒▒▒█▒░░░▒█....
-...█░░░░░░░░░░░░░░▓▓░▒▒█▒░░░▒█....
-...█░░░░░░░__rR______░▒█▒░░░▒█....
-...█▒___░░__rRR_______▒█▒░░░▒█....
-....█______░rRR░______░█░░░░▒█....
-....█░___rrrRRRRrr_____█░░░░▒█....
-....█░░___rrrRRRrr_____█▒░░▒█.....
-....█▒░_____░RRr░______█▒░░▒█.....
-....█▒▒______Rr░______░█▒░▒▒█.....
-....█▓▒░_____Rr______░▒█▒▒▒█......
-.....██▒▒░__________░▒▒█▓▒█.......
-.......██▒▒▒░_____░░▒▒▓███........
-.........███████████████..........
-..................................
-..................................
-..................................
-..................................",
+    @"................................
+................................
+................................
+................................
+.........███████████████........
+.......██▓▓▒▒▒▒▒▒▒▒▒▒▒▓▓███.....
+......█▒▒▒▒▒▒░░░░░▒▒▒▒▒▒▒▒▒█....
+.....█▒░░░░░░░░░░░░░░░░░▒▓▓█....
+....█▒░░___________░░░▒▒▓███....
+....█░░░░░░_________░▒▒▓███▓█...
+...██░░░░░░░░░░░░░░░░▒▓███▓▒█...
+..███▒▒▒▒░░░░░░░░░░░░▒▓██▒▒▒█...
+..█▓█▒▓▓▒▒▒▒▒▒▒░░░░▒▒▒▓█▒▒▒▒█...
+..█▒▒█▓▓▒▒▒▒▒▒▒▒▒▓▓▒▒███▒░░▒█...
+..█▒▒▒▓▓▒▒▒▒▒▒▒▒▒▓▓▒█▒█▒░░░▒█...
+..█▒░░▓▓█████████▓▓█▒▒█▒░░░▒█...
+..█░░░▓▓▒▒░░░░░▒▒▓▓▒▒▒█▒░░░▒█...
+..█░░░░░░░░░░░░░░▓▓░▒▒█▒░░░▒█...
+..█░░░░░░░__rR______░▒█▒░░░▒█...
+..█▒___░░__rRR_______▒█▒░░░▒█...
+...█______░rRR░______░█░░░░▒█...
+...█░___rrrRRRRrr_____█░░░░▒█...
+...█░░___rrrRRRrr_____█▒░░▒█....
+...█▒░_____░RRr░______█▒░░▒█....
+...█▒▒______Rr░______░█▒░▒▒█....
+...█▓▒░_____Rr______░▒█▒▒▒█.....
+....██▒▒░__________░▒▒█▓▒█......
+......██▒▒▒░_____░░▒▒▓███.......
+........███████████████.........
+................................
+................................
+................................",
+    Mapping
+);
+
+Texture_GPS = new Texture(
+    @"....█...........
+....▓...........
+....▓...........
+....█...........
+..███▓▓▓▓▓▓███..
+..█▒▒░░░░░░▒▒█..
+..▓▒█▓▓▓▓▓▓█▒▓..
+..▓░▓_l_l_l▓░▓..
+..▓░▓llllll▓░▓..
+..▓░▓_l_l_l▓░▓..
+..▓░▓llllll▓░▓..
+..▓░▓_l_l_l▓░▓..
+..▓░▓llllll▓░▓..
+..▓▒█▓▓▓▓▓▓█▒▓..
+..█▒▒░▒Rr▒░▒▒█..
+..████████████..",
+    Mapping
+);
+
+Texture_GPS_Icon = new Texture(
+    @"................................
+.█▓.............................
+.█▓█............................
+..█▓...............████.........
+..█▓█..........████▒░░▒█........
+...█▓.......███▒______░▒█.......
+...█▓█..████▒___░▒█████░█.......
+....█▓██▒____░▒███▓▓▓▓█░█.......
+....█▓▒░_░▒████▓▓▓█▓▓▓█▒▒█......
+....██░░███▓▓▓▓████▓▓█▓█░█......
+...█▒█▒░█▓▓███████▓▓▓█▓█░█......
+...█▒▓█░▒█▓███████▓▓▓█▓█░▒█.....
+...█▓▒█░░█▓███████▓▓██▓█▒░█.....
+....█▒█░_█▓██████▓▓▓███▓█░█.....
+....█▒█▒_█▓██████▓▓▓██▓▓█░▒█....
+....█▒▓█_▒█▓████▓▓▓███▓▓█▒░█....
+.....█▒█░_█▓███▓▓▓███▓▓▓▓█_░█...
+.....█▒█▒_▒█▓██▓▓▓██▓▓▓█▓█░_█...
+.....█▒▓█_░█▓██▓▓███▓▓▓█▓█▒_▒█..
+.....█▓▒█░_█▓█▓▓▓███▓▓███▓█_░█..
+......█▒█▒_█▓█▓▓███▓▓▓▓▓▓▓█_░█..
+......█▒▓█_▒█▓▓▓███▓▓▓████▒░░▒█.
+......█▓▒█_░█▓▓▓▓▓▓███▒░__░▒███.
+.......█▒█░_█▓▓████Rr_░▒████▓▓█.
+.......█▒█▒_███▒░__rR███▓▓▓▓▓█..
+.......█▒▓█░____▒████▓▓▓▓▓▓███..
+.......█▓▒█▒▒████▓▓▓▓▓▓████.....
+........█▓███▓▓▓▓▓▓████.........
+........██▓▓▓▓▓▓███.............
+........██▓▓████................
+.........███....................
+................................",
     Mapping
 );
 
@@ -2498,6 +2586,8 @@ Texture_FirstAidKit_Icon = new Texture(
 
     private float Rotten = 0;
 
+    private ColorB WorldBackgroundColor = ColorB.White;
+    
     private const uint Emotion_Max       = 100;
     private       uint Emotion_Happiness = Emotion_Max;
 
@@ -2976,6 +3066,10 @@ Texture_FirstAidKit_Icon = new Texture(
         }
 
         if(Entity__.ID != T_Entity.Empty){
+            if(Entity__.ID == T_Entity.Item && Entity__.Info == (byte)T_Item.Empty){
+                Entity__.Info = (byte)T_Item.FirstAidKit;
+            }
+            
             __Entity.Add(Entity__);
         }
     }
@@ -3207,7 +3301,9 @@ Texture_FirstAidKit_Icon = new Texture(
                     OffsetX = (int)(WL.Math.Sin(WorldDeltaTick * 2 + (Entity.X) * 754) * 2);
                 }
 
-                RenderQueue.Add(new Renderable{ Texture = EntityTexture, Palette = Palette_Default, X = WorldX + Entity.X + OffsetX, Y = WorldY + Entity.Y + OffsetY, Rotation = Entity.Rotation, Z = RenderLayer_Object(Entity.Y)});
+                bool BottomRenderLayer = Entity.ID is T_Entity.Spikes;
+
+                RenderQueue.Add(new Renderable{ Texture = EntityTexture, Palette = Palette_Default, X = WorldX + Entity.X + OffsetX, Y = WorldY + Entity.Y + OffsetY, Rotation = Entity.Rotation, Z = (BottomRenderLayer ? RenderLayer_Bottom + 3 : RenderLayer_Object(Entity.Y))});
 
                 if(Entity.ID == T_Entity.Tree){
                     void __RenderLeaves(int X__, int Y__){
@@ -3322,7 +3418,7 @@ Texture_FirstAidKit_Icon = new Texture(
                 Entity ItemOnGroundEntity = __Entity[CollisionInfoSecond];
                 string ItemName__ = ItemName(ItemOnGround);
                 Vector2U ItemNameSize__ = Font.TextSize(ItemName__);
-                int X__ = ItemOnGroundEntity.X + WorldX - (int)(ItemNameSize__.X / 2);
+                int X__ = ItemOnGroundEntity.X + WorldX - (int)(ItemNameSize__.X / 2) + (16 / 2);
                 int Y__ = ItemOnGroundEntity.Y + WorldY;
                 C.Fill(X__ - 1, Y__ - 1, ItemNameSize__.X + 2, ItemNameSize__.Y + 2, ColorB.White.SetA(192), ImageBlend.Alpha);
                 C.Border(X__ - 2, Y__ - 2, ItemNameSize__.X + 4, ItemNameSize__.Y + 4, 1, ColorB.White);
@@ -3350,6 +3446,37 @@ Texture_FirstAidKit_Icon = new Texture(
         }
         RenderThoughts(PlayerX, PlayerY - 8 - (int)(WL.Math.Sin(WorldDeltaTick) * 3));
 
+        if(Interface is T_Interface.None or T_Interface.Menu && !Dead){
+            if(Item == T_Item.GPS){
+                void RenderMap(){
+                    Vector2I __RenderCenterPanel(uint Size, ColorB Color){
+                        int __X = (int)(C.Width  - Size) / 2;
+                        int __Y = (int)(C.Height - Size) / 2;
+                        C.Fill(__X, __Y, Size, Size, Color);
+                        return new Vector2I(__X, __Y);
+                    }
+                    const uint MapSize = 180;
+                    __RenderCenterPanel(222, ColorB.Black);
+                    __RenderCenterPanel(220, ColorB.Gray);
+                    __RenderCenterPanel(MapSize + 2, ColorB.Black);
+                    Vector2I MapOffset = __RenderCenterPanel(MapSize, WorldBackgroundColor);
+
+                    void __MapPixel(uint X__, uint Y__, ColorB Color){
+                        if(X__ > MapSize || Y__ > MapSize){ return; }
+                        
+                        C[(uint)MapOffset.X + X__, (uint)MapOffset.Y + Y__] = Color;
+                    }
+                    
+                    foreach(Block Block in __Blocks){
+                        ColorB BlockColor = Palette_World[MapBlocksColor.GetValueOrDefault(Block.ID, (byte)1)];
+                        __MapPixel((uint)(MapSize/2 + (WorldX + Block.X)/16), (uint)(MapSize/2 + (WorldY + Block.Y)/16), BlockColor);
+                    }
+                    __MapPixel(MapSize/2, MapSize/2, ColorB.Red);
+                }
+                RenderMap();
+            }
+        }
+        
         void RenderUI(){
             float HealthPulse = Dead ? 0 : WL.Math.DSin(WorldDeltaTick / WL.Math.Sqr((float)Health / HealthMax));
             ColorB FrameColor = new ColorB((byte)(HealthPulse * 255), 0, 0);
@@ -3368,6 +3495,9 @@ Texture_FirstAidKit_Icon = new Texture(
             Font.Render(C, Palette_Default, Health.ToString(), 20, (int)C.Height - 16);
             
             Texture_Health.Render(C, Palette_Default, 3, (int)C.Height - 21);
+            
+            string __Text = (Item == T_Item.Empty ? "" : ItemName(Item)) + " [" + (SelectedItem + 1) + "]";
+            Font.Render(C, Palette_Default, __Text, (int)C.Width - (int)Font.TextSize(__Text).X - 3, (int)C.Height - 8 - 3);
 
             void RenderSlot(Image.ImageContext C, byte ID, int X, int Y){
                 int X__ = 20 + X * 36;
@@ -3386,10 +3516,13 @@ Texture_FirstAidKit_Icon = new Texture(
         
                 if(Item != 0){
                     Texture ItemTexture = Item switch{
-                        T_Item.FirstAidKit => Texture_FirstAidKit_Icon
+                        T_Item.FirstAidKit => Texture_FirstAidKit_Icon,
+                        T_Item.GPS         => Texture_GPS_Icon,
+                        
+                        var _ => Texture_Debug
                     };
             
-                    ItemTexture.Render(C, Palette_Default, X__, Y__);
+                    ItemTexture.Render(C, Palette_Default, X__ + 1, Y__ + 1);
                 }
             }
             
@@ -3421,7 +3554,10 @@ Texture_FirstAidKit_Icon = new Texture(
                         string Name = ItemName(Item);
                         
                         string Description = Item switch{
-                            T_Item.FirstAidKit => "ЛЕЧИТ БЕДНЫЙ КУБИК ГУЛУ (+ с50)"
+                            T_Item.FirstAidKit => "ЛЕЧИТ БЕДНЫЙ КУБИК ГУЛУ (+ с50)",
+                            T_Item.GPS => "ЕСЛИ ДЕРЖАТЬ В РУКАХ,\nПОКАЗЫВАЕТ КАРТУ",
+                            
+                            var _ => "О БОЖЕ ЧТО ЭТО ТАКОЕ?"
                         };
                         
                         Font.Render(C, Palette_Default, "[" + (byte)Item + "] " + Name, 20 + 2, 110 + 2);
@@ -3442,12 +3578,15 @@ Texture_FirstAidKit_Icon = new Texture(
         }
         RenderUI();
     }
-
+    
     private static Texture ItemTexture(T_Item Item){
         if(Item == T_Item.Empty){ throw new Exception("Указан пустой предмет, невозможно получить текстуру!"); }
 
         return Item switch{
-            T_Item.FirstAidKit => Texture_FirstAidKit
+            T_Item.FirstAidKit => Texture_FirstAidKit,
+            T_Item.GPS         => Texture_GPS,
+            
+            var _ => Texture_Debug
         };
     }
 
@@ -3455,12 +3594,15 @@ Texture_FirstAidKit_Icon = new Texture(
         if(Item == T_Item.Empty){ throw new Exception("Указан пустой предмет, невозможно получить его название!"); }
         
         return Item switch{
-            T_Item.FirstAidKit => "АПТЕЧКА"
+            T_Item.FirstAidKit => "АПТЕЧКА",
+            T_Item.GPS         => "GPS",
+            
+            var _ => "ПРЕДМЕТ [" + (byte)Item + "]"
         };
     }
 
     public override ColorB BackgroundColor(){
-        return ColorB.White;
+        return WorldBackgroundColor;
     }
 
     private void StartLevel(T_Level Level){
@@ -3468,6 +3610,8 @@ Texture_FirstAidKit_Icon = new Texture(
         ClearAllScene();
 
         __Decals.Clear();
+
+        Interface = T_Interface.None;
         
         WorldPosition = Vector2F.Zero;
         
@@ -3508,7 +3652,7 @@ Texture_FirstAidKit_Icon = new Texture(
         Array.Clear(Inventory, 0, Inventory.Length);
         Inventory[0] = T_Item.FirstAidKit;
         Inventory[1] = T_Item.FirstAidKit;
-        Inventory[2] = T_Item.FirstAidKit;
+        Inventory[2] = T_Item.GPS;
 
         Seed = (uint)WL.Math.Random.Fast_Int(0, 10000000);
         
@@ -3543,8 +3687,8 @@ Texture_FirstAidKit_Icon = new Texture(
                     if(KeyPressed(Key.Shift)){ Seed = 0; }
                 }
                 
-                if(Key == Key.D1){ UpdSeed(); StartLevel(T_Level.Calm); }
-                if(Key == Key.D2){ UpdSeed(); StartLevel(T_Level.Industrial); }
+                if(Key == Key.F1){ UpdSeed(); StartLevel(T_Level.Calm); }
+                if(Key == Key.F2){ UpdSeed(); StartLevel(T_Level.Industrial); }
 
                 if(Key == Key.Escape || (Interface == T_Interface.Menu && MenuSelectedButton == 0 && __Enter)){
                     if(Interface == T_Interface.None){ Interface = T_Interface.Menu; }else{ Interface = T_Interface.None; MenuSelectedButton = 0; }
@@ -3563,6 +3707,45 @@ Texture_FirstAidKit_Icon = new Texture(
                             SpawnItem(PlayerX - WorldX, PlayerY - WorldY, Item);
                             Inventory[SelectedItem] = T_Item.Empty;
                         }
+                    }
+                    
+                    switch(Key){
+                        case Key.D1:
+                            SelectedItem = 0;
+                            break;
+                        case Key.D2:
+                            SelectedItem = 1;
+                            break;
+                        case Key.D3:
+                            SelectedItem = 2;
+                            break;
+                        case Key.D4:
+                            SelectedItem = 3;
+                            break;
+                        case Key.D5:
+                            SelectedItem = 4;
+                            break;
+                        case Key.D6:
+                            SelectedItem = 5;
+                            break;
+                        case Key.D7:
+                            SelectedItem = 6;
+                            break;
+                        case Key.D8:
+                            SelectedItem = 7;
+                            break;
+                        case Key.D9:
+                            SelectedItem = 8;
+                            break;
+                        case Key.D0:
+                            SelectedItem = 9;
+                            break;
+                        case Key.Minus:
+                            SelectedItem = 10;
+                            break;
+                        case Key.Plus:
+                            SelectedItem = 11;
+                            break;
                     }
                 }
 
@@ -3677,6 +3860,31 @@ Texture_FirstAidKit_Icon = new Texture(
         }
     }
 
+    private void GenerateTestStructure(int X, int Y){
+        T_Block [] Blocks   = Enum.GetValues<T_Block >();
+        T_Entity[] Entities = Enum.GetValues<T_Entity>();
+
+        int TotalCount = Blocks.Length + Entities.Length;
+        int SquareSize = (int)WL.Math.Ceil(WL.Math.Sqrt(TotalCount));
+        int Index = 0;
+        for(int Y__ = 0; Y__ < SquareSize; Y__++){
+            for(int X__ = 0; X__ < SquareSize; X__++){
+                int WorldX = X + X__ * 5;
+                int WorldY = Y + Y__ * 5;
+
+                if(Index < Blocks.Length){
+                    AddBlock(new Block{ ID = Blocks[Index], X = WorldX, Y = WorldY});
+                }else if(Index - Blocks.Length < Entities.Length){
+                    AddEntity(new Entity{ ID = Entities[Index - Blocks.Length], X = WorldX, Y = WorldY});
+                }else{
+                    return;
+                }
+
+                Index++;
+            }   
+        }
+    }
+
     public struct Structure{
         public Structure(string Blocks, string Entities = ""){ this.Blocks = Blocks; this.Entities = Entities; }
         
@@ -3722,6 +3930,8 @@ __________"
                     __GenerateStructure(WL.Math.Random.Fast_Int(-30, 30, ref __Seed1), WL.Math.Random.Fast_Int(-30, 30, ref __Seed2), GrassBunch, Seed + UniqueXY);
                 }   
             }
+            
+            GenerateTestStructure(-50, -50);
         }
         
         switch(Level){
