@@ -81,7 +81,7 @@ public abstract class Game{
         }
         
         foreach((Collider, bool) Collision in Collisions){
-            C.Border(Collision.Item1.X, Collision.Item1.Y, Collision.Item1.W, Collision.Item1.H, 1, Collision.Item2 ? ColorB.Green : ColorB.Blue);
+            C.Border(Collision.Item1.X, Collision.Item1.Y, Collision.Item1.W, Collision.Item1.H, 1, Collision.Item2 ? new ColorB(0, (byte)WL.Math.Random.Fast_Int(128, 255)) : new ColorB((byte)WL.Math.Random.Fast_Int(128, 255)));
         }
     }
     
@@ -104,12 +104,14 @@ public abstract class Game{
     /// <summary>
     /// Проверяет, есть ли столкновения с коллайдерами
     /// </summary>
-    public static bool Collision(Collider Collider, out Collider? HitCollider){
+    public static bool Collision(Collider Collider, out Collider? HitCollider, bool ExceptInfoSecond = false){
         HitCollider = null;
         bool Result = false;
 
         foreach(Collider Collider__ in Colliders){
             if(!Collider.CanCollide(Collider__)){ continue; }
+            
+            if(ExceptInfoSecond && Collider__.InfoSecond == Collider.InfoSecond){ continue; }
 
             if(Collider__.Intersects(Collider)){
                 HitCollider = Collider__;

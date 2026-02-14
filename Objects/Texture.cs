@@ -18,28 +18,32 @@ public class Texture{
     }
     
     public Texture(string Chars, Dictionary<char, byte> Mapping){
-        if(string.IsNullOrEmpty(Chars)){ throw new Exception("Chars пустой!"); }
+        try{
+            if(string.IsNullOrEmpty(Chars)){ throw new Exception("Chars пустой!"); }
 
-        string[] Lines = Chars.Split(["\r\n", "\n"], StringSplitOptions.None);
+            string[] Lines = Chars.Split(["\r\n", "\n"], StringSplitOptions.None);
 
-        Height = (uint)Lines.Length;
-        Width  = (uint)Lines[0].Length;
+            Height = (uint)Lines.Length;
+            Width = (uint)Lines[0].Length;
 
-        foreach (string Line in Lines){
-            if(Line.Length != Width){ throw new Exception("Все строки должны быть одной длины!"); }
-        }
-
-        Pixels = new byte[Width * Height];
-
-        for(int Y = 0; Y < Height; Y++){
-            string Line = Lines[Y];
-            for(int X = 0; X < Width; X++)
-            {
-                char C = Line[X];
-                if(!Mapping.TryGetValue(C, out byte Index)){ throw new Exception("Символ ['" + C + "'] не найден в Mapping!"); }
-
-                Pixels[Y * (int)Width + X] = Index;
+            foreach(string Line in Lines){
+                if(Line.Length != Width){ throw new Exception("Все строки должны быть одной длины!"); }
             }
+
+            Pixels = new byte[Width * Height];
+
+            for(int Y = 0; Y < Height; Y++){
+                string Line = Lines[Y];
+                for(int X = 0; X < Width; X++){
+                    char C = Line[X];
+                    if(!Mapping.TryGetValue(C, out byte Index)){ throw new Exception("Символ ['" + C + "'] не найден в Mapping!"); }
+
+                    Pixels[Y * (int)Width + X] = Index;
+                }
+            }
+        }
+        catch(Exception e){
+            throw new Exception("Произошла ошибка при создании текстуры [" + this + "]!\nТекстура:\n" + Chars, e);
         }
     }
     
