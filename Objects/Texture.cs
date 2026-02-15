@@ -57,74 +57,45 @@ public class Texture{
     }
 
     public void Render(Image.ImageContext C, Palette Palette, int X = 0, int Y = 0, int SrcX = 0, int SrcY = 0, uint SrcW = 0, uint SrcH = 0, uint DstW = 0, uint DstH = 0, bool FlipX = false, bool FlipY = false, TextureRotation Rotation = TextureRotation.None, ColorB? MultiplyColor = null){
-        try{
+        try
+        {
             MultiplyColor ??= ColorB.White;
-
-            int SW = (SrcW == 0 ? (int)Width  : (int)SrcW);
-            int SH = (SrcH == 0 ? (int)Height : (int)SrcH);
-
-            int DW = (DstW == 0 ? SW : (int)DstW);
-            int DH = (DstH == 0 ? SH : (int)DstH);
+            
+            int SW = (int)(SrcW == 0 ? Width : SrcW), SH = (int)(SrcH == 0 ? Height : SrcH);
+            
+            int DW = DstW == 0 ? SW : (int)DstW, DH = DstH == 0 ? SH : (int)DstH;
             
             if(DW <= 0 || DH <= 0){ return; }
-
-            int OffsetX = 0;
-            int OffsetY = 0;
-
-            if(X < 0){
-                OffsetX = -X;
-                DW += X;
-                X = 0;
-            }
-
-            if(Y < 0){
-                OffsetY = -Y;
-                DH += Y;
-                Y = 0;
-            }
-
-            if (X + DW > C.Width ){ DW = (int)C.Width  - X; }
-            if (Y + DH > C.Height){ DH = (int)C.Height - Y; }
-            if (DW <= 0 || DH <= 0){ return; }
-
-            float CenterX = Width  / 2f;
-            float CenterY = Height / 2f;
-
-            for(int Y__ = 0; Y__ < DH; Y__++){
-                int SrcY__ = FlipY ? SrcY + SH - 1 - ((Y__ + OffsetY) % SH) : SrcY + ((Y__ + OffsetY) % SH);
-
-                for(int X__ = 0; X__ < DW; X__++){
-                    int SrcX__ = FlipX ? SrcX + SW - 1 - ((X__ + OffsetX) % SW) : SrcX + ((X__ + OffsetX) % SW);
-
-                    float DX = SrcX__ - CenterX;
-                    float DY = SrcY__ - CenterY;
-                    int RotX = 0, RotY = 0;
+            int OffsetX = X < 0 ? -X : 0, OffsetY = Y < 0 ? -Y : 0;
+            
+            if (X < 0){ DW += X; X = 0; } 
+            if(Y < 0){ DH += Y; Y = 0; }
+            
+            if(X + DW > C.Width ){ DW = (int)C.Width  - X; }
+            if(Y + DH > C.Height){ DH = (int)C.Height - Y; }
+            
+            if(DW <= 0 || DH <= 0){ return; }
+            
+            float CX = Width / 2f, CY = Height / 2f;
+            
+            for(int y__ = 0; y__ < DH; y__++){
+                int sy = FlipY ? SrcY + SH - 1 - ((y__ + OffsetY) % SH) : SrcY + ((y__ + OffsetY) % SH);
+                for (int x__ = 0; x__ < DW; x__++){
+                    int sx = FlipX ? SrcX + SW - 1 - ((x__ + OffsetX) % SW) : SrcX + ((x__ + OffsetX) % SW);
+                    float dx = sx - CX, dy = sy - CY;
                     
-                    switch (Rotation){
-                        case TextureRotation.None     : RotX = SrcX__; RotY = SrcY__; break;
-                        case TextureRotation.Rotate90 : RotX = (int)(CenterX + DY); RotY = (int)(CenterY - DX); break;
-                        case TextureRotation.Rotate180: RotX = (int)(CenterX - DX); RotY = (int)(CenterY - DY); break;
-                        case TextureRotation.Rotate270: RotX = (int)(CenterX - DY); RotY = (int)(CenterY + DX); break;
-                    }
-
-                    if(RotX < 0 || RotX >= Width || RotY < 0 || RotY >= Height){ continue; }
-
-                    byte PaletteIndex = Pixels[RotY * (int)Width + RotX];
-                    ColorB Color = Palette[PaletteIndex];
-
-                    if(Color.A == 0){ continue; }
-
-                    uint DstX = (uint)(X + X__);
-                    uint DstY = (uint)(Y + Y__);
-
-                    if(DstX >= C.Width || DstY >= C.Height){ continue; }
-
-                    C.SetPixel(DstX, DstY, Color * MultiplyColor.Value, ImageBlend.Alpha);
+                    int rx = Rotation switch { TextureRotation.None => sx, TextureRotation.Rotate90 => (int)(CX + dy), TextureRotation.Rotate180 => (int)(CX - dx), TextureRotation.Rotate270 => (int)(CX - dy), var _ => sx },
+                        ry = Rotation switch { TextureRotation.None => sy, TextureRotation.Rotate90 => (int)(CY - dx), TextureRotation.Rotate180 => (int)(CY - dy), TextureRotation.Rotate270 => (int)(CY + dx), var _ => sy };
+                    
+                    if (rx < 0 || rx >= Width || ry < 0 || ry >= Height){ continue; }
+                    ColorB color = Palette[Pixels[ry * (int)Width + rx]];
+                    if(color.A == 0){ continue; }
+                    uint DX = (uint)(X + x__), DY = (uint)(Y + y__);
+                    if(DX < C.Width && DY < C.Height) C.SetPixel(DX, DY, color * MultiplyColor.Value, ImageBlend.Alpha);
                 }
             }
-        }catch(Exception e){
-            throw new Exception("Произошла ошибка при рендере текстуры [" + this + "]!", e);
         }
+        catch (Exception e) { throw new Exception($"Произошла ошибка при рендере текстуры [{this}]!", e); }
     }
 
     public void RenderTiles(Image.ImageContext C, Palette Palette, int X, int Y, uint TileWidth, uint TileHeight = 1, int SrcX = 0, int SrcY = 0, uint SrcW = 0, uint SrcH = 0, bool FlipX = false, bool FlipY = false, TextureRotation Rotation = TextureRotation.None, ColorB? MultiplyColor = null){
