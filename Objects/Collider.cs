@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using WLO;
 
 namespace WoowzTile.Objects;
 
@@ -26,13 +27,14 @@ public enum CollisionLayer : uint{
 }
 
 public struct Collider{
-    public Collider(int X, int Y, uint W, uint H, byte Info = 0, int InfoSecond = 0, CollisionLayer Layer = CollisionLayer.L1, CollisionLayer Mask = CollisionLayer.All){
+    public Collider(int X, int Y, uint W, uint H, byte Info1 = 0, Vector2I Info2 = default, int Info3 = 0, CollisionLayer Layer = CollisionLayer.L1, CollisionLayer Mask = CollisionLayer.All){
         this.X = X;
         this.Y = Y;
         this.W = W;
         this.H = H;
-        this.Info = Info;
-        this.InfoSecond = InfoSecond;
+        this.Info1 = Info1;
+        this.Info2 = Info2;
+        this.Info3 = Info3;
         this.Layer = Layer;
         this.Mask = Mask;
     }
@@ -42,8 +44,9 @@ public struct Collider{
     public uint W;
     public uint H;
 
-    public byte Info;
-    public int InfoSecond;
+    public byte     Info1;
+    public Vector2I Info2;
+    public int      Info3;
     
     public CollisionLayer Layer;
     public CollisionLayer Mask;

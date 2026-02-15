@@ -1,4 +1,5 @@
-﻿using WL;
+﻿using System.Runtime.CompilerServices;
+using WL;
 using WLO;
 
 namespace WoowzTile.Objects;
@@ -138,5 +139,27 @@ public class Texture{
         }catch(Exception e){
             throw new Exception("Произошла ошибка при рендере текстуры 9-Slice [" + this + "]!", e);
         }
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int Repeat(int Value, int Max){
+        if(Max <= 0){ return 0; }
+
+        int Result = Value % Max;
+        return Result < 0 ? Result + Max : Result;
+    }
+
+    public ColorB GetPixelRepeat(Palette Palette, float X, float Y, float Scale = 1){
+        if(Scale <= 0){ Scale = 1; }
+
+        float ScaledX = X / Scale;
+        float ScaledY = Y / Scale;
+
+        int IX = Repeat((int)ScaledX, (int)Width );
+        int IY = Repeat((int)ScaledY, (int)Height);
+
+        byte Index = Pixels[IY * (int)Width + IX];
+
+        return Palette[Index];
     }
 }

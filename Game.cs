@@ -111,7 +111,7 @@ public abstract class Game{
         foreach(Collider Collider__ in Colliders){
             if(!Collider.CanCollide(Collider__)){ continue; }
             
-            if(ExceptInfoSecond && Collider__.InfoSecond == Collider.InfoSecond){ continue; }
+            if(ExceptInfoSecond && Collider__.Info2 == Collider.Info2){ continue; }
 
             if(Collider__.Intersects(Collider)){
                 HitCollider = Collider__;
