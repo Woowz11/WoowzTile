@@ -13,8 +13,4 @@
         <ProjectReference Include="..\WoowzLib\WoowzLib.Window\WoowzLib.Window.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Games\GOLUWorld\" />
-    </ItemGroup>
-
 </Project>
