@@ -2,53 +2,58 @@
 using WLO;
 using WoowzTile;
 using WoowzTile.Objects;
-using static GOLUWorld.GW_Values;
-using static GOLUWorld.GW_Objects;
-using static GOLUWorld.GW_Player;
-using static GOLUWorld.GW_Info;
-using static GOLUWorld.GW_Generator;
-using static GOLUWorld.GW_Resources;
+using static GOLUWorld.GOLUWorld_Values;
+using static GOLUWorld.GOLUWorld_Objects;
+using static GOLUWorld.GOLUWorld_Player;
+using static GOLUWorld.GOLUWorld_Info;
+using static GOLUWorld.GOLUWorld_Generator;
+using static GOLUWorld.GOLUWorld_Resources;
 
 namespace GOLUWorld;
 
-internal static class GW_World{
+internal static class GOLUWorld_World{
     internal static void StartLevel(T_Level Level){
         ClearAllEntityScene();
         ClearAllScene();
 
         __Decals.Clear();
 
-        Interface = T_Interface.None;
+        UI_Interface = T_Interface.None;
         
-        WorldPosition = Vector2F.Zero;
+        Coordinates_Camera = Vector2F.Zero;
         
-        WorldDeltaTick = 0;
+        World_DeltaTick = 0;
 
         if(Level == T_Level.Calm){
             GenerateLevel(Level);
         }
     }
 
-     internal static void Game_Update(TickData TD){
+    /// <summary>
+    /// Генерирует случайный сид
+    /// </summary>
+    internal static uint World_GenerateNewSeed() => (uint)WL.Math.Random.Fast_Int(0, 10000000);
+    
+    internal static void Game_Update(TickData TD){
         Game.ClearColliders();
 
-        if(InMainMenu){
+        if(UI_InMainMenu){
             return;
         }
 
-        StopTime = Interface != 0;
+        World_StopGameTime = UI_Interface != 0;
 
-        if(StopTime){ return; }
+        if(World_StopGameTime){ return; }
 
-        OutsideLevel = PlayerX - WorldX < -LevelSizeTile.X || PlayerX - WorldX > LevelSizeTile.X || PlayerY - WorldY < -LevelSizeTile.Y || PlayerY - WorldY > LevelSizeTile.Y;
+        Player_OutBounds = Coordinates_Player.X - Coordinates_World.X < -World_BlocksSize.X || Coordinates_Player.X - Coordinates_World.X > World_BlocksSize.X || Coordinates_Player.Y - Coordinates_World.Y < -World_BlocksSize.Y || Coordinates_Player.Y - Coordinates_World.Y > World_BlocksSize.Y;
 
-        Time += (float)TD.DeltaTimeS * TimeSpeed;
-        if(Time > MaxTime){ Time = 0; }
+        World_Time += (float)TD.DeltaTimeS * World_TimeSpeed;
+        if(World_Time > World_TimeMax){ World_Time = 0; }
         
-        if(Immortality){ if(Health < 1){ Health = 1; } }
+        if(Cheat_Immortality){ if(Player_Health < 1){ Player_Health = 1; } }
         
-        if(!Dead){
-            if(OutsideLevel){
+        if(!Player_Dead){
+            if(Player_OutBounds){
                 Damage(WL.Math.Random.Fast_Bool(0.05f) ? (uint)WL.Math.Random.Fast_Int(1, 10) : 0);
             }else{
                 Heal((uint)(WL.Math.Random.Fast_Bool(0.001f) ? 1 : 0));   
@@ -58,14 +63,14 @@ internal static class GW_World{
             
             if(WL.Math.Random.Fast_Bool(0.001f)){ SayThoughts(T_Thoughts.Idle); }
         }else{
-            Interface = 0;
+            UI_Interface = 0;
         }
 
-        if(ThoughtsTimer < 0 || Dead){ Thoughts = ""; ThoughtsContext = T_Thoughts.Idle; }else{ ThoughtsTimer -= (float)TD.DeltaTimeS; }
+        if(Player_ThoughtTimer < 0 || Player_Dead){ Player_Thought = ""; Player_ThoughtContext = T_Thoughts.Idle; }else{ Player_ThoughtTimer -= (float)TD.DeltaTimeS; }
         
         foreach(Block Block in __Blocks.Values){
             if(Block.ID is T_Block.Metal or T_Block.Bricks or T_Block.Water or T_Block.Black or T_Block.Error){
-                Game.AddCollider(new Collider(WorldX + Block.X, WorldY + Block.Y, 16, 16));
+                Game.AddCollider(new Collider(Coordinates_World.X + Block.X, Coordinates_World.Y + Block.Y, 16, 16));
             }
         }
 
@@ -85,8 +90,8 @@ internal static class GW_World{
                         }
                     }
 
-                    int PlayerX__ = PlayerX - WorldX;
-                    int PlayerY__ = PlayerY - WorldY;
+                    int PlayerX__ = Coordinates_Player.X - Coordinates_World.X;
+                    int PlayerY__ = Coordinates_Player.Y - Coordinates_World.Y;
 
                     float Distance = Vector2I.Distance(new Vector2I(Entity.X, Entity.Y), new Vector2I(PlayerX__, PlayerY__));
 
@@ -95,10 +100,10 @@ internal static class GW_World{
                     Vector2I Target = Entity.InfoVector;
                     Vector2I EntityPositionOriginal = new Vector2I(Entity.X, Entity.Y);
                     
-                    if(Distance < 100 && Rotten < 10){
+                    if(Distance < 100 && Player_Rotting < 10){
 
-                        Target.X = Info is 1 or 2 ? WorldX - PlayerX : PlayerX__;
-                        Target.Y = Info is 1 or 2 ? WorldY - PlayerY : PlayerY__;
+                        Target.X = Info is 1 or 2 ? Coordinates_World.X - Coordinates_Player.X : PlayerX__;
+                        Target.Y = Info is 1 or 2 ? Coordinates_World.Y - Coordinates_Player.Y : PlayerY__;
 
                         MoveDirection.X = WL.Math.Sign(Target.X - Entity.X) * SpiderSpeed;
                         MoveDirection.Y = WL.Math.Sign(Target.Y - Entity.Y) * SpiderSpeed;
@@ -153,26 +158,26 @@ internal static class GW_World{
                 }else if(Entity.ID == T_Entity.Mob_Spider){
                     Layer = CollisionLayer.L3;
                 }
-                Game.AddCollider(new Collider(WorldX + Entity.X + (int)((16 - SizeX)/2), WorldY + Entity.Y + (int)((16 - SizeY)/2), SizeX, SizeY, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, Layer));
+                Game.AddCollider(new Collider(Coordinates_World.X + Entity.X + (int)((16 - SizeX)/2), Coordinates_World.Y + Entity.Y + (int)((16 - SizeY)/2), SizeX, SizeY, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, Layer));
             }
 
             if(Entity.ID is T_Entity.Item){
-                Game.AddCollider(new Collider(WorldX + Entity.X, WorldY + Entity.Y, 16, 16, Entity.Info, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L4));
+                Game.AddCollider(new Collider(Coordinates_World.X + Entity.X, Coordinates_World.Y + Entity.Y, 16, 16, Entity.Info, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L4));
             }
             
             if(Entity.ID is T_Entity.Crate){
-                Game.AddCollider(new Collider(WorldX + Entity.X + 2, WorldY + Entity.Y + 2, 12, 12, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L5));
+                Game.AddCollider(new Collider(Coordinates_World.X + Entity.X + 2, Coordinates_World.Y + Entity.Y + 2, 12, 12, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L5));
             }
         }
 
-        bool CanMove = !Dead;
+        bool CanMove = !Player_Dead;
 
-        if(Dead){
+        if(Player_Dead){
             if(WL.Math.Random.Fast_Bool(0.8f)){
-                __Decals.Add((PlayerX - WorldX + WL.Math.Random.Fast_Int(-128, 128), PlayerY - WorldY + WL.Math.Random.Fast_Int(-128, 128), WL.Math.Random.Fast_Bool() ? T_Decal.One : T_Decal.Zero, TextureRotation.None));
+                __Decals.Add((Coordinates_Player.X - Coordinates_World.X + WL.Math.Random.Fast_Int(-128, 128), Coordinates_Player.Y - Coordinates_World.Y + WL.Math.Random.Fast_Int(-128, 128), WL.Math.Random.Fast_Bool() ? T_Decal.One : T_Decal.Zero, TextureRotation.None));
             }
 
-            Rotten += (float)TD.DeltaTimeS;
+            Player_Rotting += (float)TD.DeltaTimeS;
         }
         
         uint PlayerSize = (uint)(Texture_Player_Body.Width * 0.8f);
@@ -180,39 +185,39 @@ internal static class GW_World{
         
         if(CanMove){
             uint PlayerSpeed = (uint)(WL.Math.Max(1, (float)TD.DeltaTimeS * 100 * (Game.KeyPressed(Key.Shift) ? 1.5f : (Game.KeyPressed(Key.Control) ? 0.3f : 1))));
-            if(Health < HealthSmall){ PlayerSpeed = (uint)(PlayerSpeed / 2); }
+            if(Player_Health < Player_HealthLow){ PlayerSpeed = (uint)(PlayerSpeed / 2); }
 
             bool D = Game.KeyPressed(Key.D);
             bool A = Game.KeyPressed(Key.A);
             bool W = Game.KeyPressed(Key.W);
             bool S = Game.KeyPressed(Key.S);
-            MovingDirection = new Vector2I(A && D ? 0 : (A ? 1 : (D ? -1 : 0)), W && S ? 0 : (W ? 1 : (S ? -1 : 0)));
+            Player_MovingDirection = new Vector2I(A && D ? 0 : (A ? 1 : (D ? -1 : 0)), W && S ? 0 : (W ? 1 : (S ? -1 : 0)));
 
             Vector2F DesiredMove = new Vector2F();
 
-            CollisionLayer WallMask = IgnoreColliders ? CollisionLayer.None : CollisionLayer.L1 | CollisionLayer.L5;
-            if(MovingDirection.X != 0 && MovingDirection.Y != 0){
+            CollisionLayer WallMask = Cheat_IgnoreColliders ? CollisionLayer.None : CollisionLayer.L1 | CollisionLayer.L5;
+            if(Player_MovingDirection.X != 0 && Player_MovingDirection.Y != 0){
                 for(uint i = 1; i <= PlayerSpeed; i++){
-                    int TestX = (int)(PlayerX - MovingDirection.X * i + PlayerOffset);
-                    int TestY = (int)(PlayerY - MovingDirection.Y * i + PlayerOffset);
+                    int TestX = (int)(Coordinates_Player.X - Player_MovingDirection.X * i + PlayerOffset);
+                    int TestY = (int)(Coordinates_Player.Y - Player_MovingDirection.Y * i + PlayerOffset);
 
                     Collider TestCollider = new Collider(TestX, TestY, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, WallMask);
 
                     if(!Game.Collision(TestCollider, out Collider? _)){
-                        DesiredMove.X = MovingDirection.X * i;
-                        DesiredMove.Y = MovingDirection.Y * i;
+                        DesiredMove.X = Player_MovingDirection.X * i;
+                        DesiredMove.Y = Player_MovingDirection.Y * i;
                     }else{
                         TestCollider.X = TestX;
-                        TestCollider.Y = PlayerY + PlayerOffset;
+                        TestCollider.Y = Coordinates_Player.Y + PlayerOffset;
                         if(!Game.Collision(TestCollider, out Collider? _)){
-                            DesiredMove.X = MovingDirection.X * i;
+                            DesiredMove.X = Player_MovingDirection.X * i;
                             DesiredMove.Y = 0;
                         }else{
-                            TestCollider.X = PlayerX + PlayerOffset;
+                            TestCollider.X = Coordinates_Player.X + PlayerOffset;
                             TestCollider.Y = TestY;
                             if(!Game.Collision(TestCollider, out Collider? _)){
                                 DesiredMove.X = 0;
-                                DesiredMove.Y = MovingDirection.Y * i;
+                                DesiredMove.Y = Player_MovingDirection.Y * i;
                             }else{
                                 break;
                             }
@@ -224,8 +229,8 @@ internal static class GW_World{
             }
             else{
                 for(uint i = 1; i < PlayerSpeed + 1; i++){
-                    if(!Game.Collision(new Collider((int)(PlayerX - (MovingDirection.X * i) + PlayerOffset), PlayerY + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, WallMask), out Collider? _)){
-                        DesiredMove.X = MovingDirection.X * i;
+                    if(!Game.Collision(new Collider((int)(Coordinates_Player.X - (Player_MovingDirection.X * i) + PlayerOffset), Coordinates_Player.Y + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, WallMask), out Collider? _)){
+                        DesiredMove.X = Player_MovingDirection.X * i;
                     }
                     else{
                         break;
@@ -233,8 +238,8 @@ internal static class GW_World{
                 }
 
                 for(uint i = 1; i < PlayerSpeed + 1; i++){
-                    if(!Game.Collision(new Collider(PlayerX + PlayerOffset, (int)(PlayerY - (MovingDirection.Y * i) + PlayerOffset), PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, WallMask), out Collider? _)){
-                        DesiredMove.Y = MovingDirection.Y * i;
+                    if(!Game.Collision(new Collider(Coordinates_Player.X + PlayerOffset, (int)(Coordinates_Player.Y - (Player_MovingDirection.Y * i) + PlayerOffset), PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, WallMask), out Collider? _)){
+                        DesiredMove.Y = Player_MovingDirection.Y * i;
                     }
                     else{
                         break;
@@ -242,18 +247,18 @@ internal static class GW_World{
                 }
             }
 
-            WorldPosition += DesiredMove;
+            Coordinates_Camera += DesiredMove;
 
             if(DesiredMove.X != 0 || DesiredMove.Y != 0){
                 Track();
 
-                if(Game.Collision(new Collider(PlayerX + PlayerOffset, PlayerY + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, CollisionLayer.L2), out Collider? _)){
+                if(Game.Collision(new Collider(Coordinates_Player.X + PlayerOffset, Coordinates_Player.Y + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, CollisionLayer.L2), out Collider? _)){
                     if(WL.Math.Random.Fast_Bool(0.5f)){
                         Damage((uint)(WL.Math.Random.Fast_0_1() * 5));
                     }
                 }
 
-                if(Game.Collision(new Collider((int)(PlayerX + PlayerOffset - DesiredMove.X * 2), (int)(PlayerY + PlayerOffset - DesiredMove.Y * 2), PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, CollisionLayer.L5), out Collider? __PushedCollider)){
+                if(Game.Collision(new Collider((int)(Coordinates_Player.X + PlayerOffset - DesiredMove.X * 2), (int)(Coordinates_Player.Y + PlayerOffset - DesiredMove.Y * 2), PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, CollisionLayer.L5), out Collider? __PushedCollider)){
                     Vector2I PushedEntityIndex1 = __PushedCollider!.Value.Info2;
                     int PushedEntityIndex2 = __PushedCollider!.Value.Info3;
                     EntityKey Key = new EntityKey(PushedEntityIndex1, (uint)PushedEntityIndex2);
@@ -265,7 +270,7 @@ internal static class GW_World{
                     int NewX = PushedEntity.X - __X;
                     int NewY = PushedEntity.Y - __Y;
                     
-                    if(!Game.Collision(new Collider(WorldX + NewX - __X * 2 + 2, WorldY + NewY - __Y * 2 + 2, 12, 12, 0, PushedEntityIndex1, 0, CollisionLayer.L5, WallMask), out Collider? _, true)){
+                    if(!Game.Collision(new Collider(Coordinates_World.X + NewX - __X * 2 + 2, Coordinates_World.Y + NewY - __Y * 2 + 2, 12, 12, 0, PushedEntityIndex1, 0, CollisionLayer.L5, WallMask), out Collider? _, true)){
                         PushedEntity.X = NewX;
                         PushedEntity.Y = NewY;
                         __Entities[Key] = PushedEntity;
@@ -274,32 +279,32 @@ internal static class GW_World{
             }
         }
         
-        if(Game.Collision(new Collider((int)(PlayerX + PlayerOffset), PlayerY + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, CollisionLayer.L3), out Collider? _)){
+        if(Game.Collision(new Collider(Coordinates_Player.X + PlayerOffset, Coordinates_Player.Y + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, CollisionLayer.L3), out Collider? _)){
             if(WL.Math.Random.Fast_Bool(0.8f)){
-                Damage((uint)(WL.Math.Random.Fast_0_1() * 20), Dead ? 16 : 0);
+                Damage((uint)(WL.Math.Random.Fast_0_1() * 20), Player_Dead ? 16 : 0);
             }
         }
         
-        if(Game.Collision(new Collider((int)(PlayerX + PlayerOffset), PlayerY + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, CollisionLayer.All), out Collider? Collider__)){
-            InsideCollision = Collider__!.Value.Layer;
-            CollisionInfo1  = Collider__!.Value.Info1;
-            CollisionInfo2  = Collider__!.Value.Info2;
-            CollisionInfo3  = Collider__!.Value.Info3;
+        if(Game.Collision(new Collider(Coordinates_Player.X + PlayerOffset, Coordinates_Player.Y + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, CollisionLayer.All), out Collider? Collider__)){
+            Player_InteractingCollision = Collider__!.Value.Layer;
+            Player_CollisionInfo1  = Collider__!.Value.Info1;
+            Player_CollisionInfo2  = Collider__!.Value.Info2;
+            Player_CollisionInfo3  = Collider__!.Value.Info3;
         }else{
-            InsideCollision = CollisionLayer.None;
-            CollisionInfo1  = 0;
-            CollisionInfo2  = Vector2I.Zero;
-            CollisionInfo3  = 0;
+            Player_InteractingCollision = CollisionLayer.None;
+            Player_CollisionInfo1  = 0;
+            Player_CollisionInfo2  = Vector2I.Zero;
+            Player_CollisionInfo3  = 0;
         }
     }
      
      internal static readonly List<(int, int, T_Decal, TextureRotation)> __Decals = [];
     internal static void Track(){
         if(WL.Math.Random.Fast_Bool(0.1f)){
-            if(Health < HealthSmall){
-                SplatBlood(PlayerX - WorldX, PlayerY - WorldY);
+            if(Player_Health < Player_HealthLow){
+                SplatBlood(Coordinates_Player.X - Coordinates_World.X, Coordinates_Player.Y - Coordinates_World.Y);
             }else{
-                __Decals.Add((PlayerX - WorldX + WL.Math.Random.Fast_Int(-5, 5), PlayerY - WorldY  + WL.Math.Random.Fast_Int(-5, 5), T_Decal.Track, TextureRotation.None));
+                __Decals.Add((Coordinates_Player.X - Coordinates_World.X + WL.Math.Random.Fast_Int(-5, 5), Coordinates_Player.Y - Coordinates_World.Y  + WL.Math.Random.Fast_Int(-5, 5), T_Decal.Track, TextureRotation.None));
             }
         }
     }
@@ -332,7 +337,7 @@ internal static class GW_World{
             }
         }
 
-        if(!IgnoreEntities && BlockInfo_Solid(Block__.ID)){
+        if(!IgnoreEntities && Info_Block_Solid(Block__.ID)){
             if(__Entities.ContainsKey(new EntityKey(Key))){ SetEntity(new Entity{ X = Block__.X, Y = Block__.Y }, false, true); }
         }
     }
@@ -427,7 +432,7 @@ internal static class GW_World{
         EntityKey Key = new EntityKey(new Vector2I(Entity__.X, Entity__.Y), HasUniqueID);
         
         if(!IgnoreBlocks){
-            if(__Blocks.TryGetValue(Key.Position, out Block __Found) && BlockInfo_Solid(__Found.ID)){ return; }
+            if(__Blocks.TryGetValue(Key.Position, out Block __Found) && Info_Block_Solid(__Found.ID)){ return; }
         }
 
         if(Entity__.ID == T_Entity.Item && Entity__.Info == (byte)T_Item.Empty){

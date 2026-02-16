@@ -1,11 +1,11 @@
 ﻿using WLO;
-using static GOLUWorld.GW_Values;
-using static GOLUWorld.GW_Objects;
-using static GOLUWorld.GW_World;
+using static GOLUWorld.GOLUWorld_Values;
+using static GOLUWorld.GOLUWorld_Objects;
+using static GOLUWorld.GOLUWorld_World;
 
 namespace GOLUWorld;
 
-internal static class GW_Generator{
+internal static class GOLUWorld_Generator{
     internal static void GenerateTestStructure(int X, int Y){
         T_Block [] Blocks   = Enum.GetValues<T_Block >();
         T_Entity[] Entities = Enum.GetValues<T_Entity>();
@@ -43,10 +43,10 @@ internal static class GW_Generator{
             if(!string.IsNullOrWhiteSpace(S.Entities)){ AddEntityScene(S.Entities, OffsetX, OffsetY, __Seed); }
         }
 
-        int LEFT_BORDER   = -(int)LevelSize.X - 3;
-        int RIGHT_BORDER  =  (int)LevelSize.X + 3;
-        int TOP_BORDER    = -(int)LevelSize.Y - 3;
-        int BOTTOM_BORDER =  (int)LevelSize.Y + 3;
+        int LEFT_BORDER   = -(int)World_Size.X - 3;
+        int RIGHT_BORDER  =  (int)World_Size.X + 3;
+        int TOP_BORDER    = -(int)World_Size.Y - 3;
+        int BOTTOM_BORDER =  (int)World_Size.Y + 3;
         
         void GenerateCalm(uint Seed){
             Structure GrassLand = new Structure(@"................................
@@ -552,11 +552,16 @@ internal static class GW_Generator{
                     
                     for(int i = 0; i <= SmoothSteps; i++){
                         float T = (float)i / SmoothSteps;
+                        
+                        uint CurrentWidth = (uint)(Width * T);
+                        uint CurrentSandWidth = (uint)(SandWidth * T);
+                        if (CurrentWidth == 0) CurrentWidth = 1;
+                        if (CurrentSandWidth < CurrentWidth) CurrentSandWidth = (uint)CurrentWidth;
 
                         Vector2I Current = GetMeanderPoint(StartPosition, EndPosition, T, MeanderCount, MaxAmplitude, Compression);
 
                         if(Previous != null){
-                            GenerateRiver(Previous.Value, Current, Width, SandWidth, Seed__);
+                            GenerateRiver(Previous.Value, Current, CurrentWidth, CurrentSandWidth, Seed__);
                             Seed__ += 77778;
                         }
 
@@ -568,8 +573,8 @@ internal static class GW_Generator{
                     uint Seed__ = Seed - 1020;
                     
                     Vector2I MainStart = new Vector2I(
-                        WL.Math.Random.Fast_Int(-(int)LevelSize.X / 2, (int)LevelSize.X / 2, ref Seed__),
-                        -(int)LevelSize.Y
+                        WL.Math.Random.Fast_Int(-(int)World_Size.X / 2, (int)World_Size.X / 2, ref Seed__),
+                        -(int)World_Size.Y
                     );
 
                     Seed__ -= 10;
@@ -581,7 +586,7 @@ internal static class GW_Generator{
 
                     Seed__ -= 10;
                     
-                    uint MainWidth = 6;
+                    uint MainWidth = 20;
                     uint MainSand = 10;
                     
                     GenerateMeanderRiver(MainStart, MainEnd, MainWidth, MainSand, 6, 40, 600, 3f, Seed__);
@@ -601,8 +606,8 @@ internal static class GW_Generator{
 
                         int TributaryLength = WL.Math.AbsI(JoinPoint.Y - TributaryStart.Y);
 
-                        uint TributaryWidth = 2 + (uint)TributaryLength / 200;
-                        uint TributarySand = TributaryWidth + 2;
+                        uint TributaryWidth = (uint)((2 + TributaryLength / 30f) * T);
+                        uint TributarySand = (uint)((TributaryWidth + 2) * T);
 
                         Seed__ -= 10001 + (Seed1__ * Seed2__);
                         
@@ -616,9 +621,9 @@ internal static class GW_Generator{
 
             void GenerateGrassLand(uint Seed){
                 Seed -= 32;
-                for(int y = -(int)LevelSize.Y; y < LevelSize.Y; y += 10){
+                for(int y = -(int)World_Size.Y; y < World_Size.Y; y += 10){
                     Seed += 511;
-                    for(int x = -(int)LevelSize.X; x < LevelSize.X; x += 10){
+                    for(int x = -(int)World_Size.X; x < World_Size.X; x += 10){
                         Seed *= 51;
                         
                         uint SeedOffset = (uint)((x + y) * (x * y));
@@ -652,7 +657,7 @@ internal static class GW_Generator{
         }
         
         switch(Level){
-            case T_Level.Calm: GenerateCalm(Seed); break;
+            case T_Level.Calm: GenerateCalm(World_Seed); break;
         }
     }
 }

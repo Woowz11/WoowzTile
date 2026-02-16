@@ -1,10 +1,10 @@
 ﻿using WLO;
 using WoowzTile.Objects;
-using static GOLUWorld.GW_Resources;
+using static GOLUWorld.GOLUWorld_Resources;
 
 namespace GOLUWorld;
 
-internal static class GW_Objects{
+internal static class GOLUWorld_Objects{
     internal enum T_Block : byte{
         Empty          = 0,
         Metal          = 1,
@@ -125,6 +125,7 @@ internal static class GW_Objects{
         internal bool            FlipX         = false;
         internal bool            FlipY         = false;
         internal ColorB?         MultiplyColor = null;
+        internal bool            Reflect       = false;
     }
     
     internal struct Structure{

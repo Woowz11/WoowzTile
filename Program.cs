@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using WLO;
+using Key = WL.Key;
 
 namespace WoowzTile;
 
@@ -30,6 +31,10 @@ public class Program{
                     LoadedGame?.KeyPress(Key, true);   
                 }catch(Exception e){
                     Logger.Error("Произошла ошибка при нажатии клавиши [" + Key + "]!", e);
+                }
+
+                if(LoadedGame == null && Key == Key.Escape){
+                    __Window.Destroy();
                 }
             };
             __Window.OnKeyboardUp += (_, Key, Code) => {

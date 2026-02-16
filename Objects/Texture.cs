@@ -149,11 +149,14 @@ public class Texture{
         return Result < 0 ? Result + Max : Result;
     }
 
-    public ColorB GetPixelRepeat(Palette Palette, float X, float Y, float Scale = 1){
+    public ColorB GetPixelRepeat(Palette Palette, float X, float Y, float Scale = 1, bool FlipX = false, bool FlipY = false){
         if(Scale <= 0){ Scale = 1; }
 
         float ScaledX = X / Scale;
         float ScaledY = Y / Scale;
+
+        if(FlipX){ ScaledX = Width  - 1 - ScaledX; }
+        if(FlipY){ ScaledY = Height - 1 - ScaledY; }
 
         int IX = Repeat((int)ScaledX, (int)Width );
         int IY = Repeat((int)ScaledY, (int)Height);

@@ -1,11 +1,11 @@
 ﻿using WLO;
 using WoowzTile.Objects;
 using Char = WoowzTile.Objects.Char;
-using static GOLUWorld.GW_Objects;
+using static GOLUWorld.GOLUWorld_Objects;
 
 namespace GOLUWorld;
 
-internal static class GW_Resources{
+internal static class GOLUWorld_Resources{
     internal static readonly Dictionary<T_Block , byte> MapBlocksColor   = [];
     internal static readonly Dictionary<T_Entity, byte> MapEntitiesColor = [];
     
