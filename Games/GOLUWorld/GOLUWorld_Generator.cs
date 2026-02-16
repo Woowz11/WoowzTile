@@ -7,16 +7,16 @@ using static GOLUWorld.GOLUWorld_Resources;
 namespace GOLUWorld;
 
 internal static class GOLUWorld_Generator{
-    internal static int LEFT_BORDER   => -(int)World_Size.X - 3;
-    internal static int RIGHT_BORDER  =>  (int)World_Size.X + 3;
-    internal static int TOP_BORDER    => -(int)World_Size.Y - 3;
-    internal static int BOTTOM_BORDER =>  (int)World_Size.Y + 3;
+    internal static int Generator_Border_L => -(int)World_Size.X - 3;
+    internal static int Generator_Border_R =>  (int)World_Size.X + 3;
+    internal static int Generator_Border_U => -(int)World_Size.Y - 3;
+    internal static int Generator_Border_D =>  (int)World_Size.Y + 3;
 
     /// <summary>
     /// Берёт случайный элемент с учётом весов
     /// </summary>
     /// <param name="RandomValue">от 0 до 1</param>
-    internal static T Generator_SelectWeightedObject<T>(float RandomValue, ReadOnlySpan<(T Value, int Weight)> Variants){
+    internal static (T, byte) Generator_SelectWeightedObject<T>(float RandomValue, ReadOnlySpan<(T Value, byte Info, int Weight)> Variants){
         int TotalWeight = 0;
 
         for(int i = 0; i < Variants.Length; i++){ TotalWeight += Variants[i].Weight; }
@@ -26,11 +26,11 @@ internal static class GOLUWorld_Generator{
         if(Scaled >= TotalWeight){ Scaled = TotalWeight - 1; }
 
         for(int i = 0; i < Variants.Length; i++){
-            if(Scaled < Variants[i].Weight){ return Variants[i].Value; }
+            if(Scaled < Variants[i].Weight){ return (Variants[i].Value, Variants[i].Info); }
             Scaled -= Variants[i].Weight;
         }
 
-        return Variants[^1].Value;
+        return (Variants[^1].Value, Variants[^1].Info);
     }
     
     /// <summary>
@@ -88,9 +88,11 @@ internal static class GOLUWorld_Generator{
             
             Generator_Water(Seed);
             
+            Generator_SandPatch(Seed);
+            
             Generator_GrassLand(Seed);
             
-            Generator_GrassBunch(Seed);
+            Generator_GrassPatch(Seed);
             
             Generator_DebugStructure(-50, -50);
         }
@@ -117,7 +119,7 @@ internal static class GOLUWorld_Generator{
     /// <summary>
     /// Генерирует кусок травы
     /// </summary>
-    internal static void Generator_GrassBunch(uint Seed){
+    internal static void Generator_GrassPatch(uint Seed){
         Seed += 111125;
         for(int x = 0; x < 50; x++){
             Seed -= 161616;
@@ -127,9 +129,28 @@ internal static class GOLUWorld_Generator{
             uint __Seed2 = Seed + SeedOffset * 212224;
             uint __Seed3 = Seed + SeedOffset * 124125;
 
-            Structure __GrassBunch = Structure_GrassBunches[WL.Math.Random.Fast_Int(0, Structure_GrassBunches.Length - 1, ref __Seed3)];
+            Structure __GrassBunch = Structure_GrassPatches[WL.Math.Random.Fast_Int(0, Structure_GrassPatches.Length - 1, ref __Seed3)];
                     
-            Generator_Structure(WL.Math.Random.Fast_Int(LEFT_BORDER, RIGHT_BORDER, ref __Seed1), WL.Math.Random.Fast_Int(TOP_BORDER, BOTTOM_BORDER, ref __Seed2), __GrassBunch, Seed + SeedOffset);
+            Generator_Structure(WL.Math.Random.Fast_Int(Generator_Border_L, Generator_Border_R, ref __Seed1), WL.Math.Random.Fast_Int(Generator_Border_U, Generator_Border_D, ref __Seed2), __GrassBunch, Seed + SeedOffset);
+        }
+    }
+    
+    /// <summary>
+    /// Генерирует кусок песка
+    /// </summary>
+    internal static void Generator_SandPatch(uint Seed){
+        Seed += 112125;
+        for(int x = 0; x < 10; x++){
+            Seed -= 1616436;
+                    
+            uint SeedOffset = (uint)x;
+            uint __Seed1 = Seed + SeedOffset * 225223;
+            uint __Seed2 = Seed + SeedOffset * 21324;
+            uint __Seed3 = Seed + SeedOffset * 128125;
+
+            Structure __SandBunch = Structure_SandPatches[WL.Math.Random.Fast_Int(0, Structure_SandPatches.Length - 1, ref __Seed3)];
+                    
+            Generator_Structure(WL.Math.Random.Fast_Int(Generator_Border_L, Generator_Border_R, ref __Seed1), WL.Math.Random.Fast_Int(Generator_Border_U, Generator_Border_D, ref __Seed2), __SandBunch, Seed + SeedOffset);
         }
     }
     

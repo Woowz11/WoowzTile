@@ -1,4 +1,6 @@
-﻿using WLO;
+﻿using WL;
+using WLO;
+using WoowzTile;
 using WoowzTile.Objects;
 using static GOLUWorld.GOLUWorld_Values;
 using static GOLUWorld.GOLUWorld_Objects;
@@ -8,6 +10,16 @@ using static GOLUWorld.GOLUWorld_Resources;
 namespace GOLUWorld;
 
 internal static class GOLUWorld_Player{
+    /// <summary>
+    /// С какими коллизиями сталкивается игрок?
+    /// </summary>
+    internal static CollisionLayer Player_Collider => Cheat_IgnoreColliders ? CollisionLayer.None : CollisionLayer.L1 | CollisionLayer.L5;
+
+    /// <summary>
+    /// Скорость игрока
+    /// </summary>
+    internal static uint Player_Speed(TickData TD) => (uint)(WL.Math.Max(1, (float)TD.DeltaTimeS * 100 * (Game.KeyPressed(Key.Shift) ? 1.5f : (Game.KeyPressed(Key.Control) ? 0.3f : 1))));
+    
     /// <summary>
     /// Очищает инвентарь
     /// </summary>
@@ -80,20 +92,39 @@ internal static class GOLUWorld_Player{
         
         EmotionChange(T_Emotion.Happiness, (int)(Heal / 2));
     }
+
+    /// <summary>
+    /// Игрок атакует в ближнем бою
+    /// </summary>
+    internal static void Player_AttackMelee(Direction4? Direction = null){
+        Player_AttackDirection = Direction ?? Player_LastDirection;
+        Player_AttackTimer = 1;
+    }
     
-    internal static void UseItem(){
+    /// <summary>
+    /// Использует предмет в руках
+    /// </summary>
+    /// <param name="Direction">Направление действия</param>
+    internal static void Player_ItemUse(Direction4? Direction = null){
+        if(Player_AttackTimer > 0 || Player_Dead){ return; }
+        
         T_Item Item = Player_ItemInHands;
 
         if(Item != T_Item.Empty){
             bool RemoveItem = false;
             
             switch(Item){
-                case T_Item.FirstAidKit:{
+                case T_Item.FirstAidKit: {
                     if(Player_Health == Player_HealthMax){ return; }
                     
                     Heal(50, true);
                     
                     RemoveItem = true;
+                    break;
+                }
+
+                case T_Item.Stick: {
+                    Player_AttackMelee(Direction);
                     break;
                 }
             }
@@ -102,6 +133,28 @@ internal static class GOLUWorld_Player{
                 Player_Inventory[Player_InventorySelectedSlot] = 0;
             }
         }
+    }
+
+    /// <summary>
+    /// Выкидывает предмет в руках
+    /// </summary>
+    internal static void Player_ItemDrop(){
+        if(Player_AttackTimer > 0 || Player_Dead){ return; }
+        
+        T_Item Item = Player_ItemInHands;
+        if(Item != T_Item.Empty){
+            World_SpawnItem(Coordinates_WorldPlayer.X, Coordinates_WorldPlayer.Y, Item);
+            Player_ItemInHands = T_Item.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Меняет выбранный слот
+    /// </summary>
+    internal static void Player_ItemSwitch(byte Slot){
+        if(Player_AttackTimer > 0 || Player_Dead){ return; }
+        
+        Player_InventorySelectedSlot = Slot;
     }
 
     internal static bool AddToInventory(T_Item Item){

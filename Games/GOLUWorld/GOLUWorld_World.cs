@@ -61,6 +61,8 @@ internal static class GOLUWorld_World{
         
         World_DeltaTick = 0;
 
+        Player_AttackTimer = 0;
+
         if(World == T_World.Calm){
             Generator_World(World);
         }
@@ -83,7 +85,7 @@ internal static class GOLUWorld_World{
             World_Tick(TD);
         }
     }
-
+    
     /// <summary>
     /// Обновляет 1 кадр мира
     /// </summary>
@@ -101,6 +103,8 @@ internal static class GOLUWorld_World{
         World_Time += (float)TD.DeltaTimeS * World_TimeSpeed;
         if(World_Time > World_TimeMax){ World_Time = 0; }
 
+        World_UpdateFlow();
+        
         World_UpdateBlocks();
 
         World_UpdateEntities();
@@ -209,8 +213,15 @@ internal static class GOLUWorld_World{
                 }
                 Game.AddCollider(new Collider(Coordinates_World.X + Entity.X + (int)((16 - SizeX)/2), Coordinates_World.Y + Entity.Y + (int)((16 - SizeY)/2), SizeX, SizeY, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, Layer));
             }
-
+            
             if(Entity.ID is T_Entity.Item){
+                Block Floor = World_GetBlock(Entity.X, Entity.Y, Relative: true);
+                if(Floor.ID is T_Block.Water){
+                    Entity.X += WL.Math.RoundProbabilistic(World_Flow.X);
+                    Entity.Y += WL.Math.RoundProbabilistic(World_Flow.Y);
+                    World_Entities[KVP.Key] = Entity;
+                }
+                
                 Game.AddCollider(new Collider(Coordinates_World.X + Entity.X, Coordinates_World.Y + Entity.Y, 16, 16, Entity.Info, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L4));
             }
             
@@ -225,15 +236,19 @@ internal static class GOLUWorld_World{
     /// </summary>
     internal static void World_UpdatePlayer(TickData TD){
         if(Cheat_Immortality){ if(Player_Health < 1){ Player_Health = 1; } }
+
+        Player_Floor = World_GetBlock(Coordinates_WorldPlayer.X, Coordinates_WorldPlayer.Y, Relative: true);
         
         if(Player_Dead){
             UI_Interface = 0;
             
             if(WL.Math.Random.Fast_Bool(0.8f)){
-                World_Decals.Add((Coordinates_Player.X - Coordinates_World.X + WL.Math.Random.Fast_Int(-128, 128), Coordinates_Player.Y - Coordinates_World.Y + WL.Math.Random.Fast_Int(-128, 128), WL.Math.Random.Fast_Bool() ? T_Decal.One : T_Decal.Zero, TextureRotation.None));
+                World_Decals.Add(new Decal{ X = Coordinates_Player.X - Coordinates_World.X + WL.Math.Random.Fast_Int(-128, 128), Y = Coordinates_Player.Y - Coordinates_World.Y + WL.Math.Random.Fast_Int(-128, 128), ID = WL.Math.Random.Fast_Bool() ? T_Decal.One : T_Decal.Zero});
             }
 
             Player_Rotting += (float)TD.DeltaTimeS;
+
+            Player_AttackTimer = 0;
         }else{
             if(Player_OutBounds){
                 Damage(WL.Math.Random.Fast_Bool(0.05f) ? (uint)WL.Math.Random.Fast_Int(1, 10) : 0);
@@ -244,6 +259,8 @@ internal static class GOLUWorld_World{
             EmotionChange(T_Emotion.Happiness, WL.Math.Random.Fast_Bool(0.01f) ? 1 : 0);
             
             if(WL.Math.Random.Fast_Bool(0.001f)){ SayThoughts(T_Thoughts.Idle); }
+
+            Player_AttackTimer -= Info_Item_MeleeAttackSpeed(Player_ItemInHands);
         }
 
         if(Player_ThoughtTimer < 0 || Player_Dead){ Player_Thought = ""; Player_ThoughtContext = T_Thoughts.Idle; }else{ Player_ThoughtTimer -= (float)TD.DeltaTimeS; }
@@ -253,8 +270,8 @@ internal static class GOLUWorld_World{
         
         bool CanMove = !Player_Dead;
         if(CanMove){
-            uint PlayerSpeed = (uint)(WL.Math.Max(1, (float)TD.DeltaTimeS * 100 * (Game.KeyPressed(Key.Shift) ? 1.5f : (Game.KeyPressed(Key.Control) ? 0.3f : 1))));
-            if(Player_Health < Player_HealthLow){ PlayerSpeed = (uint)(PlayerSpeed / 2); }
+            uint __Player_Speed = Player_Speed(TD);
+            if(Player_Health < Player_HealthLow){ __Player_Speed /= 2; }
 
             bool D = Game.KeyPressed(Key.D);
             bool A = Game.KeyPressed(Key.A);
@@ -262,15 +279,25 @@ internal static class GOLUWorld_World{
             bool S = Game.KeyPressed(Key.S);
             Player_MovingDirection = new Vector2I(A && D ? 0 : (A ? 1 : (D ? -1 : 0)), W && S ? 0 : (W ? 1 : (S ? -1 : 0)));
 
+            if(D && !A){ 
+                Player_LastDirection = Direction4.Right;
+            }else if(A && !D){ 
+                Player_LastDirection = Direction4.Left;
+            }else if(W && !S){ 
+                Player_LastDirection = Direction4.Up;
+            }else if(S && !W){ 
+                Player_LastDirection = Direction4.Down;
+            }
+            
             Vector2F DesiredMove = new Vector2F();
 
-            CollisionLayer WallMask = Cheat_IgnoreColliders ? CollisionLayer.None : CollisionLayer.L1 | CollisionLayer.L5;
+            CollisionLayer __Player_Collider = Player_Collider;
             if(Player_MovingDirection.X != 0 && Player_MovingDirection.Y != 0){
-                for(uint i = 1; i <= PlayerSpeed; i++){
+                for(uint i = 1; i <= __Player_Speed; i++){
                     int TestX = (int)(Coordinates_Player.X - Player_MovingDirection.X * i + PlayerOffset);
                     int TestY = (int)(Coordinates_Player.Y - Player_MovingDirection.Y * i + PlayerOffset);
 
-                    Collider TestCollider = new Collider(TestX, TestY, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, WallMask);
+                    Collider TestCollider = new Collider(TestX, TestY, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, __Player_Collider);
 
                     if(!Game.Collision(TestCollider, out Collider? _)){
                         DesiredMove.X = Player_MovingDirection.X * i;
@@ -297,8 +324,8 @@ internal static class GOLUWorld_World{
                 }
             }
             else{
-                for(uint i = 1; i < PlayerSpeed + 1; i++){
-                    if(!Game.Collision(new Collider((int)(Coordinates_Player.X - (Player_MovingDirection.X * i) + PlayerOffset), Coordinates_Player.Y + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, WallMask), out Collider? _)){
+                for(uint i = 1; i < __Player_Speed + 1; i++){
+                    if(!Game.Collision(new Collider((int)(Coordinates_Player.X - (Player_MovingDirection.X * i) + PlayerOffset), Coordinates_Player.Y + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, __Player_Collider), out Collider? _)){
                         DesiredMove.X = Player_MovingDirection.X * i;
                     }
                     else{
@@ -306,8 +333,8 @@ internal static class GOLUWorld_World{
                     }
                 }
 
-                for(uint i = 1; i < PlayerSpeed + 1; i++){
-                    if(!Game.Collision(new Collider(Coordinates_Player.X + PlayerOffset, (int)(Coordinates_Player.Y - (Player_MovingDirection.Y * i) + PlayerOffset), PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, WallMask), out Collider? _)){
+                for(uint i = 1; i < __Player_Speed + 1; i++){
+                    if(!Game.Collision(new Collider(Coordinates_Player.X + PlayerOffset, (int)(Coordinates_Player.Y - (Player_MovingDirection.Y * i) + PlayerOffset), PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, __Player_Collider), out Collider? _)){
                         DesiredMove.Y = Player_MovingDirection.Y * i;
                     }
                     else{
@@ -339,7 +366,7 @@ internal static class GOLUWorld_World{
                     int NewX = PushedEntity.X - __X;
                     int NewY = PushedEntity.Y - __Y;
                     
-                    if(!Game.Collision(new Collider(Coordinates_World.X + NewX - __X * 2 + 2, Coordinates_World.Y + NewY - __Y * 2 + 2, 12, 12, 0, PushedEntityIndex1, 0, CollisionLayer.L5, WallMask), out Collider? _, true)){
+                    if(!Game.Collision(new Collider(Coordinates_World.X + NewX - __X * 2 + 2, Coordinates_World.Y + NewY - __Y * 2 + 2, 12, 12, 0, PushedEntityIndex1, 0, CollisionLayer.L5, __Player_Collider), out Collider? _, true)){
                         PushedEntity.X = NewX;
                         PushedEntity.Y = NewY;
                         World_Entities[Key] = PushedEntity;
@@ -366,6 +393,34 @@ internal static class GOLUWorld_World{
             Player_CollisionInfo3  = 0;
         }
     }
+
+    /// <summary>
+    /// Обновляет скорость течения
+    /// </summary>
+    internal static void World_UpdateFlow(){
+        const float __Flow_Speed_Change = 0.01f;
+
+        __Flow_Timer_X--;
+        if(__Flow_Timer_X <= 0)
+        {
+            __Flow_Dir_X = WL.Math.Random.Fast_Bool();
+            __Flow_Timer_X = WL.Math.Random.Fast_Int(10, 60);
+        }
+
+        __Flow_Timer_Y--;
+        if(__Flow_Timer_Y <= 0)
+        {
+            __Flow_Dir_Y = WL.Math.Random.Fast_Bool();
+            __Flow_Timer_Y = WL.Math.Random.Fast_Int(10, 60);
+        }
+
+        World_Flow.X = WL.Math.Clamp(World_Flow.X + (__Flow_Dir_X ? __Flow_Speed_Change : -__Flow_Speed_Change), -World_FlowMax, World_FlowMax);
+        World_Flow.Y = WL.Math.Clamp(World_Flow.Y + (__Flow_Dir_Y ? __Flow_Speed_Change : -__Flow_Speed_Change), -World_FlowMax, World_FlowMax);
+    }
+    private static int  __Flow_Timer_X = 0;
+    private static int  __Flow_Timer_Y = 0;
+    private static bool __Flow_Dir_X   = true;
+    private static bool __Flow_Dir_Y   = true;
     
     /// <summary>
     /// Оставляет след
@@ -375,7 +430,7 @@ internal static class GOLUWorld_World{
             if(Player_Health < Player_HealthLow){
                 World_SpatterBlood(Coordinates_Player.X - Coordinates_World.X, Coordinates_Player.Y - Coordinates_World.Y);
             }else{
-                World_Decals.Add((Coordinates_Player.X - Coordinates_World.X + WL.Math.Random.Fast_Int(-5, 5), Coordinates_Player.Y - Coordinates_World.Y  + WL.Math.Random.Fast_Int(-5, 5), T_Decal.FootStep, TextureRotation.None));
+                World_Decals.Add(new Decal{ X = Coordinates_Player.X - Coordinates_World.X + WL.Math.Random.Fast_Int(-5, 5), Y = Coordinates_Player.Y - Coordinates_World.Y  + WL.Math.Random.Fast_Int(-5, 5), ID = T_Decal.FootStep });
             }
         }
     }
@@ -384,7 +439,7 @@ internal static class GOLUWorld_World{
     /// Оставить пятно крови
     /// </summary>
     internal static void World_SpatterBlood(int X, int Y){
-        World_Decals.Add((X, Y, T_Decal.Blood, WL.Math.Random.Fast_Bool(0.5f) ? (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.None :  TextureRotation.Rotate90) : (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.Rotate180 : TextureRotation.Rotate270)));
+        World_Decals.Add(new Decal{ X = X, Y = Y, ID = T_Decal.Blood, Rotation = WL.Math.Random.Fast_Bool(0.5f) ? (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.None :  TextureRotation.Rotate90) : (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.Rotate180 : TextureRotation.Rotate270)});
     }
 
     /// <summary>
@@ -422,11 +477,17 @@ internal static class GOLUWorld_World{
     /// <summary>
     /// Получает блок
     /// </summary>
-    internal static Block World_GetBlock(int X, int Y, bool SnapToGrid = true){
-        if(SnapToGrid){
-            X *= 16;
-            Y *= 16;
+    internal static Block World_GetBlock(int X, int Y, bool SnapToGrid = true, bool Relative = false){
+        if(Relative){
+            X -= X % 16;
+            Y -= Y % 16;
+        }else{
+            if(SnapToGrid){
+                X *= 16;
+                Y *= 16;
+            }
         }
+
         return World_Blocks.GetValueOrDefault(new Vector2I(X, Y), new Block{ ID = T_Block.Empty, X = X, Y = Y });
     }
 
@@ -481,7 +542,8 @@ internal static class GOLUWorld_World{
             __Seed += 1222;
             
             foreach(char C in SceneMap){
-                T_Block ID;
+                T_Block ID = T_Block.Empty;
+                (T_Block, byte)? ID_and_Info = null;
                 switch(C){
                     case '\r': 
                         continue;
@@ -518,15 +580,26 @@ internal static class GOLUWorld_World{
                         break;
                     case 'Д':
                         __Seed += 121;
-                        ID = Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Block.Ground_Grass, 1), (T_Block.Empty, 1)]);
+                        ID_and_Info = Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Block.Ground_Grass, 0, 1), (T_Block.Empty, 0, 1)]);
+                        break;
+                    case 'П':
+                        __Seed += 774743;
+                        ID_and_Info = Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Block.Ground_Sand, 0, 1), (T_Block.Empty, 0, 1)]);
                         break;
                     default:
                         ID = T_Block.Error;
                         break;
                 }
 
+                byte Info = 0;
+                
+                if(ID_and_Info != null){
+                    ID = ID_and_Info.Value.Item1;
+                    Info = ID_and_Info.Value.Item2;
+                }
+                
                 if(ID != T_Block.Empty){
-                    World_SetBlock(new Block{ X = X__, Y = Y__, ID = ID}, Replace: Replace);
+                    World_SetBlock(new Block{ X = X__, Y = Y__, ID = ID, Info = Info}, Replace: Replace);
                 }
                 
                 X__++;
@@ -549,7 +622,8 @@ internal static class GOLUWorld_World{
             __Seed -= 86;
             
             foreach(char C in SceneMap){
-                T_Entity ID;
+                T_Entity ID = T_Entity.Empty;
+                (T_Entity, byte)? ID_and_Info = null;
                 switch(C){
                     case '\r': 
                         continue;
@@ -586,23 +660,40 @@ internal static class GOLUWorld_World{
                         break;
                     case 'Д':
                         __Seed += 1667;
-                        ID = World_GetBlock(X__, Y__).ID == T_Block.Ground_Sand ?
-                            Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Grass, 1), (T_Entity.Rock, 1), (T_Entity.Empty, 99)]) :
-                            Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Tree, 20), (T_Entity.Rock, 10), (T_Entity.Bush, 5), (T_Entity.Grass, 43), (T_Entity.Empty, 32)]);
+                        ID_and_Info = World_GetBlock(X__, Y__).ID == T_Block.Ground_Sand ?
+                            Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Rock, 0, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Empty, 0, 99)]) :
+                            Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Tree, 0, 20), (T_Entity.Rock, 0, 10), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Bush, 0, 5), (T_Entity.Grass, 0, 43), (T_Entity.Empty, 0, 32)]);
                         break;
                     case 'д':
                         __Seed += 1532;
-                        ID = World_GetBlock(X__, Y__).ID == T_Block.Ground_Sand ?
-                            Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Grass, 1), (T_Entity.Empty, 99)]) :
-                            Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Bush, 5), (T_Entity.Grass, 43), (T_Entity.Empty, 32)]);
+                        ID_and_Info = World_GetBlock(X__, Y__).ID == T_Block.Ground_Sand ?
+                            Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Empty, 0, 99)]) :
+                            Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Bush, 0, 5), (T_Entity.Grass, 0, 43), (T_Entity.Empty, 0, 32)]);
                         break;
                     default:
                         ID = T_Entity.Error;
                         break;
                 }
 
+                byte Info = 0;
+                
+                if(ID_and_Info != null){
+                    ID = ID_and_Info.Value.Item1;
+                    Info = ID_and_Info.Value.Item2;
+                }
+                
                 if(ID != T_Entity.Empty){
-                    World_SetEntity(new Entity{ X = X__, Y = Y__, ID = ID});
+                    int OffsetX = 0;
+                    int OffsetY = 0;
+                    
+                    if(Info_Entity_RandomSpawnPosition(ID, Info)){
+                        __Seed += (uint)X__;
+                        OffsetX = WL.Math.Random.Fast_Int(0, 16, ref __Seed);
+                        __Seed += (uint)Y__;
+                        OffsetY = WL.Math.Random.Fast_Int(0, 16, ref __Seed);
+                    }
+                    
+                    World_SetEntity(new Entity{ X = X__ * 16 + OffsetX, Y = Y__ * 16 + OffsetY, ID = ID, Info = Info}, SnapToGrid: false);
                 }
 
                 X__++;

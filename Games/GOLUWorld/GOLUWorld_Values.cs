@@ -68,6 +68,11 @@ internal static class GOLUWorld_Values{
         /// Направление движения игрока
         /// </summary>
         internal static Vector2I Player_MovingDirection = Vector2I.Zero;
+
+        /// <summary>
+        /// В последний раз куда двигался игрок?
+        /// </summary>
+        internal static Direction4 Player_LastDirection = Direction4.Right;
         
         /// <summary>
         /// Игрок за пределами карты?
@@ -94,6 +99,11 @@ internal static class GOLUWorld_Values{
         /// </summary>
         internal static int Player_CollisionInfo3 = 0;
 
+        /// <summary>
+        /// Пол на котором сейчас стоит игрок
+        /// </summary>
+        internal static Block Player_Floor;
+        
         /// <summary>
         /// Максимальное здоровье
         /// </summary>
@@ -180,7 +190,17 @@ internal static class GOLUWorld_Values{
         /// <summary>
         /// Визуально текстура игрока отзеркаленная?
         /// </summary>
-        internal static bool  Player_TextureFlipped = false;
+        internal static bool Player_TextureFlipped = false;
+
+        /// <summary>
+        /// Таймер атаки (0-1)
+        /// </summary>
+        internal static float Player_AttackTimer = 0;
+
+        /// <summary>
+        /// Направление атаки
+        /// </summary>
+        internal static Direction4 Player_AttackDirection;
         
         /// <summary>
         /// Рендерить коллизии?
@@ -278,9 +298,19 @@ internal static class GOLUWorld_Values{
         internal static float World_AnimationTimer = 0;
         
         /// <summary>
+        /// Течение
+        /// </summary>
+        internal static Vector2F World_Flow = Vector2F.Zero;
+
+        /// <summary>
+        /// Максимальная скорость течения
+        /// </summary>
+        internal const float World_FlowMax = 2;
+        
+        /// <summary>
         /// Все декали в мире
         /// </summary>
-        internal static readonly List<(int, int, T_Decal, TextureRotation)> World_Decals = [];
+        internal static readonly List<Decal> World_Decals = [];
         
         /// <summary>
         /// Все блоки в мире

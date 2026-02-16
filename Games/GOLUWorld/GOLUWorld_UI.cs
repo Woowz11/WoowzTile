@@ -176,14 +176,7 @@ internal static class GOLUWorld_UI{
             T_Item Item = Player_Inventory[ID];
     
             if(Item != 0){
-                Texture ItemTexture = Item switch{
-                    T_Item.FirstAidKit => Texture_FirstAidKit_Icon,
-                    T_Item.GPS         => Texture_GPS_Icon,
-                    
-                    var _ => Texture_Error_Icon
-                };
-        
-                ItemTexture.Render(C, Palette_Default, X__ + 1, Y__ + 1);
+                Info_Item_Icon(Item).Render(C, Palette_Default, X__ + 1, Y__ + 1);
             }
         }
         
@@ -214,18 +207,11 @@ internal static class GOLUWorld_UI{
                 if(Item != T_Item.Empty){
                     string Name = Info_Item_Name(Item);
                     
-                    string Description = Item switch{
-                        T_Item.FirstAidKit => "ЛЕЧИТ БЕДНЫЙ КУБИК ГУЛУ (+ с50)",
-                        T_Item.GPS => "ЕСЛИ ДЕРЖАТЬ В РУКАХ,\nПОКАЗЫВАЕТ КАРТУ",
-                        
-                        var _ => "О БОЖЕ ЧТО ЭТО ТАКОЕ?"
-                    };
-                    
                     Font_Default.Render(C, Palette_Default, "[" + (byte)Item + "] " + Name, 20 + 2, 110 + 2);
                     
                     C.Fill(20, 110 + 11, C.Width - 40, 1, ColorB.Black);
                     
-                    Font_Default.Render(C, Palette_Default, Description, 20 + 2, 110 + 2 + 11);
+                    Font_Default.Render(C, Palette_Default, Info_Item_Description(Item), 20 + 2, 110 + 2 + 11);
                 }
                 break;
             }
@@ -338,5 +324,5 @@ internal static class GOLUWorld_UI{
     /// <summary>
     /// Название окна
     /// </summary>
-    internal static string UI_WindowTitle => Emotion_Happiness + " | " + Player_InteractingCollision + " (" + Player_CollisionInfo1 + ", " + Player_CollisionInfo2 + ", " + Player_CollisionInfo3 + ") | " + World_Seed + " | " + Cheat_IgnoreColliders + " | " + World_Time + " (" + World_DayPhase + ")";
+    internal static string UI_WindowTitle => Emotion_Happiness + " | " + Player_InteractingCollision + " (" + Player_CollisionInfo1 + ", " + Player_CollisionInfo2 + ", " + Player_CollisionInfo3 + ") | " + World_Seed + " | " + Cheat_IgnoreColliders + " | " + World_Time + " (" + World_DayPhase + ") | " + World_Flow + " | " + Player_AttackTimer;
 }

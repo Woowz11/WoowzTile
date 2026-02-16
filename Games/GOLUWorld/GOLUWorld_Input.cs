@@ -61,59 +61,64 @@ internal static class GOLUWorld_Input{
                 if(!Player_Dead){
                     if(Key == Key.Tab){ UI_Interface = UI_Interface == T_Interface.None ? T_Interface.Inventory : T_Interface.None; }
                     
-                    if(__Enter){ UseItem(); }
-                    
-                    if(Key == Key.E){ Use(); }
+                    if(__Enter){ Player_ItemUse(); }
 
-                    if(Key == Key.Backspace){
-                        T_Item Item = Player_ItemInHands;
-                        if(Item != T_Item.Empty){
-                            World_SpawnItem(Coordinates_WorldPlayer.X, Coordinates_WorldPlayer.Y, Item);
-                            Player_ItemInHands = T_Item.Empty;
+                    if(UI_Interface == T_Interface.None){
+                        if(Key is Key.Right or Key.Left or Key.Up or Key.Down){
+                            Player_ItemUse(Key switch{
+                                Key.Right => Direction4.Right,
+                                Key.Left  => Direction4.Left,
+                                Key.Up    => Direction4.Up,
+                                Key.Down  => Direction4.Down
+                            });
                         }
                     }
                     
+                    if(Key == Key.E){ Use(); }
+
+                    if(Key == Key.Backspace){ Player_ItemDrop(); }
+                    
                     switch(Key){
                         case Key.D1:
-                            Player_InventorySelectedSlot = 0;
+                            Player_ItemSwitch(0);
                             break;
                         case Key.D2:
-                            Player_InventorySelectedSlot = 1;
+                            Player_ItemSwitch(1);
                             break;
                         case Key.D3:
-                            Player_InventorySelectedSlot = 2;
+                            Player_ItemSwitch(2);
                             break;
                         case Key.D4:
-                            Player_InventorySelectedSlot = 3;
+                            Player_ItemSwitch(3);
                             break;
                         case Key.D5:
-                            Player_InventorySelectedSlot = 4;
+                            Player_ItemSwitch(4);
                             break;
                         case Key.D6:
-                            Player_InventorySelectedSlot = 5;
+                            Player_ItemSwitch(5);
                             break;
                         case Key.D7:
-                            Player_InventorySelectedSlot = 6;
+                            Player_ItemSwitch(6);
                             break;
                         case Key.D8:
-                            Player_InventorySelectedSlot = 7;
+                            Player_ItemSwitch(7);
                             break;
                         case Key.D9:
-                            Player_InventorySelectedSlot = 8;
+                            Player_ItemSwitch(8);
                             break;
                         case Key.D0:
-                            Player_InventorySelectedSlot = 9;
+                            Player_ItemSwitch(9);
                             break;
                         case Key.Minus:
-                            Player_InventorySelectedSlot = 10;
+                            Player_ItemSwitch(10);
                             break;
                         case Key.Plus:
-                            Player_InventorySelectedSlot = 11;
+                            Player_ItemSwitch(11);
                             break;
                     }
                 }
 
-                if(UI_Interface == T_Interface.Inventory){
+                if(UI_Interface == T_Interface.Inventory && Player_AttackTimer <= 0){
                     byte OldSelectedItem = Player_InventorySelectedSlot;
                     
                     if(__Right){

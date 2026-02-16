@@ -224,15 +224,8 @@ internal static class GOLUWorld_Render{
     /// Рендерит декали
     /// </summary>
     internal static void Render_Decals(Image.ImageContext C){
-        foreach((int, int, T_Decal, TextureRotation) Track in World_Decals){
-            Texture DecalTexture = Track.Item3 switch{
-                T_Decal.FootStep => Texture_FootStep,
-                T_Decal.Blood    => Texture_Blood,
-                T_Decal.Zero     => Texture_Zero,
-                T_Decal.One      => Texture_One
-            };
-            
-            Render_RenderQueue_Add(C, new Renderable{ Texture = DecalTexture, Palette = Palette_Default, X = Coordinates_World.X + Track.Item1, Y = Coordinates_World.Y + Track.Item2, Rotation = Track.Item4, Z = Render_Layer_VeryBottom + 2});
+        foreach(Decal Decal in World_Decals){
+            Render_RenderQueue_Add(C, new Renderable{ Texture = Info_Decal_Texture(Decal.ID), Palette = Palette_Default, X = Coordinates_World.X + Decal.X, Y = Coordinates_World.Y + Decal.Y, Rotation = Decal.Rotation, Z = Render_Layer_VeryBottom + 2});
         }
     }
 
@@ -333,14 +326,45 @@ internal static class GOLUWorld_Render{
         }
         
         int __PlayerZ = 0;
-        void __RenderPlayerPart(Texture T, ColorB? Color, int OffsetY = 0, Texture? UniqueReflectionTexture = null){
-            Render_RenderQueue_Add(C, new Renderable{ Texture = T, Palette = Palette_Default, X = Coordinates_Player.X, Y = Coordinates_Player.Y, FlipX = Player_TextureFlipped, MultiplyColor = Color, Z = Render_Layer_Object(Coordinates_Player.Y - Coordinates_World.Y + 1) + __PlayerZ, Reflect = true, ReflectTexture = UniqueReflectionTexture}, OffsetY);
+        void __RenderPlayerPart(Texture T, ColorB? Color, int OffsetX = 0, int OffsetY = 0, Texture? UniqueReflectionTexture = null, TextureRotation Rotation = TextureRotation.None){
+            Render_RenderQueue_Add(C, new Renderable{ Texture = T, Palette = Palette_Default, X = Coordinates_Player.X + OffsetX, Y = Coordinates_Player.Y, FlipX = Player_TextureFlipped, MultiplyColor = Color, Z = Render_Layer_Object(Coordinates_Player.Y - Coordinates_World.Y + 1) + __PlayerZ, Reflect = true, ReflectTexture = UniqueReflectionTexture, Rotation = Rotation}, OffsetY);
             __PlayerZ++;
         }
         
         T_Item Item = Player_ItemInHands;
         if(Item != T_Item.Empty){
-            __RenderPlayerPart(Info_Item_Texture(Item), null, -11);
+            int __OffsetX = 0;
+            int __OffsetY = -11;
+            TextureRotation RotateItem = TextureRotation.None;
+
+            if(Player_AttackTimer > 0){
+                const int AttackDistance = 13;
+
+                switch(Player_AttackDirection){
+                    case Direction4.Right:
+                        __OffsetX = AttackDistance;
+                        __OffsetY = (int)WL.Math.Lerp(-AttackDistance, AttackDistance, Player_AttackTimer);
+                        RotateItem = TextureRotation.Rotate270;
+                        break;
+                    case Direction4.Left:
+                        __OffsetX = -AttackDistance;
+                        __OffsetY = (int)WL.Math.Lerp(AttackDistance, -AttackDistance, Player_AttackTimer);
+                        RotateItem = TextureRotation.Rotate90;
+                        break;
+                    case Direction4.Up:
+                        __OffsetX = (int)WL.Math.Lerp(-AttackDistance, AttackDistance, Player_AttackTimer);
+                        __OffsetY = -AttackDistance;
+                        RotateItem = TextureRotation.None;
+                        break;
+                    case Direction4.Down:
+                        __OffsetX = (int)WL.Math.Lerp(AttackDistance, -AttackDistance, Player_AttackTimer);
+                        __OffsetY = AttackDistance;
+                        RotateItem = TextureRotation.Rotate180;
+                        break;
+                }
+            }
+            
+            __RenderPlayerPart(Info_Item_Texture(Item), null, __OffsetX, __OffsetY, Rotation: RotateItem);
         }
     
         ColorB PlayerColor = ColorB.Lerp(ColorB.White, ColorB.DarkRed, WL.Math.Clamp01((Player_Rotting - 2) / 50));

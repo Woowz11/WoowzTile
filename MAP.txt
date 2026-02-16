@@ -3,9 +3,10 @@
 ['A'] = 3,
 ['B'] = 4,
 ['S'] = 5,
-['W'] = 6
-['Д'] = 7
-['^'] = 8
+['W'] = 6,
+['Д'] = 7,
+['^'] = 8,
+['П'] = 9,
 
 new KeyValuePair<byte, ColorB>(1 , ColorB.Transparent),
 new KeyValuePair<byte, ColorB>(2 , ColorB.Black),
@@ -14,4 +15,5 @@ new KeyValuePair<byte, ColorB>(4 , ColorB.Gray),
 new KeyValuePair<byte, ColorB>(5 , ColorB.LightGray),
 new KeyValuePair<byte, ColorB>(6 , ColorB.Red),
 new KeyValuePair<byte, ColorB>(7 , ColorB.Green.SetA(128)),
-new KeyValuePair<byte, ColorB>(8 , ColorB.Green)
+new KeyValuePair<byte, ColorB>(8 , ColorB.Green),
+new KeyValuePair<byte, ColorB>(9 , ColorB.LightGray.SetA(128)),

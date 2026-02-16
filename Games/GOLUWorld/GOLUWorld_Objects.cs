@@ -17,6 +17,7 @@ internal static class GOLUWorld_Objects{
      * 'b' - Чёрный блок (блок)
      * '^' - Трава (пол)
      * 'Д' - [ГЕНЕРАТОР] Случайно, трава или пустота
+     * 'П' - [ГЕНЕРАТОР] Случайно, песок или пустота
      *
      * Сущности:
      * '_' - Пустота
@@ -28,7 +29,7 @@ internal static class GOLUWorld_Objects{
      * '#' - Ящик (толкаемый блок)
      * '~' - Трава
      * '3' - Куст
-     * 'Д' - [ГЕНЕРАТОР] Случайно, дерево или трава или куст или пустота
+     * 'Д' - [ГЕНЕРАТОР] Случайно, дерево или трава или палка или куст или пустота
      * 'д' - [ГЕНЕРАТОР] Случайно, трава или камень или куст или пустота
      *
      * Коллизии:
@@ -71,7 +72,8 @@ internal static class GOLUWorld_Objects{
         Empty       = 0,
         FirstAidKit = 1,
         GPS         = 2,
-        Error       = 3
+        Error       = 3,
+        Stick       = 4
     }
 
     internal enum T_Interface : byte{
@@ -130,9 +132,10 @@ internal static class GOLUWorld_Objects{
     internal struct Block{
         public Block(){}
     
-        internal int     X  = 0;
-        internal int     Y  = 0;
-        internal T_Block ID = T_Block.Empty;
+        internal int     X    = 0;
+        internal int     Y    = 0;
+        internal T_Block ID   = T_Block.Empty;
+        internal byte    Info = 0;
     }
     
     internal struct Entity{
@@ -144,6 +147,15 @@ internal static class GOLUWorld_Objects{
         internal byte            Info       = 0;
         internal Vector2I        InfoVector = Vector2I.Zero;
         internal TextureRotation Rotation   = TextureRotation.None;
+    }
+    
+    internal struct Decal{
+        public Decal(){}
+
+        internal int             X        = 0;
+        internal int             Y        = 0;
+        internal T_Decal        ID        = T_Decal.FootStep;
+        internal TextureRotation Rotation = TextureRotation.None;
     }
     
     internal struct Renderable{
