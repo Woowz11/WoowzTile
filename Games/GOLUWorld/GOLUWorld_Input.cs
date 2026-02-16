@@ -6,6 +6,7 @@ using static GOLUWorld.GOLUWorld_Objects;
 using static GOLUWorld.GOLUWorld_World;
 using static GOLUWorld.GOLUWorld_Player;
 using static GOLUWorld.GOLUWorld_UI;
+using static GOLUWorld.GOLUWorld_Generator;
 
 namespace GOLUWorld;
 
@@ -35,6 +36,7 @@ internal static class GOLUWorld_Input{
                 if(Key == Key.I){ Cheat_Immortality = !Cheat_Immortality; }
                 if(Key == Key.X){ Cheat_IgnoreColliders = !Cheat_IgnoreColliders; }
                 if(Key == Key.F){ Cheat_FastTime = !Cheat_FastTime; }
+                if(Key == Key.B){ Cheat_DisableWorldLimit = !Cheat_DisableWorldLimit; }
                 if(Key == Key.Home){ Coordinates_Camera = Vector2F.Zero; }
 
                 void UpdSeed(){
@@ -46,8 +48,11 @@ internal static class GOLUWorld_Input{
                     if(Game.KeyPressed(Key.Control)){ World_Seed = World_GenerateNewSeed(); }
                 }
                 
-                if(Key == Key.F1){ UpdSeed(); StartLevel(T_Level.Calm); }
-                if(Key == Key.F2){ UpdSeed(); StartLevel(T_Level.Industrial); }
+                if(Key == Key.F1){ UpdSeed(); World_GoToWorld(T_World.Calm); }
+                if(Key == Key.F2){ UpdSeed(); World_GoToWorld(T_World.Industrial); }
+                if(Key == Key.F3){
+                    Generator_DebugStructure(Coordinates_WorldPlayer.X / 16, Coordinates_WorldPlayer.Y / 16);
+                }
 
                 if(Key == Key.Escape || (UI_Interface == T_Interface.Menu && UI_MenuSelectedButton == 0 && __Enter)){
                     if(UI_Interface == T_Interface.None){ UI_Interface = T_Interface.Menu; }else{ UI_Interface = T_Interface.None; UI_MenuSelectedButton = 0; }
@@ -63,7 +68,7 @@ internal static class GOLUWorld_Input{
                     if(Key == Key.Backspace){
                         T_Item Item = Player_ItemInHands;
                         if(Item != T_Item.Empty){
-                            SpawnItem(Coordinates_WorldPlayer.X, Coordinates_WorldPlayer.Y, Item);
+                            World_SpawnItem(Coordinates_WorldPlayer.X, Coordinates_WorldPlayer.Y, Item);
                             Player_ItemInHands = T_Item.Empty;
                         }
                     }

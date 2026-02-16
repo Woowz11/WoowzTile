@@ -5,6 +5,40 @@ using static GOLUWorld.GOLUWorld_Resources;
 namespace GOLUWorld;
 
 internal static class GOLUWorld_Objects{
+    /*
+     * Блоки:
+     * '_' - Пустота
+     * '#' - Блок металла (блок)
+     * ''' - Доски (пол)
+     * 'A' - Асфальт (пол)
+     * 'B' - Кирпичи (блок)
+     * 'S' - Песок (пол)
+     * 'W' - Вода (блок)
+     * 'b' - Чёрный блок (блок)
+     * '^' - Трава (пол)
+     * 'Д' - [ГЕНЕРАТОР] Случайно, трава или пустота
+     *
+     * Сущности:
+     * '_' - Пустота
+     * 'C' - Стул
+     * 'T' - Стол
+     * '^' - Шипы
+     * 's' - Паук (моб)
+     * '!' - Дерево
+     * '#' - Ящик (толкаемый блок)
+     * '~' - Трава
+     * '3' - Куст
+     * 'Д' - [ГЕНЕРАТОР] Случайно, дерево или трава или куст или пустота
+     * 'д' - [ГЕНЕРАТОР] Случайно, трава или камень или куст или пустота
+     *
+     * Коллизии:
+     * L1 - Мир и игрок
+     * L2 - Наносит урон если ходить в нём
+     * L3 - Наносит всегда урон
+     * L4 - Предмет
+     * L5 - Толкаемый блок
+     */
+    
     internal enum T_Block : byte{
         Empty          = 0,
         Metal          = 1,
@@ -29,13 +63,15 @@ internal static class GOLUWorld_Objects{
         Crate      = 7,
         Grass      = 8,
         Bush       = 9,
-        Error      = 10
+        Error      = 10,
+        Rock       = 11
     }
 
     internal enum T_Item : byte{
         Empty       = 0,
         FirstAidKit = 1,
-        GPS         = 2
+        GPS         = 2,
+        Error       = 3
     }
 
     internal enum T_Interface : byte{
@@ -45,10 +81,10 @@ internal static class GOLUWorld_Objects{
     }
 
     internal enum T_Decal : byte{
-        Track = 0,
-        Blood = 1,
-        Zero  = 2,
-        One   = 3
+        FootStep = 0,
+        Blood    = 1,
+        Zero     = 2,
+        One      = 3
     }
 
     internal enum T_Emotion : byte{
@@ -61,7 +97,7 @@ internal static class GOLUWorld_Objects{
         Heal   = 2
     }
 
-    internal enum T_Level : byte{
+    internal enum T_World : byte{
         None = 0,
     
         /* Спокойный уровень, чёрно-белый, больше белого, земляной покров, стены из металла и кирпичей */
@@ -113,19 +149,20 @@ internal static class GOLUWorld_Objects{
     internal struct Renderable{
         public Renderable(){}
         
-        internal int             X             = 0;
-        internal int             Y             = 0;
-        internal uint            W             = 0;
-        internal uint            H             = 0;
-        internal Palette         Palette       = Palette_World;
-        internal Texture         Texture       = Texture_Black;
-        internal TextureRotation Rotation      = TextureRotation.None;
-        internal RenderableType  Type          = RenderableType.Tile;
-        internal int             Z             = 0;
-        internal bool            FlipX         = false;
-        internal bool            FlipY         = false;
-        internal ColorB?         MultiplyColor = null;
-        internal bool            Reflect       = false;
+        internal int             X              = 0;
+        internal int             Y              = 0;
+        internal uint            W              = 0;
+        internal uint            H              = 0;
+        internal Palette         Palette        = Palette_World;
+        internal Texture         Texture        = Texture_Black;
+        internal TextureRotation Rotation       = TextureRotation.None;
+        internal RenderableType  Type           = RenderableType.Tile;
+        internal int             Z              = 0;
+        internal bool            FlipX          = false;
+        internal bool            FlipY          = false;
+        internal ColorB?         MultiplyColor  = null;
+        internal bool            Reflect        = false;
+        internal Texture?        ReflectTexture = null;
     }
     
     internal struct Structure{

@@ -26,7 +26,7 @@ internal static class GOLUWorld_Info{
             T_Item.FirstAidKit => Texture_FirstAidKit,
             T_Item.GPS         => Texture_GPS,
             
-            var _ => Texture_Debug
+            var _ => Texture_Error
         };
     }
 
@@ -36,6 +36,7 @@ internal static class GOLUWorld_Info{
         return Item switch{
             T_Item.FirstAidKit => "АПТЕЧКА",
             T_Item.GPS         => "GPS",
+            T_Item.Error       => "ОШИБКА",
             
             var _ => "ПРЕДМЕТ [" + (byte)Item + "]"
         };

@@ -173,6 +173,16 @@ internal static class GOLUWorld_Values{
         internal static T_Thoughts Player_ThoughtContext = T_Thoughts.Idle;
         
         /// <summary>
+        /// Таймер моргания игрока
+        /// </summary>
+        internal static float Player_BlinkTimer = 0;
+        
+        /// <summary>
+        /// Визуально текстура игрока отзеркаленная?
+        /// </summary>
+        internal static bool  Player_TextureFlipped = false;
+        
+        /// <summary>
         /// Рендерить коллизии?
         /// </summary>
         internal static bool Cheat_RenderColliders = false;
@@ -180,7 +190,7 @@ internal static class GOLUWorld_Values{
         /// <summary>
         /// Игрок бессмертный?
         /// </summary>
-        internal static bool Cheat_Immortality     = false;
+        internal static bool Cheat_Immortality = false;
         
         /// <summary>
         /// Игнорировать коллизии?
@@ -196,16 +206,12 @@ internal static class GOLUWorld_Values{
         /// Во сколько раз ускорить время
         /// </summary>
         internal static uint Cheat_FastTime_Value = 5;
-        
+
         /// <summary>
-        /// Таймер моргания игрока
+        /// Отключает лимит мира
         /// </summary>
-        internal static float Player_BlinkTimer = 0;
+        internal static bool Cheat_DisableWorldLimit = false;
         
-        /// <summary>
-        /// Визуально текстура игрока отзеркаленная?
-        /// </summary>
-        internal static bool  Player_TextureFlipped = false;
         
     #endregion
 
@@ -219,7 +225,7 @@ internal static class GOLUWorld_Values{
         /// <summary>
         /// Текущий уровень
         /// </summary>
-        internal static T_Level  World_Level = T_Level.None;
+        internal static T_World  World_Type = T_World.None;
         
         /// <summary>
         /// Размер мира
@@ -270,6 +276,21 @@ internal static class GOLUWorld_Values{
         /// Таймер анимаций
         /// </summary>
         internal static float World_AnimationTimer = 0;
+        
+        /// <summary>
+        /// Все декали в мире
+        /// </summary>
+        internal static readonly List<(int, int, T_Decal, TextureRotation)> World_Decals = [];
+        
+        /// <summary>
+        /// Все блоки в мире
+        /// </summary>
+        internal static readonly Dictionary<Vector2I, Block> World_Blocks = [];
+        
+        /// <summary>
+        /// Все сущности в мире
+        /// </summary>
+        internal static readonly Dictionary<EntityKey, Entity> World_Entities = [];
         
     #endregion
 

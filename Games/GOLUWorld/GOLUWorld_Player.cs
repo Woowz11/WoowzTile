@@ -63,7 +63,7 @@ internal static class GOLUWorld_Player{
         
         Player_Health = WL.Math.SubU(Player_Health, Damage);
 
-        SplatBlood(Coordinates_Player.X - Coordinates_World.X + WL.Math.Random.Fast_Int(-Range, Range), Coordinates_Player.Y - Coordinates_World.Y + WL.Math.Random.Fast_Int(-Range, Range));
+        World_SpatterBlood(Coordinates_Player.X - Coordinates_World.X + WL.Math.Random.Fast_Int(-Range, Range), Coordinates_Player.Y - Coordinates_World.Y + WL.Math.Random.Fast_Int(-Range, Range));
 
         EmotionChange(T_Emotion.Happiness, -(int)Damage * 2);
 
@@ -119,7 +119,7 @@ internal static class GOLUWorld_Player{
         if(Player_InteractingCollision == CollisionLayer.L4){
             T_Item Item = (T_Item)Player_CollisionInfo1;
             if(Item != T_Item.Empty){
-                if(AddToInventory(Item)){ __Entities.Remove(new EntityKey(Player_CollisionInfo2, (uint)Player_CollisionInfo3)); }
+                if(AddToInventory(Item)){ World_Entities.Remove(new EntityKey(Player_CollisionInfo2, (uint)Player_CollisionInfo3)); }
             }
         }
     }

@@ -31,7 +31,7 @@ internal static class GOLUWorld_Render{
     /// <summary>
     /// Добавляет элемент в рендер цикл
     /// </summary>
-    internal static void AddToRender(Image.ImageContext C, Renderable R, int OffsetY = 0){
+    internal static void Render_RenderQueue_Add(Image.ImageContext C, Renderable R, int OffsetY = 0){
         R.Y += OffsetY;
             
         const int BorderOffset = 5 * 16;
@@ -44,17 +44,26 @@ internal static class GOLUWorld_Render{
             __RenderQueue.Add(R);
 
             if(R.Reflect){
-                R.FlipY = !R.FlipY;
-                R.X += (int)(R.Texture.Width  / 2   );
-                R.Y += (int)(R.Texture.Height * 1.5f) - OffsetY * 2;
-
-                ColorB __ReflectColor = R.MultiplyColor ?? ColorB.White;
-                __ReflectColor.SetA(128);
-                R.MultiplyColor = __ReflectColor;
-                    
-                __RenderQueue_Water.Add(R);
+                Render_RenderQueue_Water_Add(R, OffsetY);
             }
         }
+    }
+
+    /// <summary>
+    /// Добавляет элемент в рендер цикл воды
+    /// </summary>
+    internal static void Render_RenderQueue_Water_Add(Renderable R, int OffsetY = 0){
+        R.FlipY = !R.FlipY;
+        R.X += (int)(R.Texture.Width  / 2   );
+        R.Y += (int)(R.Texture.Height * 1.5f) - OffsetY * 2;
+
+        ColorB __ReflectColor = R.MultiplyColor ?? ColorB.White;
+        __ReflectColor.SetA(128);
+        R.MultiplyColor = __ReflectColor;
+
+        if(R.ReflectTexture != null){ R.Texture = R.ReflectTexture; }
+                
+        __RenderQueue_Water.Add(R);
     }
     
     /// <summary>
@@ -176,7 +185,7 @@ internal static class GOLUWorld_Render{
             for(int X__ = -1; X__ < 16; X__++){
                 int __X = X__ * 16 + __OffsetX;
                 int __Y = Y__ * 16 + __OffsetY;
-                AddToRender(C, new Renderable{ Texture = Texture_Ground, X = __X, Y = __Y, Z = Render_Layer_VeryBottom });
+                Render_RenderQueue_Add(C, new Renderable{ Texture = Texture_Ground, X = __X, Y = __Y, Z = Render_Layer_VeryBottom });
             }
         }
     }
@@ -185,17 +194,17 @@ internal static class GOLUWorld_Render{
     /// Рендерит блоки
     /// </summary>
     internal static void Render_Blocks(Image.ImageContext C){
-        foreach(Block Block in __Blocks.Values){
+        foreach(Block Block in World_Blocks.Values){
             if(Block.ID is T_Block.Ground_Planks or T_Block.Ground_Asphalt or T_Block.Ground_Sand or T_Block.Water or T_Block.Ground_Grass){
                 Texture BlockTexture = Block.ID switch{
                     T_Block.Ground_Planks  => Texture_Planks,
                     T_Block.Ground_Asphalt => Texture_Asphalt,
                     T_Block.Ground_Sand    => Texture_Sand,
-                    T_Block.Water          => (__Blocks.TryGetValue(new Vector2I(Block.X, Block.Y - 16), out Block __Found) && __Found.ID == Block.ID ? Texture_Water : Texture_Water_Top),
+                    T_Block.Water          => (World_Blocks.TryGetValue(new Vector2I(Block.X, Block.Y - 16), out Block __Found) && __Found.ID == Block.ID ? Texture_Water : Texture_Water_Top),
                     T_Block.Ground_Grass   => Texture_Grass,
                 };
                 
-                AddToRender(C, new Renderable{Texture = BlockTexture, X = Coordinates_World.X + Block.X, Y = Coordinates_World.Y + Block.Y, Z = Render_Layer_VeryBottom + 1});
+                Render_RenderQueue_Add(C, new Renderable{Texture = BlockTexture, X = Coordinates_World.X + Block.X, Y = Coordinates_World.Y + Block.Y, Z = Render_Layer_VeryBottom + 1});
             }
             
             if(Block.ID is T_Block.Metal or T_Block.Bricks or T_Block.Black or T_Block.Error){
@@ -203,10 +212,10 @@ internal static class GOLUWorld_Render{
                     T_Block.Metal  => Texture_Metal,
                     T_Block.Bricks => Texture_Bricks,
                     T_Block.Black  => Texture_Black,
-                    T_Block.Error  => Texture_Debug
+                    T_Block.Error  => Texture_Error
                 };
                 
-                AddToRender(C, new Renderable{ Texture = BlockTexture, X = Coordinates_World.X + Block.X, Y = Coordinates_World.Y + Block.Y, Z = Render_Layer_Object(Block.Y)});
+                Render_RenderQueue_Add(C, new Renderable{ Texture = BlockTexture, X = Coordinates_World.X + Block.X, Y = Coordinates_World.Y + Block.Y, Z = Render_Layer_Object(Block.Y)});
             }
         }
     }
@@ -215,15 +224,15 @@ internal static class GOLUWorld_Render{
     /// Рендерит декали
     /// </summary>
     internal static void Render_Decals(Image.ImageContext C){
-        foreach((int, int, T_Decal, TextureRotation) Track in __Decals){
+        foreach((int, int, T_Decal, TextureRotation) Track in World_Decals){
             Texture DecalTexture = Track.Item3 switch{
-                T_Decal.Track => Texture_Track,
-                T_Decal.Blood => Texture_Blood,
-                T_Decal.Zero  => Texture_Zero,
-                T_Decal.One   => Texture_One
+                T_Decal.FootStep => Texture_FootStep,
+                T_Decal.Blood    => Texture_Blood,
+                T_Decal.Zero     => Texture_Zero,
+                T_Decal.One      => Texture_One
             };
             
-            AddToRender(C, new Renderable{ Texture = DecalTexture, Palette = Palette_Default, X = Coordinates_World.X + Track.Item1, Y = Coordinates_World.Y + Track.Item2, Rotation = Track.Item4, Z = Render_Layer_VeryBottom + 2});
+            Render_RenderQueue_Add(C, new Renderable{ Texture = DecalTexture, Palette = Palette_Default, X = Coordinates_World.X + Track.Item1, Y = Coordinates_World.Y + Track.Item2, Rotation = Track.Item4, Z = Render_Layer_VeryBottom + 2});
         }
     }
 
@@ -231,10 +240,10 @@ internal static class GOLUWorld_Render{
     /// Рендерит сущностей
     /// </summary>
     internal static void Render_Entities(Image.ImageContext C){
-         foreach(Entity Entity in __Entities.Values){
+         foreach(Entity Entity in World_Entities.Values){
             int? __ReflectOffsetY = Info_Entity_Reflect(Entity.ID);
             
-            if(Entity.ID is T_Entity.Chair or T_Entity.Table or T_Entity.Spikes or T_Entity.Tree or T_Entity.Item or T_Entity.Crate or T_Entity.Grass or T_Entity.Bush or T_Entity.Error){
+            if(Entity.ID is T_Entity.Chair or T_Entity.Table or T_Entity.Spikes or T_Entity.Tree or T_Entity.Item or T_Entity.Crate or T_Entity.Grass or T_Entity.Bush or T_Entity.Error or T_Entity.Rock){
                 Texture EntityTexture = Entity.ID switch{
                     T_Entity.Chair  => Texture_Chair,
                     T_Entity.Table  => Texture_Table,
@@ -244,7 +253,8 @@ internal static class GOLUWorld_Render{
                     T_Entity.Crate  => Texture_Crate,
                     T_Entity.Grass  => Texture_TallGrass,
                     T_Entity.Bush   => Texture_Bush,
-                    T_Entity.Error  => Texture_Debug
+                    T_Entity.Error  => Texture_Error,
+                    T_Entity.Rock   => Texture_Rock
                 };
 
                 bool __Top = false;
@@ -264,7 +274,7 @@ internal static class GOLUWorld_Render{
 
                 bool BottomRenderLayer = Entity.ID is T_Entity.Spikes;
 
-                AddToRender(C, new Renderable{ Texture = EntityTexture, Palette = Palette_Default, X = Coordinates_World.X + Entity.X + OffsetX, Y = Coordinates_World.Y + Entity.Y + OffsetY, Rotation = Entity.Rotation, Z = (BottomRenderLayer ? Render_Layer_VeryBottom + 3 : Render_Layer_Object(Entity.Y) + (__Top ? 1 : 0)), Reflect = __ReflectOffsetY.HasValue}, __ReflectOffsetY ?? 0);
+                Render_RenderQueue_Add(C, new Renderable{ Texture = EntityTexture, Palette = Palette_Default, X = Coordinates_World.X + Entity.X + OffsetX, Y = Coordinates_World.Y + Entity.Y + OffsetY, Rotation = Entity.Rotation, Z = (BottomRenderLayer ? Render_Layer_VeryBottom + 3 : Render_Layer_Object(Entity.Y) + (__Top ? 1 : 0)), Reflect = __ReflectOffsetY.HasValue}, __ReflectOffsetY ?? 0);
 
                 if(Entity.ID == T_Entity.Tree){
                     void __RenderLeaves(int X__, int Y__){
@@ -276,7 +286,7 @@ internal static class GOLUWorld_Render{
 
                         __X__ += (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.X + __X__) * 432) * 2);
                         __Y__ += (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.Y + __Y__) * 12) * 2);
-                        AddToRender(C, new Renderable{ Texture = Texture_Tree_Leaves, Palette = Palette_Default, X = Coordinates_World.X + Entity.X + __X__, Y = Coordinates_World.Y + Entity.Y + __Y__, Rotation = Entity.Rotation, Z = Render_Layer_Object(Entity.Y) + (X__ + Y__)});
+                        Render_RenderQueue_Add(C, new Renderable{ Texture = Texture_Tree_Leaves, Palette = Palette_Default, X = Coordinates_World.X + Entity.X + __X__, Y = Coordinates_World.Y + Entity.Y + __Y__, Rotation = Entity.Rotation, Z = Render_Layer_Object(Entity.Y) + (X__ + Y__)});
                     }
                     __RenderLeaves(0, 0);
                     __RenderLeaves(2, 0);
@@ -297,7 +307,7 @@ internal static class GOLUWorld_Render{
                     OffsetY = 8;
                 }
                 
-                AddToRender(C, new Renderable{ Texture = EntityTexture, Palette = Palette_Default, X = Coordinates_World.X + Entity.X - OffsetX, Y = Coordinates_World.Y + Entity.Y - OffsetY, Rotation = Entity.Rotation, Z = Render_Layer_Top(Entity.Y), Reflect = __ReflectOffsetY.HasValue}, __ReflectOffsetY ?? 0);
+                Render_RenderQueue_Add(C, new Renderable{ Texture = EntityTexture, Palette = Palette_Default, X = Coordinates_World.X + Entity.X - OffsetX, Y = Coordinates_World.Y + Entity.Y - OffsetY, Rotation = Entity.Rotation, Z = Render_Layer_Top(Entity.Y), Reflect = __ReflectOffsetY.HasValue}, __ReflectOffsetY ?? 0);
             }
         }
     }
@@ -323,8 +333,8 @@ internal static class GOLUWorld_Render{
         }
         
         int __PlayerZ = 0;
-        void __RenderPlayerPart(Texture T, ColorB? Color, int OffsetY = 0){
-            AddToRender(C, new Renderable{ Texture = T, Palette = Palette_Default, X = Coordinates_Player.X, Y = Coordinates_Player.Y, FlipX = Player_TextureFlipped, MultiplyColor = Color, Z = Render_Layer_Object(Coordinates_Player.Y - Coordinates_World.Y + 1) + __PlayerZ, Reflect = true}, OffsetY);
+        void __RenderPlayerPart(Texture T, ColorB? Color, int OffsetY = 0, Texture? UniqueReflectionTexture = null){
+            Render_RenderQueue_Add(C, new Renderable{ Texture = T, Palette = Palette_Default, X = Coordinates_Player.X, Y = Coordinates_Player.Y, FlipX = Player_TextureFlipped, MultiplyColor = Color, Z = Render_Layer_Object(Coordinates_Player.Y - Coordinates_World.Y + 1) + __PlayerZ, Reflect = true, ReflectTexture = UniqueReflectionTexture}, OffsetY);
             __PlayerZ++;
         }
         
@@ -338,7 +348,7 @@ internal static class GOLUWorld_Render{
         __RenderPlayerPart(PlayerBody, PlayerColor);
         __RenderPlayerPart(PlayerNose, PlayerColor);
         __RenderPlayerPart(PlayerMouth, PlayerColor);
-        __RenderPlayerPart(PlayerEyes, PlayerColor);
+        __RenderPlayerPart(PlayerEyes, PlayerColor, UniqueReflectionTexture: Texture_Player_Eyes_Reflection);
 
         if(Player_Health < Player_HealthLow * 2){
             Texture PlayerBlood = Player_Health < Player_HealthLow ? Texture_Player_Blood_Strong : Texture_Player_Blood;
@@ -394,7 +404,7 @@ internal static class GOLUWorld_Render{
                     if(Color == __WaterShaderColor_Dark){ Result -= new ColorB(64, 64, 64); }
                 }
 
-                if(PX <= -World_BlocksSize.X || PX >= World_BlocksSize.X || PY <= -World_BlocksSize.Y || PY >= World_BlocksSize.Y){
+                if((PX <= -World_BlocksSize.X || PX >= World_BlocksSize.X || PY <= -World_BlocksSize.Y || PY >= World_BlocksSize.Y) && !Cheat_DisableWorldLimit){
                     int DistanceX = 0;
                     int DistanceY = 0;
 
@@ -427,7 +437,7 @@ internal static class GOLUWorld_Render{
         if(Player_InteractingCollision == CollisionLayer.L4){
             T_Item ItemOnGround = (T_Item)Player_CollisionInfo1;
             if(ItemOnGround != T_Item.Empty){
-                Entity ItemOnGroundEntity = __Entities[new EntityKey(Player_CollisionInfo2, (uint)Player_CollisionInfo3)];
+                Entity ItemOnGroundEntity = World_Entities[new EntityKey(Player_CollisionInfo2, (uint)Player_CollisionInfo3)];
                 string ItemName__ = Info_Item_Name(ItemOnGround);
                 Vector2U ItemNameSize__ = Font_Default.TextSize(ItemName__);
                 int X__ = ItemOnGroundEntity.X + Coordinates_World.X - (int)(ItemNameSize__.X / 2) + (16 / 2);

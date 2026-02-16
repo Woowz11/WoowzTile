@@ -16,7 +16,7 @@ internal static class GOLUWorld_UI{
     /// Открывает главное меню
     /// </summary>
     internal static void UI_GoToMainMenu(){
-        StartLevel(T_Level.None);
+        World_GoToWorld(T_World.None);
         
         UI_InMainMenu = true;
         UI_Interface = T_Interface.None;
@@ -30,7 +30,7 @@ internal static class GOLUWorld_UI{
         if(UI_Interface == T_Interface.None){
             switch(UI_MenuSelectedButton){
                 case 0:
-                case 1: GOLUWorld.StartGame(); break;
+                case 1: World_Start(); break;
                 case 2:{
                     UI_Interface = (T_Interface)1;
                     break;
@@ -118,8 +118,9 @@ internal static class GOLUWorld_UI{
             "[I] - БЕССМЕРТИЕ iс",
             "[X] - ИГНОРИРОВАТЬ КОЛЛАЙДЕРЫ",
             "[F] - БЫСТРОЕ ВРЕМЯ",
+            "[B] - ОТКЛЮЧАЕТ ГРАНИЦЫ",
             "[HOME] - ТЕЛЕПОРТ В ЦЕНТР",
-            "[F1,F2] - ТЕСТОВОЕ",
+            "[F1,F2,F3] - ТЕСТОВОЕ",
             "",
             "[ДВИЖЕНИЕ + SHIFT] - ДВИГАТЬ ПРЕДМЕТЫ\nВ ИНВЕНТОРЕ"
         ];
@@ -127,7 +128,7 @@ internal static class GOLUWorld_UI{
         for(int i = 0; i < HelpInfo.Length; i++){
             string HelpInfoMessage = HelpInfo[i];
                 
-            Font_Default.Render(C, Palette_Default, HelpInfoMessage, 30, 15 + i * 12);
+            Font_Default.Render(C, Palette_Default, HelpInfoMessage, 30, 5 + i * 9);
         }
             
         UI_EasyButton(C, 0, "ОБРАТНО", (int)(C.Width / 2 - Font_Default.TextSize("ОБРАТНО").X / 2), 150 + (5 * 13), true);
@@ -179,7 +180,7 @@ internal static class GOLUWorld_UI{
                     T_Item.FirstAidKit => Texture_FirstAidKit_Icon,
                     T_Item.GPS         => Texture_GPS_Icon,
                     
-                    var _ => Texture_Debug
+                    var _ => Texture_Error_Icon
                 };
         
                 ItemTexture.Render(C, Palette_Default, X__ + 1, Y__ + 1);
@@ -249,13 +250,13 @@ internal static class GOLUWorld_UI{
                 C.Fill(__X, __Y, Size, Size, Color);
                 return new Vector2I(__X, __Y);
             }
-            const uint MapSize = 180;
+            const uint GPSSize = 180;
             
-            Vector2I MapOffset = __RenderCenterPanel(MapSize, World_BackgroundColor);
+            Vector2I GPSOffset = __RenderCenterPanel(GPSSize, World_BackgroundColor);
 
-            void __MapPixel(int X__, int Y__, ColorB Color, bool Fixed = false){
-                uint __X = (uint)MapOffset.X;
-                uint __Y = (uint)MapOffset.Y;
+            void __GPSPixel(int X__, int Y__, ColorB Color, bool Fixed = false){
+                uint __X = (uint)GPSOffset.X;
+                uint __Y = (uint)GPSOffset.Y;
 
                 if(!Fixed){
                     X__ += (int)Coordinates_Camera.X;
@@ -265,58 +266,77 @@ internal static class GOLUWorld_UI{
                     Y__ = (int)WL.Math.Floor((float)Y__ / 16);
                 }
                 
-                X__ += (int)MapSize / 2;
-                Y__ += (int)MapSize / 2;
+                X__ += (int)GPSSize / 2;
+                Y__ += (int)GPSSize / 2;
             
                 __X += (uint)X__;
                 __Y += (uint)Y__;   
                 
-                if(__X < MapOffset.X || __Y < MapOffset.Y || __X > MapOffset.X + MapSize - 1 || __Y > MapOffset.Y + MapSize - 1){ return; }
-                
-                C[__X, __Y] = Color;
+                if(__X < GPSOffset.X || __Y < GPSOffset.Y || __X > GPSOffset.X + GPSSize - 1 || __Y > GPSOffset.Y + GPSSize - 1){ return; }
+
+                C.SetPixel(__X, __Y, Color, ImageBlend.Alpha);
             }
             
-            foreach(Block Block in __Blocks.Values){
+            foreach(Block Block in World_Blocks.Values){
                 ColorB BlockColor = Palette_World[MapBlocksColor.GetValueOrDefault(Block.ID, (byte)1)];
-                __MapPixel(Block.X, Block.Y, BlockColor);
+                __GPSPixel(Block.X, Block.Y, BlockColor);
             }
 
-            foreach(Entity Entity in __Entities.Values){
+            foreach(Entity Entity in World_Entities.Values){
                 byte __PaletteIndex = MapEntitiesColor.GetValueOrDefault(Entity.ID, (byte)0);
                 if(__PaletteIndex == 0){ continue; }
                 ColorB EntityColor = Palette_World[__PaletteIndex];
-                __MapPixel(Entity.X, Entity.Y, EntityColor);
+                __GPSPixel(Entity.X, Entity.Y, EntityColor);
 
                 if(Entity.ID == T_Entity.Tree){
-                    __MapPixel(Entity.X, Entity.Y + 16, EntityColor);
-                    __MapPixel(Entity.X, Entity.Y + 16 * 2, EntityColor);
+                    __GPSPixel(Entity.X, Entity.Y + 16, EntityColor);
+                    __GPSPixel(Entity.X, Entity.Y + 16 * 2, EntityColor);
                 }
             }
             
-            for(int __Y__ = -(int)MapSize/2; __Y__ < MapSize/2; __Y__++){
-                for(int __X__ = -(int)MapSize/2; __X__ < MapSize/2; __X__++){
+            for(int __Y__ = -(int)GPSSize/2; __Y__ < GPSSize/2; __Y__++){
+                for(int __X__ = -(int)GPSSize/2; __X__ < GPSSize/2; __X__++){
                     int PX = Coordinates_Player.X - Coordinates_World.X + __X__ * 16;
                     int PY = Coordinates_Player.Y - Coordinates_World.Y + __Y__ * 16;
 
-                    if(PX <= -World_BlocksSize.X || PX >= World_BlocksSize.X || PY <= -World_BlocksSize.Y || PY >= World_BlocksSize.Y){ __MapPixel(__X__, __Y__, new ColorB((byte)WL.Math.Random.Fast_Int(128, 255)), true); }
+                    if((PX <= -World_BlocksSize.X || PX >= World_BlocksSize.X || PY <= -World_BlocksSize.Y || PY >= World_BlocksSize.Y) && !Cheat_DisableWorldLimit){
+                        int DistanceX = 0;
+                        int DistanceY = 0;
+
+                        if(PX < -World_BlocksSize.X){ DistanceX = -(int)World_BlocksSize.X - PX; }else if(PX > World_BlocksSize.X){ DistanceX = PX - (int)World_BlocksSize.X; }
+                        if(PY < -World_BlocksSize.Y){ DistanceY = -(int)World_BlocksSize.Y - PY; }else if(PY > World_BlocksSize.Y){ DistanceY = PY - (int)World_BlocksSize.Y; }
+
+                        int Distance = WL.Math.MaxI(DistanceX, DistanceY);
+
+                        const int FadeDistance = 128;
+
+                        float FadeFactor = WL.Math.Clamp01((float)Distance / FadeDistance);
+
+                        __GPSPixel(__X__, __Y__, new ColorB((byte)(WL.Math.Random.Fast_Int(128, 255)), 0, 0, (byte)(255 * FadeFactor)), true);
+                    }
                 }   
             }
 
-            void __MapPixelPlayer(int __X, int __Y) => __MapPixel(Coordinates_Player.X - Coordinates_World.X + __X * 16, Coordinates_Player.Y - Coordinates_World.Y + __Y * 16, ColorB.Blue);
-            __MapPixelPlayer(0, 1);
-            __MapPixelPlayer(0, 2);
-            __MapPixelPlayer(0, -1);
-            __MapPixelPlayer(0, -2);
-            __MapPixelPlayer(1, 0);
-            __MapPixelPlayer(2, 0);
-            __MapPixelPlayer(-1, 0);
-            __MapPixelPlayer(-2, 0);
+            void __GPSPixelPlayer(int __X, int __Y) => __GPSPixel(Coordinates_Player.X - Coordinates_World.X + __X * 16, Coordinates_Player.Y - Coordinates_World.Y + __Y * 16, ColorB.Blue);
+            __GPSPixelPlayer( 0,  1);
+            __GPSPixelPlayer( 0,  2);
+            __GPSPixelPlayer( 0, -1);
+            __GPSPixelPlayer( 0, -2);
+            __GPSPixelPlayer( 1,  0);
+            __GPSPixelPlayer( 2,  0);
+            __GPSPixelPlayer(-1,  0);
+            __GPSPixelPlayer(-2,  0);
             
             string Coordinates = Coordinates_Beautiful.X + " : " + Coordinates_Beautiful.Y;
             Vector2U __CoordinatesSize = Font_Default.TextSize(Coordinates);
-            Font_Default.Render(C, Palette_Default, Coordinates, (int)(MapOffset.X + MapSize) - (int)__CoordinatesSize.X - 2, (int)(MapOffset.Y + MapSize) - (int)__CoordinatesSize.Y - 2);
+            Font_Default.Render(C, Palette_Default, Coordinates, (int)(GPSOffset.X + GPSSize) - (int)__CoordinatesSize.X - 2, (int)(GPSOffset.Y + GPSSize) - (int)__CoordinatesSize.Y - 2);
             
             Texture_GPS_Overlay.Render(C, Palette_Default);
         }
     }
+    
+    /// <summary>
+    /// Название окна
+    /// </summary>
+    internal static string UI_WindowTitle => Emotion_Happiness + " | " + Player_InteractingCollision + " (" + Player_CollisionInfo1 + ", " + Player_CollisionInfo2 + ", " + Player_CollisionInfo3 + ") | " + World_Seed + " | " + Cheat_IgnoreColliders + " | " + World_Time + " (" + World_DayPhase + ")";
 }
