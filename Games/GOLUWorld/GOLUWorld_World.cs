@@ -55,6 +55,7 @@ internal static class GOLUWorld_World{
         World_Decals  .Clear();
         World_Entities.Clear();
         World_Blocks  .Clear();
+        World_Ceilings.Clear();
 
         UI_Interface = T_Interface.None;
         
@@ -118,8 +119,8 @@ internal static class GOLUWorld_World{
     /// </summary>
     internal static void World_UpdateBlocks(){
         foreach(Block Block in World_Blocks.Values){
-            if(Block.ID is T_Block.Metal or T_Block.Bricks or T_Block.Water or T_Block.Black or T_Block.Error){
-                Game.AddCollider(new Collider(Coordinates_World.X + Block.X, Coordinates_World.Y + Block.Y, 16, 16));
+            if(Info_Block_Solid(Block.ID)){
+                Game.AddCollider(new Collider(Coordinates_World.X + Block.X, Coordinates_World.Y + Block.Y, 16, 16, Block.Info, new Vector2I(Block.X, Block.Y)));
             }
         }
     }
@@ -130,7 +131,16 @@ internal static class GOLUWorld_World{
     internal static void World_UpdateEntities(){
         foreach(KeyValuePair<EntityKey, Entity> KVP in World_Entities){
             Entity Entity = KVP.Value;
-            
+
+            if(Info_Entity_CanFlow(Entity.ID)){
+                Block Floor = World_GetBlock(Entity.X, Entity.Y, Relative: true);
+                if(Floor.ID is T_Block.Water){
+                    Entity.X += WL.Math.RoundProbabilistic(World_Flow.X);
+                    Entity.Y += WL.Math.RoundProbabilistic(World_Flow.Y);
+                    World_Entities[KVP.Key] = Entity;
+                }
+            }
+
             if(Entity.ID is T_Entity.Table or T_Entity.Spikes or T_Entity.Mob_Spider or T_Entity.Tree){
                 if(Entity.ID == T_Entity.Mob_Spider){
                     World_Entities[KVP.Key] = World_AI_Spider(Entity);
@@ -152,13 +162,6 @@ internal static class GOLUWorld_World{
             }
             
             if(Entity.ID is T_Entity.Item){
-                Block Floor = World_GetBlock(Entity.X, Entity.Y, Relative: true);
-                if(Floor.ID is T_Block.Water){
-                    Entity.X += WL.Math.RoundProbabilistic(World_Flow.X);
-                    Entity.Y += WL.Math.RoundProbabilistic(World_Flow.Y);
-                    World_Entities[KVP.Key] = Entity;
-                }
-                
                 Game.AddCollider(new Collider(Coordinates_World.X + Entity.X, Coordinates_World.Y + Entity.Y, 16, 16, Entity.Info, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L4));
             }
             
@@ -174,13 +177,16 @@ internal static class GOLUWorld_World{
     internal static void World_UpdatePlayer(TickData TD){
         if(Cheat_Immortality){ if(Player_Health < 1){ Player_Health = 1; } }
 
-        Player_Floor = World_GetBlock(Coordinates_WorldPlayer.X, Coordinates_WorldPlayer.Y, Relative: true);
+        Player_Floor   = World_GetBlock  (Coordinates_WorldPlayerCenter.X, Coordinates_WorldPlayerCenter.Y, Relative: true);
+        Player_Ceiling = World_GetCeiling(Coordinates_WorldPlayerCenter.X, Coordinates_WorldPlayerCenter.Y, Relative: true);
+        
+        if(Game.KeyPressed(Key.F4)){ World_SetBlock(new Block{ ID = T_Block.Bricks, X = Coordinates_WorldPlayerCenter.X/16, Y = (Coordinates_WorldPlayerCenter.Y)/16 + 1}); }
         
         if(Player_Dead){
             UI_Interface = 0;
             
             if(WL.Math.Random.Fast_Bool(0.8f)){
-                World_Decals.Add(new Decal{ X = Coordinates_Player.X - Coordinates_World.X + WL.Math.Random.Fast_Int(-128, 128), Y = Coordinates_Player.Y - Coordinates_World.Y + WL.Math.Random.Fast_Int(-128, 128), ID = WL.Math.Random.Fast_Bool() ? T_Decal.One : T_Decal.Zero});
+                World_AddDecal(new Decal{ X = Coordinates_WorldPlayer.X + WL.Math.Random.Fast_Int(-128, 128), Y = Coordinates_WorldPlayer.Y + WL.Math.Random.Fast_Int(-128, 128), ID = WL.Math.Random.Fast_Bool() ? T_Decal.One : T_Decal.Zero});
             }
 
             Player_Rotting += (float)TD.DeltaTimeS;
@@ -365,30 +371,21 @@ internal static class GOLUWorld_World{
         Vector2I EntityPositionOriginal = new Vector2I(Entity.X, Entity.Y);
         
         if(Distance < 100 && Player_Rotting < 10){
-
             Target.X = Info is 1 or 2 ? Coordinates_World.X - Coordinates_Player.X : PlayerX__;
             Target.Y = Info is 1 or 2 ? Coordinates_World.Y - Coordinates_Player.Y : PlayerY__;
-
-            MoveDirection.X = WL.Math.Sign(Target.X - Entity.X) * SpiderSpeed;
-            MoveDirection.Y = WL.Math.Sign(Target.Y - Entity.Y) * SpiderSpeed;
-            
-            Entity.X += MoveDirection.X;
-            Entity.Y += MoveDirection.Y;
-            Entity.Info = Info;
-            
         }else{
-            if(WL.Math.Random.Fast_Bool(0.05f) || Target == Vector2I.Zero){
-                Target = new Vector2I(WL.Math.Random.Fast_Int(-1000, 1000), WL.Math.Random.Fast_Int(-1000, 1000));
+            if(WL.Math.Random.Fast_Bool(0.005f) || Target == Vector2I.Zero || Target == new Vector2I(Entity.X, Entity.Y)){
+                Target = new Vector2I(WL.Math.Random.Fast_Int(-(int)World_BlocksSize.X, (int)World_BlocksSize.X), WL.Math.Random.Fast_Int(-(int)World_BlocksSize.Y, (int)World_BlocksSize.Y));
             }
-            
-            MoveDirection.X = WL.Math.Sign(Target.X - Entity.X) * SpiderSpeed;
-            MoveDirection.Y = WL.Math.Sign(Target.Y - Entity.Y) * SpiderSpeed;
-
-            Entity.X += MoveDirection.X;
-            Entity.Y += MoveDirection.Y;
-            Entity.Info = Info;
-            Entity.InfoVector = Target;
         }
+        
+        MoveDirection.X = WL.Math.Sign(Target.X - Entity.X) * SpiderSpeed;
+        MoveDirection.Y = WL.Math.Sign(Target.Y - Entity.Y) * SpiderSpeed;
+
+        Entity.X += MoveDirection.X;
+        Entity.Y += MoveDirection.Y;
+        Entity.Info = Info;
+        Entity.InfoVector = Target;
 
         if(MoveDirection != Vector2I.Zero){
             int DirectionX = 0;
@@ -447,7 +444,7 @@ internal static class GOLUWorld_World{
             if(Player_Health < Player_HealthLow){
                 World_SpatterBlood(Coordinates_Player.X - Coordinates_World.X, Coordinates_Player.Y - Coordinates_World.Y);
             }else{
-                World_Decals.Add(new Decal{ X = Coordinates_Player.X - Coordinates_World.X + WL.Math.Random.Fast_Int(-5, 5), Y = Coordinates_Player.Y - Coordinates_World.Y  + WL.Math.Random.Fast_Int(-5, 5), ID = T_Decal.FootStep });
+                World_AddDecal(new Decal{ X = Coordinates_Player.X - Coordinates_World.X, Y = Coordinates_Player.Y - Coordinates_World.Y, ID = T_Decal.FootStep }, 5);
             }
         }
     }
@@ -456,7 +453,21 @@ internal static class GOLUWorld_World{
     /// Оставить пятно крови
     /// </summary>
     internal static void World_SpatterBlood(int X, int Y){
-        World_Decals.Add(new Decal{ X = X, Y = Y, ID = T_Decal.Blood, Rotation = WL.Math.Random.Fast_Bool(0.5f) ? (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.None :  TextureRotation.Rotate90) : (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.Rotate180 : TextureRotation.Rotate270)});
+        World_AddDecal(new Decal{ X = X, Y = Y, ID = T_Decal.Blood, Rotation = WL.Math.Random.Fast_Bool(0.5f) ? (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.None :  TextureRotation.Rotate90) : (WL.Math.Random.Fast_Bool(0.5f) ? TextureRotation.Rotate180 : TextureRotation.Rotate270)});
+    }
+
+    /// <summary>
+    /// Добавляет декаль в мир
+    /// </summary>
+    internal static void World_AddDecal(Decal Decal, uint RandomRange = 0){
+        if(RandomRange != 0){
+            Decal.X += WL.Math.Random.Fast_Int(-(int)RandomRange, (int)RandomRange);
+            Decal.Y += WL.Math.Random.Fast_Int(-(int)RandomRange, (int)RandomRange);
+        }
+        
+        if(Info_Block_SupportDecals(World_GetBlock(Decal.X, Decal.Y, Relative: true).ID)){
+            World_Decals.Add(Decal);
+        }
     }
 
     /// <summary>
@@ -496,8 +507,8 @@ internal static class GOLUWorld_World{
     /// </summary>
     internal static Block World_GetBlock(int X, int Y, bool SnapToGrid = true, bool Relative = false){
         if(Relative){
-            X -= X % 16;
-            Y -= Y % 16;
+            X = World_FloorTile(X);
+            Y = World_FloorTile(Y);
         }else{
             if(SnapToGrid){
                 X *= 16;
@@ -508,40 +519,50 @@ internal static class GOLUWorld_World{
         return World_Blocks.GetValueOrDefault(new Vector2I(X, Y), new Block{ ID = T_Block.Empty, X = X, Y = Y });
     }
 
+    internal static int World_FloorTile(int V, int TileSize = 16){
+        return (int)WL.Math.Floor((float)V / TileSize) * TileSize;
+    }
+    
     /// <summary>
     /// Устанавливает сущность
     /// </summary>
-    internal static void World_SetEntity(Entity Entity__, bool SnapToGrid = true, bool IgnoreBlocks = false){
+    internal static void World_SetEntity(Entity Entity, bool SnapToGrid = true, bool IgnoreBlocks = false){
         if(SnapToGrid){
-            Entity__.X *= 16;
-            Entity__.Y *= 16;
+            Entity.X *= 16;
+            Entity.Y *= 16;
         }
 
-        bool HasUniqueID = Entity__.ID is T_Entity.Crate or T_Entity.Item or T_Entity.Mob_Spider;
+        bool HasUniqueID = Entity.ID is T_Entity.Crate or T_Entity.Item or T_Entity.Mob_Spider;
         
-        EntityKey Key = new EntityKey(new Vector2I(Entity__.X, Entity__.Y), HasUniqueID);
+        EntityKey Key = new EntityKey(new Vector2I(Entity.X, Entity.Y), HasUniqueID);
         
         if(!IgnoreBlocks){
             if(World_Blocks.TryGetValue(Key.Position, out Block __Found) && Info_Block_Solid(__Found.ID)){ return; }
         }
 
-        if(Entity__.ID == T_Entity.Item && Entity__.Info == (byte)T_Item.Empty){
-            Entity__.Info = (byte)T_Item.Error;
+        if(Entity.ID == T_Entity.Item && Entity.Info == (byte)T_Item.Empty){
+            Entity.Info = (byte)T_Item.Error;
+        }
+
+        if(Info_Entity_Plant(Entity.ID)){
+            uint __Seed = (uint)Entity.X;
+            __Seed *= (uint)Entity.Y;
+            Entity.Info = WL.Math.Random.Fast_Byte(ref __Seed);
         }
         
         if(World_Entities.ContainsKey(Key)){
-            if(Entity__.ID == T_Entity.Empty){
+            if(Entity.ID == T_Entity.Empty){
                 World_Entities.Remove(Key);
             }
             else{
                 Entity OldEntity = World_Entities[Key];
-                if(OldEntity.ID != Entity__.ID){
-                    World_Entities[Key] = Entity__;
+                if(OldEntity.ID != Entity.ID){
+                    World_Entities[Key] = Entity;
                 }
             }
         }else{
-            if(Entity__.ID != T_Entity.Empty){
-                World_Entities[Key] = Entity__;
+            if(Entity.ID != T_Entity.Empty){
+                World_Entities[Key] = Entity;
             }
         }
     }
@@ -559,64 +580,16 @@ internal static class GOLUWorld_World{
             __Seed += 1222;
             
             foreach(char C in SceneMap){
-                T_Block ID = T_Block.Empty;
-                (T_Block, byte)? ID_and_Info = null;
                 switch(C){
-                    case '\r': 
-                        continue;
-                    case '.':
-                        X__++;
-                        continue;
-                    case '\n':
-                        Y__++;
-                        X__ = X;
-                        continue;
-                    case '#':
-                        ID = T_Block.Metal;
-                        break;
-                    case '\'':
-                        ID = T_Block.Ground_Planks;
-                        break;
-                    case 'A':
-                        ID = T_Block.Ground_Asphalt;
-                        break;
-                    case 'B':
-                        ID = T_Block.Bricks;
-                        break;
-                    case 'S':
-                        ID = T_Block.Ground_Sand;
-                        break;
-                    case 'W':
-                        ID = T_Block.Water;
-                        break;
-                    case 'b':
-                        ID = T_Block.Black;
-                        break;
-                    case '^':
-                        ID = T_Block.Ground_Grass;
-                        break;
-                    case 'Д':
-                        __Seed += 121;
-                        ID_and_Info = Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Block.Ground_Grass, 0, 1), (T_Block.Empty, 0, 1)]);
-                        break;
-                    case 'П':
-                        __Seed += 774743;
-                        ID_and_Info = Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Block.Ground_Sand, 0, 1), (T_Block.Empty, 0, 1)]);
-                        break;
-                    default:
-                        ID = T_Block.Error;
-                        break;
+                    case '\r': continue;
+                    case '\n': Y__++; X__ = X; continue;
+                    case '.' : X__++; continue;
                 }
 
-                byte Info = 0;
-                
-                if(ID_and_Info != null){
-                    ID = ID_and_Info.Value.Item1;
-                    Info = ID_and_Info.Value.Item2;
-                }
-                
-                if(ID != T_Block.Empty){
-                    World_SetBlock(new Block{ X = X__, Y = Y__, ID = ID, Info = Info}, Replace: Replace);
+                (T_Block ID, byte Info)? ID_and_Info = Info_Block_Symbol(C, X__, Y__, ref __Seed);
+
+                if(ID_and_Info != null && ID_and_Info.Value.ID != T_Block.Empty){
+                    World_SetBlock(new Block{ X = X__, Y = Y__, ID = ID_and_Info.Value.ID, Info = ID_and_Info.Value.Info}, Replace: Replace);
                 }
                 
                 X__++;
@@ -639,87 +612,112 @@ internal static class GOLUWorld_World{
             __Seed -= 86;
             
             foreach(char C in SceneMap){
-                T_Entity ID = T_Entity.Empty;
-                (T_Entity, byte)? ID_and_Info = null;
                 switch(C){
-                    case '\r': 
-                        continue;
-                    case '.':
-                        X__++;
-                        continue;
-                    case '\n':
-                        Y__++;
-                        X__ = X;
-                        continue;
-                    case 'C':
-                        ID = T_Entity.Chair;
-                        break;
-                    case 'T':
-                        ID = T_Entity.Table;
-                        break;
-                    case '^':
-                        ID = T_Entity.Spikes;
-                        break;
-                    case 's':
-                        ID = T_Entity.Mob_Spider;
-                        break;
-                    case '!':
-                        ID = T_Entity.Tree;
-                        break;
-                    case '#':
-                        ID = T_Entity.Crate;
-                        break;
-                    case '~':
-                        ID = T_Entity.Grass;
-                        break;
-                    case '3':
-                        ID = T_Entity.Bush;
-                        break;
-                    case 'Д':
-                        __Seed += 1667;
-                        ID_and_Info = World_GetBlock(X__, Y__).ID == T_Block.Ground_Sand ?
-                            Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Rock, 0, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Empty, 0, 99)]) :
-                            Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Tree, 0, 20), (T_Entity.Rock, 0, 10), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Bush, 0, 5), (T_Entity.Grass, 0, 43), (T_Entity.Empty, 0, 32)]);
-                        break;
-                    case 'д':
-                        __Seed += 1532;
-                        ID_and_Info = World_GetBlock(X__, Y__).ID == T_Block.Ground_Sand ?
-                            Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Empty, 0, 99)]) :
-                            Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Bush, 0, 5), (T_Entity.Grass, 0, 43), (T_Entity.Empty, 0, 32)]);
-                        break;
-                    default:
-                        ID = T_Entity.Error;
-                        break;
+                    case '\r': continue;
+                    case '\n': Y__++; X__ = X; continue;
+                    case '.' : X__++; continue;
                 }
+                
+                (T_Entity ID, byte Info)? ID_and_Info = Info_Entity_Symbol(C, X__, Y__, ref __Seed);
 
-                byte Info = 0;
-                
-                if(ID_and_Info != null){
-                    ID = ID_and_Info.Value.Item1;
-                    Info = ID_and_Info.Value.Item2;
-                }
-                
-                if(ID != T_Entity.Empty){
+                if(ID_and_Info != null && ID_and_Info.Value.ID != T_Entity.Empty){
                     int OffsetX = 0;
                     int OffsetY = 0;
                     
-                    if(Info_Entity_RandomSpawnPosition(ID, Info)){
+                    if(Info_Entity_RandomSpawnPosition(ID_and_Info.Value.ID, ID_and_Info.Value.Info)){
                         __Seed += (uint)X__;
                         OffsetX = WL.Math.Random.Fast_Int(0, 16, ref __Seed);
                         __Seed += (uint)Y__;
                         OffsetY = WL.Math.Random.Fast_Int(0, 16, ref __Seed);
                     }
                     
-                    World_SetEntity(new Entity{ X = X__ * 16 + OffsetX, Y = Y__ * 16 + OffsetY, ID = ID, Info = Info}, SnapToGrid: false);
+                    World_SetEntity(new Entity{ X = X__ * 16 + OffsetX, Y = Y__ * 16 + OffsetY, ID = ID_and_Info.Value.ID, Info = ID_and_Info.Value.Info}, SnapToGrid: false);
                 }
-
+                
                 X__++;
             }
         }catch(Exception e){
-            throw new Exception("Произошла ошибка при загрузке Entity сцены!", e);
+            throw new Exception("Произошла ошибка при загрузке сцены с сущностями!", e);
         }
     }
 
+    /// <summary>
+    /// Устанавливает потлок
+    /// </summary>
+    internal static void World_SetCeiling(Ceiling Ceiling__, bool SnapToGrid = true, bool IgnoreEntities = false, bool Replace = true){
+        if(SnapToGrid){
+            Ceiling__.X *= 16;
+            Ceiling__.Y *= 16;
+        }
+
+        Vector2I Key = new Vector2I(Ceiling__.X, Ceiling__.Y);
+        if(World_Ceilings.ContainsKey(Key)){
+            if(Ceiling__.ID == T_Ceiling.Empty){
+                World_Ceilings.Remove(Key);
+            }else{
+                if(Replace){
+                    Ceiling OldCeiling = World_Ceilings[Key];
+                    if(OldCeiling.ID != Ceiling__.ID){
+                        World_Ceilings[Key] = Ceiling__;
+                    }
+                }
+            }
+        }else{
+            if(Ceiling__.ID != T_Ceiling.Empty){
+                World_Ceilings[Key] = Ceiling__;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Получает потолок
+    /// </summary>
+    internal static Ceiling World_GetCeiling(int X, int Y, bool SnapToGrid = true, bool Relative = false){
+        if(Relative){
+            X = World_FloorTile(X);
+            Y = World_FloorTile(Y);
+        }else{
+            if(SnapToGrid){
+                X *= 16;
+                Y *= 16;
+            }
+        }
+
+        return World_Ceilings.GetValueOrDefault(new Vector2I(X, Y), new Ceiling{ ID = T_Ceiling.Empty, X = X, Y = Y });
+    }
+    
+    /// <summary>
+    /// Добавляет потолки в виде карты
+    /// </summary>
+    internal static void World_AddCeilingsMap(string SceneMap, int X = 0, int Y = 0, uint __Seed = 0, bool Replace = false){
+        try{
+            if(string.IsNullOrEmpty(SceneMap)){ return; }
+            
+            int X__ = X;
+            int Y__ = Y;
+            
+            __Seed += 1222;
+            
+            foreach(char C in SceneMap){
+                switch(C){
+                    case '\r': continue;
+                    case '\n': Y__++; X__ = X; continue;
+                    case '.' : X__++; continue;
+                }
+
+                (T_Ceiling ID, byte Info)? ID_and_Info = Info_Ceiling_Symbol(C, X__, Y__, ref __Seed);
+
+                if(ID_and_Info != null && ID_and_Info.Value.ID != T_Ceiling.Empty){
+                    World_SetCeiling(new Ceiling{ X = X__, Y = Y__, ID = ID_and_Info.Value.ID, Info = ID_and_Info.Value.Info}, Replace: Replace);
+                }
+                
+                X__++;
+            }
+        }catch(Exception e){
+            throw new Exception("Произошла ошибка при загрузке сцены с потолком!", e);
+        }
+    }
+    
     /// <summary>
     /// Спавнит предмет
     /// </summary>
@@ -734,5 +732,22 @@ internal static class GOLUWorld_World{
         Entity Entity = World_Entities[Key];
         Entity.Health = WL.Math.SubU(Entity.Health, Damage);
         World_Entities[Key] = Entity;
+
+        if(Entity.ID is T_Entity.Mob_Spider && Entity.Health != 0){
+            World_SpatterBlood(Entity.X, Entity.Y);
+        }
+    }
+
+    /// <summary>
+    /// Нанести урон блоку
+    /// </summary>
+    internal static void World_DamageBlock(Vector2I Key, uint Damage){
+        Block Block = World_Blocks[Key];
+        if(Block.ID is T_Block.Window){
+            World_SetBlock(new Block{ X = Block.X, Y = Block.Y }, SnapToGrid: false);
+            for(int i = 0; i < 6; i++){
+                World_AddDecal(new Decal{ ID = T_Decal.Glass, X = Block.X + 8, Y = Block.Y + 8}, 16);
+            }
+        }
     }
 }

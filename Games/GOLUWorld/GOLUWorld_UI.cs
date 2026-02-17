@@ -138,27 +138,20 @@ internal static class GOLUWorld_UI{
     /// Рендерит UI
     /// </summary>
     internal static void UI_Render(Image.ImageContext C){
-        float HealthPulse = Player_Dead ? 0 : WL.Math.DSin(World_DeltaTick / WL.Math.Sqr((float)Player_Health / Player_HealthMax));
-        ColorB FrameColor = new ColorB((byte)(HealthPulse * 255), 0, 0);
+        Texture_Frame.Render(C, Palette_Default);
+        
+        C.Fill(23 - 1, (int)C.Height - 19 - 1, Player_HealthMax + 2, 8 + 2, ColorB.DarkRed);
+        C.Fill(23, (int)C.Height - 19, Player_HealthMax, 8, ColorB.Black);
+        C.Fill(23, (int)C.Height - 19, Player_Health, 8, ColorB.Red);
+        C.Fill(23, (int)C.Height - 19 + 3, Player_Health, 8 - 6, ColorB.LightRed);
 
-        uint Thickness = (uint)WL.Math.Min(1 + HealthPulse / WL.Math.Sqr((float)Player_Health / Player_HealthMax), 16);
+        Font_Default.Render(C, Palette_Default, Cheat_Immortality ? "i" : Player_Health.ToString(), 23, (int)C.Height - 19);
         
-        C.Border(0, 0, C.Width, C.Height, 1, FrameColor);
-        C.Border(1, 1, C.Width - 2, C.Height - 2, Thickness, FrameColor.Clone().SetA(128), ImageBlend.Alpha);
-        C.Border(1 + (int)Thickness, 1 + (int)Thickness, C.Width - (1 + Thickness) * 2, C.Height - (1 + Thickness) * 2, Thickness, FrameColor.Clone().SetA(64), ImageBlend.Alpha);
-        
-        C.Fill(20 - 1, (int)C.Height - 16 - 1, Player_HealthMax + 2, 8 + 2, ColorB.DarkRed);
-        C.Fill(20, (int)C.Height - 16, Player_HealthMax, 8, ColorB.Black);
-        C.Fill(20, (int)C.Height - 16, Player_Health, 8, ColorB.Red);
-        C.Fill(20, (int)C.Height - 16 + 3, Player_Health, 8 - 6, ColorB.LightRed);
-
-        Font_Default.Render(C, Palette_Default, Cheat_Immortality ? "i" : Player_Health.ToString(), 20, (int)C.Height - 16);
-        
-        Texture_Health.Render(C, Palette_Default, 3, (int)C.Height - 21);
+        Texture_Health.Render(C, Palette_Default, 6, (int)C.Height - 23);
         
         T_Item Item = Player_ItemInHands;
         string __Text = (Item == T_Item.Empty ? "" : Info_Item_Name(Item)) + " [" + (Player_InventorySelectedSlot + 1) + "]";
-        RenderOutlineColorText(C, __Text, (int)C.Width - (int)Font_Default.TextSize(__Text).X - 4, (int)C.Height - 8 - 4, ColorB.Black, ColorB.White);
+        Render_TextOutlineColor(C, __Text, (int)C.Width - (int)Font_Default.TextSize(__Text).X - 7, (int)C.Height - 8 - 7, ColorB.Black, ColorB.White);
         
         void RenderSlot(Image.ImageContext C, byte ID, int X, int Y){
             int X__ = 20 + X * 36;
@@ -266,8 +259,7 @@ internal static class GOLUWorld_UI{
             }
             
             foreach(Block Block in World_Blocks.Values){
-                ColorB BlockColor = Palette_World[MapBlocksColor.GetValueOrDefault(Block.ID, (byte)1)];
-                __GPSPixel(Block.X, Block.Y, BlockColor);
+                __GPSPixel(Block.X, Block.Y, Palette_World[MapBlocksColor.GetValueOrDefault(Block.ID, (byte)1)]);
             }
 
             foreach(Entity Entity in World_Entities.Values){
@@ -280,6 +272,14 @@ internal static class GOLUWorld_UI{
                     __GPSPixel(Entity.X, Entity.Y + 16, EntityColor);
                     __GPSPixel(Entity.X, Entity.Y + 16 * 2, EntityColor);
                 }
+            }
+            
+            foreach(Ceiling Ceiling in World_Ceilings.Values){
+                byte __PaletteIndex = MapCeilingsColor.GetValueOrDefault(Ceiling.ID, (byte)0);
+                if(__PaletteIndex == 0){ continue; }
+                ColorB CeilingColor = Palette_World[__PaletteIndex];
+                if(Ceiling is{ ID: T_Ceiling.RoofTiles, Info: 1 }){ CeilingColor = Palette_World[3]; }
+                __GPSPixel(Ceiling.X, Ceiling.Y, CeilingColor);
             }
             
             for(int __Y__ = -(int)GPSSize/2; __Y__ < GPSSize/2; __Y__++){
@@ -317,7 +317,7 @@ internal static class GOLUWorld_UI{
             
             string Coordinates = Coordinates_Beautiful.X + " : " + Coordinates_Beautiful.Y;
             Vector2U __CoordinatesSize = Font_Default.TextSize(Coordinates);
-            RenderOutlineColorText(C, Coordinates, (int)(GPSOffset.X + GPSSize) - (int)__CoordinatesSize.X - 2, (int)(GPSOffset.Y + GPSSize) - (int)__CoordinatesSize.Y - 2, ColorB.Red, ColorB.Black);
+            Render_TextOutlineColor(C, Coordinates, (int)(GPSOffset.X + GPSSize) - (int)__CoordinatesSize.X - 2, (int)(GPSOffset.Y + GPSSize) - (int)__CoordinatesSize.Y - 2, ColorB.Red, ColorB.Black);
             
             Texture_GPS_Overlay.Render(C, Palette_Default);
             if(World_AnimationTimer > 0.5f){

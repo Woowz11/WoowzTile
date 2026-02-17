@@ -141,8 +141,12 @@ internal static class GOLUWorld_Player{
                 break;
         }
         
-        if(Game.Collision(new Collider(AttackX, AttackY, (uint)Width, (uint)Height, Mask: CollisionLayer.L6), out Collider? Hit)){
-            World_DamageEntity(new EntityKey(Hit.Value.Info2, (uint)Hit.Value.Info3), Item_Info_MeleeAttackDamage(Player_ItemInHands));
+        if(Game.Collision(new Collider(AttackX, AttackY, (uint)Width, (uint)Height, Mask: CollisionLayer.L6), out Collider? HitEntity)){
+            World_DamageEntity(new EntityKey(HitEntity!.Value.Info2, (uint)HitEntity.Value.Info3), Item_Info_MeleeAttackDamage(Player_ItemInHands));
+        }
+        
+        if(Game.Collision(new Collider(AttackX, AttackY, (uint)Width, (uint)Height, Mask: CollisionLayer.L1), out Collider? HitBlock)){
+            World_DamageBlock(HitBlock!.Value.Info2, Item_Info_MeleeAttackDamage(Player_ItemInHands));
         }
     }
     

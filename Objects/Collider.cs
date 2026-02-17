@@ -8,15 +8,15 @@ public enum CollisionLayer : uint{
     None = 0,
     All = uint.MaxValue,
     
-    L1 = 1 << 0,
-    L2 = 1 << 1,
-    L3 = 1 << 2,
-    L4 = 1 << 3,
-    L5 = 1 << 4,
-    L6 = 1 << 5,
-    L7 = 1 << 6,
-    L8 = 1 << 7,
-    L9 = 1 << 8,
+    L1  = 1 << 0,
+    L2  = 1 << 1,
+    L3  = 1 << 2,
+    L4  = 1 << 3,
+    L5  = 1 << 4,
+    L6  = 1 << 5,
+    L7  = 1 << 6,
+    L8  = 1 << 7,
+    L9  = 1 << 8,
     L10 = 1 << 9,
     L11 = 1 << 10,
     L12 = 1 << 11,
@@ -54,10 +54,11 @@ public struct Collider{
     public bool CanCollide(Collider Other) => (Mask & Other.Layer) != 0 && (Other.Mask & Layer) != 0;
 
     public static int GetLayerIndex(CollisionLayer Layer){
-        if(Layer == CollisionLayer.None){ return -1; }
-        if(Layer == CollisionLayer.All){ return -2; }
-        
-        return BitOperations.TrailingZeroCount((uint)Layer);
+        return Layer switch{
+            CollisionLayer.None => -1,
+            CollisionLayer.All  => -2,
+            var _ => BitOperations.TrailingZeroCount((uint)Layer)
+        };
     }
     
     public bool Intersects(Collider Other) => X < Other.X + Other.W && X + W > Other.X && Y < Other.Y + Other.H && Y + H > Other.Y;

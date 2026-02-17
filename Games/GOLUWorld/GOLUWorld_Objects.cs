@@ -5,42 +5,6 @@ using static GOLUWorld.GOLUWorld_Resources;
 namespace GOLUWorld;
 
 internal static class GOLUWorld_Objects{
-    /*
-     * Блоки:
-     * '_' - Пустота
-     * '#' - Блок металла (блок)
-     * ''' - Доски (пол)
-     * 'A' - Асфальт (пол)
-     * 'B' - Кирпичи (блок)
-     * 'S' - Песок (пол)
-     * 'W' - Вода (блок)
-     * 'b' - Чёрный блок (блок)
-     * '^' - Трава (пол)
-     * 'Д' - [ГЕНЕРАТОР] Случайно, трава или пустота
-     * 'П' - [ГЕНЕРАТОР] Случайно, песок или пустота
-     *
-     * Сущности:
-     * '_' - Пустота
-     * 'C' - Стул
-     * 'T' - Стол
-     * '^' - Шипы
-     * 's' - Паук (моб)
-     * '!' - Дерево
-     * '#' - Ящик (толкаемый блок)
-     * '~' - Трава
-     * '3' - Куст
-     * 'Д' - [ГЕНЕРАТОР] Случайно, дерево или трава или палка или куст или пустота
-     * 'д' - [ГЕНЕРАТОР] Случайно, трава или камень или куст или пустота
-     *
-     * Коллизии:
-     * L1 - Мир и игрок
-     * L2 - Наносит урон если ходить в нём
-     * L3 - Наносит всегда урон
-     * L4 - Предмет
-     * L5 - Толкаемый блок
-     * L6 - Получаемое урон
-     */
-    
     internal enum T_Block : byte{
         Empty          = 0,
         Metal          = 1,
@@ -51,7 +15,17 @@ internal static class GOLUWorld_Objects{
         Water          = 6,
         Black          = 7,
         Ground_Grass   = 8,
-        Error          = 9
+        Error          = 9,
+        Concrete       = 10,
+        Window         = 11
+    }
+    
+    internal enum T_Ceiling : byte{
+        Empty     = 0,
+        Invisible = 1,
+        Concrete  = 2,
+        Error     = 3,
+        RoofTiles = 4
     }
 
     internal enum T_Entity : byte{
@@ -77,17 +51,18 @@ internal static class GOLUWorld_Objects{
         Stick       = 4
     }
 
-    internal enum T_Interface : byte{
-        None      = 0,
-        Inventory = 1,
-        Menu      = 2
-    }
-
     internal enum T_Decal : byte{
         FootStep = 0,
         Blood    = 1,
         Zero     = 2,
-        One      = 3
+        One      = 3,
+        Glass    = 4
+    }
+    
+    internal enum T_Interface : byte{
+        None      = 0,
+        Inventory = 1,
+        Menu      = 2
     }
 
     internal enum T_Emotion : byte{
@@ -139,6 +114,15 @@ internal static class GOLUWorld_Objects{
         internal byte    Info = 0;
     }
     
+    internal struct Ceiling{
+        public Ceiling(){}
+    
+        internal int       X    = 0;
+        internal int       Y    = 0;
+        internal T_Ceiling ID   = T_Ceiling.Empty;
+        internal byte      Info = 0;
+    }
+    
     internal struct Entity{
         public Entity(){}
 
@@ -181,8 +165,8 @@ internal static class GOLUWorld_Objects{
     }
     
     internal struct Structure{
-        internal Structure(string Blocks, string Entities = ""){
-            this.Blocks = Blocks; this.Entities = Entities;
+        internal Structure(string Blocks, string Entities = "", string Ceilings = ""){
+            this.Blocks = Blocks; this.Entities = Entities; this.Ceilings = Ceilings;
         }
         
         internal string Blocks{
@@ -203,15 +187,34 @@ internal static class GOLUWorld_Objects{
         }
         internal string __Entities = "";
         
+        internal string Ceilings{
+            get => __Ceilings;
+            set{
+                __Ceilings = value;
+                __CalculateSize();
+            }
+        }
+        internal string __Ceilings = "";
+        
         internal uint Width { get; private set; }
         internal uint Height{ get; private set; }
 
         internal void __CalculateSize(){
             string[] Lines1 = Blocks  .Replace("\r", "").Split('\n');
             string[] Lines2 = Entities.Replace("\r", "").Split('\n');
+            string[] Lines3 = Ceilings.Replace("\r", "").Split('\n');
 
-            Width  = (uint)WL.Math.MaxI(Lines1.Max(Line => Line.Length), Lines2.Max(Line => Line.Length));
-            Height = (uint)WL.Math.MaxI(Blocks.Count(C => C == '\n') + 1, Entities.Count(C => C == '\n') + 1);
+            Width = (uint)WL.Math.MaxI(
+                Lines1.Max(Line => Line.Length),
+                Lines2.Max(Line => Line.Length),
+                Lines3.Max(Line => Line.Length)
+            );
+            
+            Height = (uint)WL.Math.MaxI(
+                Lines1.Length,
+                Lines2.Length,
+                Lines3.Length
+            );
         }
     }
     

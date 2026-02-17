@@ -9,7 +9,7 @@ namespace GOLUWorld;
 internal static class GOLUWorld_Values{
     #region Константы игры
 
-        internal const string Game_Version = "0.6";
+        internal const string Game_Version = "0.7";
         internal const string Game_Name    = "GOLUWorld";
 
     #endregion
@@ -29,6 +29,8 @@ internal static class GOLUWorld_Values{
                 Coordinates_World = new Vector2I((int)(Coordinates_Camera.X + Game.SceneSize.X / 2F), (int)(Coordinates_Camera.Y + Game.SceneSize.Y / 2F));
 
                 Coordinates_WorldPlayer = new Vector2I(Coordinates_Player.X - Coordinates_World.X, Coordinates_Player.Y - Coordinates_World.Y);
+
+                Coordinates_WorldPlayerCenter = Coordinates_WorldPlayer + new Vector2I(8, 8);
                 
                 Coordinates_Beautiful = new Vector2I(-(Coordinates_World.X / 16) + 8, -(Coordinates_World.Y / 16) + 8);
             }
@@ -44,6 +46,11 @@ internal static class GOLUWorld_Values{
         /// Координаты игрока в МИРЕ
         /// </summary>
         internal static Vector2I Coordinates_WorldPlayer{ get; private set; }
+        
+        /// <summary>
+        /// Координаты игрока в МИРЕ (в центре игрока)
+        /// </summary>
+        internal static Vector2I Coordinates_WorldPlayerCenter{ get; private set; }
         
         /// <summary>
         /// Координаты МИРА
@@ -103,6 +110,11 @@ internal static class GOLUWorld_Values{
         /// Пол на котором сейчас стоит игрок
         /// </summary>
         internal static Block Player_Floor;
+        
+        /// <summary>
+        /// Потолок под которым находится игрок
+        /// </summary>
+        internal static Ceiling Player_Ceiling;
         
         /// <summary>
         /// Максимальное здоровье
@@ -316,6 +328,11 @@ internal static class GOLUWorld_Values{
         /// Все блоки в мире
         /// </summary>
         internal static readonly Dictionary<Vector2I, Block> World_Blocks = [];
+        
+        /// <summary>
+        /// Все потолки в мире
+        /// </summary>
+        internal static readonly Dictionary<Vector2I, Ceiling> World_Ceilings = [];
         
         /// <summary>
         /// Все сущности в мире

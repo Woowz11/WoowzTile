@@ -8,6 +8,7 @@ using static GOLUWorld.GOLUWorld_Objects;
 using static GOLUWorld.GOLUWorld_Info;
 using static GOLUWorld.GOLUWorld_UI;
 using static GOLUWorld.GOLUWorld_Player;
+using static GOLUWorld.GOLUWorld_World;
 
 namespace GOLUWorld;
 
@@ -17,15 +18,16 @@ internal static class GOLUWorld_Render{
     /// </summary>
     internal static void UI_EasyButton(Image.ImageContext C, byte ButtonID, string ButtonText, int X, int Y, bool Always = false){
         if(UI_MenuSelectedButton == ButtonID || Always){
-            RenderOutlineColorText(C, ButtonText, X, Y, ColorB.White, ColorB.Red);
+            Render_TextOutlineColor(C, ButtonText, X, Y, ColorB.White, ColorB.Red);
         }else{
-            RenderOutlineColorText(C, ButtonText, X, Y, ColorB.Black, ColorB.White);   
+            Render_TextOutlineColor(C, ButtonText, X, Y, ColorB.Black, ColorB.White);   
         }
     }
     
     internal const int Render_Layer_VeryBottom = -10000000;
     internal static int Render_Layer_Object(int Y) => -100000 + Y * 100;
     internal static int Render_Layer_Top(int Y) => 1000 + Y * 100;
+    internal const int Render_Layer_VeryTop = 10000000;
     
     /// <summary>
     /// Добавляет элемент в рендер цикл
@@ -122,23 +124,14 @@ internal static class GOLUWorld_Render{
         __RenderQueue_Water.Add(new Renderable{ X = (int)SunPosition.X, Y = (int)SunPosition.Y, Texture = Texture_Light, Palette = Palette_Alpha, MultiplyColor = new ColorB(255, 255, 200, (byte)(DayAlpha * 255))});
         __RenderQueue_Water.Add(new Renderable{ X = (int)SunPosition.X, Y = (int)SunPosition.Y, Texture = Texture_Circle_16px, Palette = Palette_Alpha, MultiplyColor = new ColorB(255, 255, 255, (byte)(DayAlpha * 255))});
         
-        Render_Ground(C);
-
-        Render_Blocks(C);
-
-        Render_Decals(C);
-
+        Render_Ground  (C);
+        Render_Decals  (C);
+        Render_Blocks  (C);
         Render_Entities(C);
+        Render_Ceilings(C);
+        Render_Player  (C);
         
-        Render_Player(C);
-        
-        __RenderQueue.Sort((A, B) => A.Z.CompareTo(B.Z));
-        foreach(Renderable R in __RenderQueue){
-            switch(R.Type){
-                case RenderableType.Tile: R.Texture.Render(C, R.Palette, R.X, R.Y, FlipX: R.FlipX, FlipY: R.FlipY, MultiplyColor: R.MultiplyColor, Rotation: R.Rotation); break;
-                case RenderableType.Tiles: R.Texture.RenderTiles(C, R.Palette, R.X, R.Y, R.W, R.H); break;
-            }
-        }
+        Render_RenderQueue(C);
 
         Render_PostProcessing(C, DayAlpha, NightAlpha);
         
@@ -154,37 +147,56 @@ internal static class GOLUWorld_Render{
     }
     private static readonly List<Renderable> __RenderQueue       = [];
     private static readonly List<Renderable> __RenderQueue_Water = [];
+
+    /// <summary>
+    /// Рендерит RenderQueue
+    /// </summary>
+    internal static void Render_RenderQueue(Image.ImageContext C){
+        __RenderQueue.Sort((A, B) => A.Z.CompareTo(B.Z));
+        foreach(Renderable R in __RenderQueue){
+            switch(R.Type){
+                case RenderableType.Tile: R.Texture.Render(C, R.Palette, R.X, R.Y, FlipX: R.FlipX, FlipY: R.FlipY, MultiplyColor: R.MultiplyColor, Rotation: R.Rotation); break;
+                case RenderableType.Tiles: R.Texture.RenderTiles(C, R.Palette, R.X, R.Y, R.W, R.H); break;
+            }
+        }
+    }
     
-    internal static void RenderColorText(Image.ImageContext C, string Text, int X, int Y, ColorB Color){
+    /// <summary>
+    /// Рендерит цветной текст
+    /// </summary>
+    internal static void Render_TextColor(Image.ImageContext C, string Text, int X, int Y, ColorB Color){
         Font_Default.Render(C, Palette_White, Text, X, Y, Color);
     }
 
-    internal static void RenderOutlineColorText(Image.ImageContext C, string Text, int X, int Y, ColorB Color, ColorB OutlineColor){
-        RenderColorText(C, Text, X - 1, Y, OutlineColor);
-        RenderColorText(C, Text, X + 1, Y, OutlineColor);
-        RenderColorText(C, Text, X, Y - 1, OutlineColor);
-        RenderColorText(C, Text, X, Y + 1, OutlineColor);
-        RenderColorText(C, Text, X - 1, Y - 1, OutlineColor);
-        RenderColorText(C, Text, X + 1, Y + 1, OutlineColor);
-        RenderColorText(C, Text, X - 1, Y + 1, OutlineColor);
-        RenderColorText(C, Text, X + 1, Y - 1, OutlineColor);
+    /// <summary>
+    /// Рендерит цветной текст с обводкой
+    /// </summary>
+    internal static void Render_TextOutlineColor(Image.ImageContext C, string Text, int X, int Y, ColorB Color, ColorB OutlineColor){
+        Render_TextColor(C, Text, X - 1, Y, OutlineColor);
+        Render_TextColor(C, Text, X + 1, Y, OutlineColor);
+        Render_TextColor(C, Text, X, Y - 1, OutlineColor);
+        Render_TextColor(C, Text, X, Y + 1, OutlineColor);
+        Render_TextColor(C, Text, X - 1, Y - 1, OutlineColor);
+        Render_TextColor(C, Text, X + 1, Y + 1, OutlineColor);
+        Render_TextColor(C, Text, X - 1, Y + 1, OutlineColor);
+        Render_TextColor(C, Text, X + 1, Y - 1, OutlineColor);
         
-        RenderColorText(C, Text, X, Y, Color);
+        Render_TextColor(C, Text, X, Y, Color);
     }
 
     /// <summary>
     /// Рендерит землю (бесконечные блоки)
     /// </summary>
     internal static void Render_Ground(Image.ImageContext C){
-        int __OffsetX = Coordinates_World.X % 16;
-        int __OffsetY = Coordinates_World.Y % 16;
-        if(__OffsetX < 0){ __OffsetX += 16; }
-        if(__OffsetY < 0){ __OffsetY += 16; }
+        int OffsetX = Coordinates_World.X % 16;
+        int OffsetY = Coordinates_World.Y % 16;
+        if(OffsetX < 0){ OffsetX += 16; }
+        if(OffsetY < 0){ OffsetY += 16; }
         for(int Y__ = -1; Y__ < 16; Y__++){
             for(int X__ = -1; X__ < 16; X__++){
-                int __X = X__ * 16 + __OffsetX;
-                int __Y = Y__ * 16 + __OffsetY;
-                Render_RenderQueue_Add(C, new Renderable{ Texture = Texture_Ground, X = __X, Y = __Y, Z = Render_Layer_VeryBottom });
+                int X = X__ * 16 + OffsetX;
+                int Y = Y__ * 16 + OffsetY;
+                Render_RenderQueue_Add(C, new Renderable{ Texture = Texture_Ground, X = X, Y = Y, Z = Render_Layer_VeryBottom });
             }
         }
     }
@@ -195,6 +207,54 @@ internal static class GOLUWorld_Render{
     internal static void Render_Blocks(Image.ImageContext C){
         foreach(Block Block in World_Blocks.Values){
             Render_RenderQueue_Add(C, new Renderable{Texture = Info_Block_Texture(Block), X = Coordinates_World.X + Block.X, Y = Coordinates_World.Y + Block.Y, Z = Info_Block_Ground(Block.ID) ? Render_Layer_VeryBottom + 1 : Render_Layer_Object(Block.Y), Reflect = Info_Block_Reflect(Block.ID)});
+        }
+    }
+    
+    /// <summary>
+    /// Рендерит потолки
+    /// </summary>
+    internal static void Render_Ceilings(Image.ImageContext C){
+        bool HasCeiling = Player_Ceiling.ID != T_Ceiling.Empty;
+        
+        if(HasCeiling){
+            int OffsetX = Coordinates_World.X % 16;
+            int OffsetY = Coordinates_World.Y % 16;
+            if(OffsetX < 0){ OffsetX += 16; }
+            if(OffsetY < 0){ OffsetY += 16; }
+            for(int Y__ = -1; Y__ < 16; Y__++){
+                for(int X__ = -1; X__ < 16; X__++){
+                    int X = X__ * 16 + OffsetX;
+                    int Y = Y__ * 16 + OffsetY;
+                    
+                    int TileX = ((Coordinates_WorldPlayer.X + 8) + X - 8 * 16) / 16;
+                    int TileY = ((Coordinates_WorldPlayer.Y + 8) + Y - 8 * 16) / 16;
+                    
+                    bool HasNeighborCeiling = false;
+
+                    for(int OffsetTileY = -1; OffsetTileY <= 1 && !HasNeighborCeiling; OffsetTileY++){
+                        for(int OffsetTileX = -1; OffsetTileX <= 1; OffsetTileX++){
+                            if(World_GetCeiling(TileX + OffsetTileX, TileY + OffsetTileY).ID != T_Ceiling.Empty){
+                                HasNeighborCeiling = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if(HasNeighborCeiling){ continue; }
+                    
+                    Render_RenderQueue_Add(C, new Renderable{ Texture = Texture_Black, X = X, Y = Y, Z = Render_Layer_VeryTop + 1000, MultiplyColor = new ColorB(0, 0, 0, 192)});
+                }
+            }
+        }
+
+        foreach(Ceiling Ceiling in World_Ceilings.Values){
+            if(Ceiling.ID is T_Ceiling.Invisible){ continue; }
+            if(HasCeiling){
+                Render_RenderQueue_Add(C, new Renderable{Texture = Texture_Black, X = Coordinates_World.X + Ceiling.X, Y = Coordinates_World.Y + Ceiling.Y, Z = Render_Layer_VeryTop, MultiplyColor = new ColorB(0, 0, 0, 64)});   
+            }else{
+                bool FlipY = Ceiling.ID is T_Ceiling.RoofTiles && Ceiling.Info == 1;
+                Render_RenderQueue_Add(C, new Renderable{Texture = Info_Ceiling_Texture(Ceiling), X = Coordinates_World.X + Ceiling.X, Y = Coordinates_World.Y + Ceiling.Y, Z = Render_Layer_VeryTop, FlipY = FlipY});
+            }
         }
     }
 
@@ -225,20 +285,27 @@ internal static class GOLUWorld_Render{
                         OffsetY = -48;
                         break;
                     
-                    case T_Entity.Grass or T_Entity.Bush:
-                        OffsetX = (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.X * 2 + Entity.Y), 1) * 2);
-                        break;
-                    
                     case T_Entity.Mob_Spider: {
                         OffsetX = -8;
                         OffsetY = -8;
 
-                        if(!Entity.Dead){ Z = Render_Layer_Top(Entity.Y); }
+                        if(!Entity.Dead){ Z = Render_Layer_VeryTop + 100; }
                         break;
                     }
                     case T_Entity.Spikes:
                         Z = Render_Layer_VeryBottom + 3;
                         break;
+                }
+
+                if(Info_Entity_Plant(Entity.ID)){
+                    if(Entity.Info != 0){
+                        uint __Seed = Entity.Info;
+                        OffsetX += WL.Math.Random.Fast_Int(-8, 8, ref __Seed);
+                        __Seed += 256;
+                        OffsetY += WL.Math.Random.Fast_Int(-8, 8, ref __Seed);
+                    }
+                        
+                    OffsetX += (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.X * 2 + Entity.Y), 1) * 2);
                 }
 
                 if(Entity.ID is T_Entity.Crate or T_Entity.Item){ Z++; }
@@ -255,7 +322,7 @@ internal static class GOLUWorld_Render{
 
                         __X__ += (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.X + __X__) * 432, 1) * 2);
                         __Y__ += (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.Y + __Y__) * 12 , 1) * 2);
-                        Render_RenderQueue_Add(C, new Renderable{ Texture = Texture_Tree_Leaves, Palette = Palette_Default, X = Coordinates_World.X + Entity.X + __X__, Y = Coordinates_World.Y + Entity.Y + __Y__, Rotation = Entity.Rotation, Z = Render_Layer_Object(Entity.Y) + (X__ + Y__)});
+                        Render_RenderQueue_Add(C, new Renderable{ Texture = Texture_Tree_Leaves, Palette = Palette_Default, X = Coordinates_World.X + Entity.X + __X__, Y = Coordinates_World.Y + Entity.Y + __Y__, Rotation = Entity.Rotation, Z = Render_Layer_VeryTop + 1 + (X__ + Y__)});
                     }
                     __RenderLeaves(0, 0);
                     __RenderLeaves(2, 0);
@@ -343,7 +410,7 @@ internal static class GOLUWorld_Render{
             __RenderPlayerPart(Texture_Player_Healed, null);
         }
     }
-
+    
     /// <summary>
     /// Делает пост-процессинг
     /// </summary>
@@ -357,8 +424,9 @@ internal static class GOLUWorld_Render{
 
                 int PX = Coordinates_WorldPlayer.X - ((int)C.Width /2 - (int)FX);
                 int PY = Coordinates_WorldPlayer.Y - ((int)C.Height/2 - (int)FY);
-                
-                if(Color == __WaterShaderColor || Color == __WaterShaderColor_Dark){
+
+                ColorB __WaterShaderColor_InCeilingWarFog = new ColorB(63, 0, 0);
+                if(Color == __WaterShaderColor || Color == __WaterShaderColor_Dark || Color == __WaterShaderColor_InCeilingWarFog){
                     byte __Noise1 = PerlinNoise((int)(PX + World_DeltaTick * 2), (int)(PY + World_DeltaTick * 4));
                     byte __Noise2 = PerlinNoise((int)((FX/1.5f + PX/4f) + 32 + World_DeltaTick), (int)((FY/1.5f + PY/4f) + 32 - World_DeltaTick), 4);
 
@@ -369,7 +437,7 @@ internal static class GOLUWorld_Render{
                     WaterSolid += new ColorB((byte)(__Noise2 / 2), (byte)(__Noise2 / 4), (byte)(__Noise2 / 4));
                     
                     Result = WaterSolid;
-
+                    
                     foreach(Renderable R in __RenderQueue_Water){
                         int LocalX = (int)FX - R.X + (int)R.Texture.Width  / 2;
                         int LocalY = (int)FY - R.Y + (int)R.Texture.Height / 2;
@@ -391,7 +459,11 @@ internal static class GOLUWorld_Render{
                         }
                     }
 
-                    if(Color == __WaterShaderColor_Dark){ Result -= new ColorB(64, 64, 64); }
+                    if(Color == __WaterShaderColor_Dark){
+                        Result -= new ColorB(64, 64, 64);
+                    }else if(Color == __WaterShaderColor_InCeilingWarFog){
+                        Result -= new ColorB(128, 128, 128);
+                    }
                 }
 
                 if((PX <= -World_BlocksSize.X || PX >= World_BlocksSize.X || PY <= -World_BlocksSize.Y || PY >= World_BlocksSize.Y) && !Cheat_DisableWorldLimit){
@@ -452,6 +524,6 @@ internal static class GOLUWorld_Render{
         uint Height__ = ThoughtsSize.Y + 14;
         Texture_Cloud.Render9Slice(C, Palette_Default, 10, X__, Y - (int)Height__, ThoughtsSize.X + 16, Height__);
         
-        RenderOutlineColorText(C, Player_Thought, X__ + 9, Y + 8 - (int)Height__, ColorB.Black, ColorB.White);
+        Render_TextOutlineColor(C, Player_Thought, X__ + 9, Y + 8 - (int)Height__, ColorB.Black, ColorB.White);
     }
 }

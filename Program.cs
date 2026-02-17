@@ -9,7 +9,7 @@ public class Program{
         try{
             WL.WoowzLib.Start(new WoowzLibInfo(Name: "WoowzTile"));
 
-            __Window = new Window(BackgroundColor: ColorB.Gray, Width: 256, Height: 256);
+            __Window = new Window(BackgroundColor: ColorB.Gray, Width: 256, Height: 256, X: 1920/2 - 128, Y: 1080/2 - 128);
 
             __Window.OnResize += (_, W, H) => {
                 RenderWindow();
