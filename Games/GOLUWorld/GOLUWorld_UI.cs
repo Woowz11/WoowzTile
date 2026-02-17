@@ -207,7 +207,9 @@ internal static class GOLUWorld_UI{
                 if(Item != T_Item.Empty){
                     string Name = Info_Item_Name(Item);
                     
-                    Font_Default.Render(C, Palette_Default, "[" + (byte)Item + "] " + Name, 20 + 2, 110 + 2);
+                    Font_Default.Render(C, Palette_Default, Name, 20 + 2, 110 + 2);
+                    string ItemID = "[" + (byte)Item + "]";
+                    Font_Default.Render(C, Palette_Default, ItemID, (int)C.Width - 22 - (int)Font_Default.TextSize(ItemID).X, 110 + 2);
                     
                     C.Fill(20, 110 + 11, C.Width - 40, 1, ColorB.Black);
                     
@@ -315,9 +317,12 @@ internal static class GOLUWorld_UI{
             
             string Coordinates = Coordinates_Beautiful.X + " : " + Coordinates_Beautiful.Y;
             Vector2U __CoordinatesSize = Font_Default.TextSize(Coordinates);
-            Font_Default.Render(C, Palette_Default, Coordinates, (int)(GPSOffset.X + GPSSize) - (int)__CoordinatesSize.X - 2, (int)(GPSOffset.Y + GPSSize) - (int)__CoordinatesSize.Y - 2);
+            RenderOutlineColorText(C, Coordinates, (int)(GPSOffset.X + GPSSize) - (int)__CoordinatesSize.X - 2, (int)(GPSOffset.Y + GPSSize) - (int)__CoordinatesSize.Y - 2, ColorB.Red, ColorB.Black);
             
             Texture_GPS_Overlay.Render(C, Palette_Default);
+            if(World_AnimationTimer > 0.5f){
+                Texture_GPS_Overlay_Button.Render(C, Palette_Default, 122, 221);
+            }
         }
     }
     

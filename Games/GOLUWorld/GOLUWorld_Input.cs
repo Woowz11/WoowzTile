@@ -59,7 +59,7 @@ internal static class GOLUWorld_Input{
                 }
 
                 if(!Player_Dead){
-                    if(Key == Key.Tab){ UI_Interface = UI_Interface == T_Interface.None ? T_Interface.Inventory : T_Interface.None; }
+                    if(Key == Key.Tab && Player_AttackTimer <= 0){ UI_Interface = UI_Interface == T_Interface.None ? T_Interface.Inventory : T_Interface.None; }
                     
                     if(__Enter){ Player_ItemUse(); }
 

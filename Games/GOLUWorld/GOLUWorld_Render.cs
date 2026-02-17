@@ -236,38 +236,36 @@ internal static class GOLUWorld_Render{
          foreach(Entity Entity in World_Entities.Values){
             int? __ReflectOffsetY = Info_Entity_Reflect(Entity.ID);
             
-            if(Entity.ID is T_Entity.Chair or T_Entity.Table or T_Entity.Spikes or T_Entity.Tree or T_Entity.Item or T_Entity.Crate or T_Entity.Grass or T_Entity.Bush or T_Entity.Error or T_Entity.Rock){
-                Texture EntityTexture = Entity.ID switch{
-                    T_Entity.Chair  => Texture_Chair,
-                    T_Entity.Table  => Texture_Table,
-                    T_Entity.Spikes => Texture_Spikes,
-                    T_Entity.Tree   => Texture_Tree,
-                    T_Entity.Item   => Info_Item_Texture((T_Item)Entity.Info),
-                    T_Entity.Crate  => Texture_Crate,
-                    T_Entity.Grass  => Texture_TallGrass,
-                    T_Entity.Bush   => Texture_Bush,
-                    T_Entity.Error  => Texture_Error,
-                    T_Entity.Rock   => Texture_Rock
-                };
-
-                bool __Top = false;
-                if(Entity.ID is T_Entity.Crate){
-                    __Top = true;
-                }
+            if(Info_Entity_DoRender(Entity.ID)){
+                int Z = Render_Layer_Object(Entity.Y);
                 
                 int OffsetX = 0;
                 int OffsetY = 0;
-                if(Entity.ID == T_Entity.Tree){
-                    OffsetY = -48;
+                
+                switch(Entity.ID){
+                    case T_Entity.Tree:
+                        OffsetY = -48;
+                        break;
+                    
+                    case T_Entity.Grass or T_Entity.Bush:
+                        OffsetX = (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.X * 2 + Entity.Y)) * 2);
+                        break;
+                    
+                    case T_Entity.Mob_Spider: {
+                        OffsetX = -8;
+                        OffsetY = -8;
+
+                        if(!Entity.Dead){ Z = Render_Layer_Top(Entity.Y); }
+                        break;
+                    }
+                    case T_Entity.Spikes:
+                        Z = Render_Layer_VeryBottom + 3;
+                        break;
                 }
 
-                if(Entity.ID is T_Entity.Grass or T_Entity.Bush){
-                    OffsetX = (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.X * 2 + Entity.Y)) * 2);
-                }
+                if(Entity.ID is T_Entity.Crate or T_Entity.Item){ Z++; }
 
-                bool BottomRenderLayer = Entity.ID is T_Entity.Spikes;
-
-                Render_RenderQueue_Add(C, new Renderable{ Texture = EntityTexture, Palette = Palette_Default, X = Coordinates_World.X + Entity.X + OffsetX, Y = Coordinates_World.Y + Entity.Y + OffsetY, Rotation = Entity.Rotation, Z = (BottomRenderLayer ? Render_Layer_VeryBottom + 3 : Render_Layer_Object(Entity.Y) + (__Top ? 1 : 0)), Reflect = __ReflectOffsetY.HasValue}, __ReflectOffsetY ?? 0);
+                Render_RenderQueue_Add(C, new Renderable{ Texture = Info_Entity_Texture(Entity), Palette = Palette_Default, X = Coordinates_World.X + Entity.X + OffsetX, Y = Coordinates_World.Y + Entity.Y + OffsetY, Rotation = Entity.Rotation, Z = Z, Reflect = __ReflectOffsetY.HasValue}, __ReflectOffsetY ?? 0);
 
                 if(Entity.ID == T_Entity.Tree){
                     void __RenderLeaves(int X__, int Y__){
@@ -285,22 +283,6 @@ internal static class GOLUWorld_Render{
                     __RenderLeaves(2, 0);
                     __RenderLeaves(1, 2);
                 }
-            }
-            
-            if(Entity.ID is T_Entity.Mob_Spider){
-                Texture EntityTexture = Entity.ID switch{
-                    T_Entity.Mob_Spider => (World_AnimationTimer > 0.5f ? Texture_Spider_Anim : Texture_Spider)
-                };
-
-                int OffsetX = 0;
-                int OffsetY = 0;
-
-                if(Entity.ID == T_Entity.Mob_Spider){
-                    OffsetX = 8;
-                    OffsetY = 8;
-                }
-                
-                Render_RenderQueue_Add(C, new Renderable{ Texture = EntityTexture, Palette = Palette_Default, X = Coordinates_World.X + Entity.X - OffsetX, Y = Coordinates_World.Y + Entity.Y - OffsetY, Rotation = Entity.Rotation, Z = Render_Layer_Top(Entity.Y), Reflect = __ReflectOffsetY.HasValue}, __ReflectOffsetY ?? 0);
             }
         }
     }
@@ -344,12 +326,12 @@ internal static class GOLUWorld_Render{
                     case Direction4.Right:
                         __OffsetX = AttackDistance;
                         __OffsetY = (int)WL.Math.Lerp(-AttackDistance, AttackDistance, Player_AttackTimer);
-                        RotateItem = TextureRotation.Rotate270;
+                        RotateItem = Player_TextureFlipped ? TextureRotation.Rotate270 : TextureRotation.Rotate90;
                         break;
                     case Direction4.Left:
                         __OffsetX = -AttackDistance;
                         __OffsetY = (int)WL.Math.Lerp(AttackDistance, -AttackDistance, Player_AttackTimer);
-                        RotateItem = TextureRotation.Rotate90;
+                        RotateItem = Player_TextureFlipped ? TextureRotation.Rotate90 : TextureRotation.Rotate270;
                         break;
                     case Direction4.Up:
                         __OffsetX = (int)WL.Math.Lerp(-AttackDistance, AttackDistance, Player_AttackTimer);

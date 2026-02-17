@@ -38,6 +38,7 @@ internal static class GOLUWorld_Objects{
      * L3 - Наносит всегда урон
      * L4 - Предмет
      * L5 - Толкаемый блок
+     * L6 - Получаемое урон
      */
     
     internal enum T_Block : byte{
@@ -147,6 +148,8 @@ internal static class GOLUWorld_Objects{
         internal byte            Info       = 0;
         internal Vector2I        InfoVector = Vector2I.Zero;
         internal TextureRotation Rotation   = TextureRotation.None;
+        internal uint            Health     = 100;
+        internal bool            Dead       => Health == 0;
     }
     
     internal struct Decal{

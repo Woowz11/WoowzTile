@@ -1,6 +1,7 @@
 ﻿using WoowzTile.Objects;
 using static GOLUWorld.GOLUWorld_Objects;
 using static GOLUWorld.GOLUWorld_Resources;
+using static GOLUWorld.GOLUWorld_Values;
 
 namespace GOLUWorld;
 
@@ -79,6 +80,7 @@ internal static class GOLUWorld_Info{
         return Item switch{
             T_Item.FirstAidKit => "ЛЕЧИТ БЕДНЫЙ КУБИК ГУЛУ (+ с50)",
             T_Item.GPS => "ЕСЛИ ДЕРЖАТЬ В РУКАХ,\nПОКАЗЫВАЕТ КАРТУ",
+            T_Item.Stick => "ИЗБЕЙ ВСЕХ ВЕТКОЙ (у10)",
                         
             var _ => "О БОЖЕ ЧТО ЭТО ТАКОЕ?"
         };
@@ -89,8 +91,19 @@ internal static class GOLUWorld_Info{
     /// </summary>
     internal static float Info_Item_MeleeAttackSpeed(T_Item Item){
         return Item switch{
-            T_Item.Stick => 0.1f,
+            T_Item.Stick => 0.15f,
                         
+            var _ => 0
+        };
+    }
+
+    /// <summary>
+    /// Урон атаки
+    /// </summary>
+    internal static uint Item_Info_MeleeAttackDamage(T_Item Item){
+        return Item switch{
+            T_Item.Stick => 10,
+
             var _ => 0
         };
     }
@@ -106,4 +119,28 @@ internal static class GOLUWorld_Info{
             T_Decal.One      => Texture_One
         };
     }
+
+    /// <summary>
+    /// Текстура сущности
+    /// </summary>
+    internal static Texture Info_Entity_Texture(Entity Entity){
+        return Entity.ID switch{
+            T_Entity.Chair      => Texture_Chair,
+            T_Entity.Table      => Texture_Table,
+            T_Entity.Spikes     => Texture_Spikes,
+            T_Entity.Tree       => Texture_Tree,
+            T_Entity.Item       => Info_Item_Texture((T_Item)Entity.Info),
+            T_Entity.Crate      => Texture_Crate,
+            T_Entity.Grass      => Texture_TallGrass,
+            T_Entity.Bush       => Texture_Bush,
+            T_Entity.Error      => Texture_Error,
+            T_Entity.Rock       => Texture_Rock,
+            T_Entity.Mob_Spider => Entity.Health > 0 ? (World_AnimationTimer > 0.5f ? Texture_Spider_Walk : Texture_Spider) : Texture_Spider_Dead
+        };
+    }
+
+    /// <summary>
+    /// Какие сущности рендерить?
+    /// </summary>
+    internal static bool Info_Entity_DoRender(T_Entity Entity) => Entity is T_Entity.Chair or T_Entity.Table or T_Entity.Spikes or T_Entity.Tree or T_Entity.Item or T_Entity.Crate or T_Entity.Grass or T_Entity.Bush or T_Entity.Error or T_Entity.Rock or T_Entity.Mob_Spider;
 }

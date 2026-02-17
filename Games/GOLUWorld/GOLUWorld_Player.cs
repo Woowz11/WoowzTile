@@ -6,6 +6,7 @@ using static GOLUWorld.GOLUWorld_Values;
 using static GOLUWorld.GOLUWorld_Objects;
 using static GOLUWorld.GOLUWorld_World;
 using static GOLUWorld.GOLUWorld_Resources;
+using static GOLUWorld.GOLUWorld_Info;
 
 namespace GOLUWorld;
 
@@ -92,13 +93,57 @@ internal static class GOLUWorld_Player{
         
         EmotionChange(T_Emotion.Happiness, (int)(Heal / 2));
     }
-
+    
     /// <summary>
     /// Игрок атакует в ближнем бою
     /// </summary>
     internal static void Player_AttackMelee(Direction4? Direction = null){
         Player_AttackDirection = Direction ?? Player_LastDirection;
         Player_AttackTimer = 1;
+
+        const int PlayerColliderSize = 16;
+        const int AttackRange        = 16;
+        const int AttackThickness    = 24;
+        
+        int AttackX = 0;
+        int AttackY = 0;
+        int Width   = 0;
+        int Height  = 0;
+
+        switch (Player_AttackDirection)
+        {
+            case Direction4.Right:
+                AttackX = Coordinates_Player.X + PlayerColliderSize;
+                AttackY = Coordinates_Player.Y + (PlayerColliderSize - AttackThickness) / 2;
+                Width   = AttackRange;
+                Height  = AttackThickness;
+                break;
+
+            case Direction4.Left:
+                AttackX = Coordinates_Player.X - AttackRange;
+                AttackY = Coordinates_Player.Y + (PlayerColliderSize - AttackThickness) / 2;
+                Width   = AttackRange;
+                Height  = AttackThickness;
+                break;
+
+            case Direction4.Up:
+                AttackX = Coordinates_Player.X + (PlayerColliderSize - AttackThickness) / 2;
+                AttackY = Coordinates_Player.Y - AttackRange;
+                Width   = AttackThickness;
+                Height  = AttackRange;
+                break;
+
+            case Direction4.Down:
+                AttackX = Coordinates_Player.X + (PlayerColliderSize - AttackThickness) / 2;
+                AttackY = Coordinates_Player.Y + PlayerColliderSize;
+                Width   = AttackThickness;
+                Height  = AttackRange;
+                break;
+        }
+        
+        if(Game.Collision(new Collider(AttackX, AttackY, (uint)Width, (uint)Height, Mask: CollisionLayer.L6), out Collider? Hit)){
+            World_DamageEntity(new EntityKey(Hit.Value.Info2, (uint)Hit.Value.Info3), Item_Info_MeleeAttackDamage(Player_ItemInHands));
+        }
     }
     
     /// <summary>

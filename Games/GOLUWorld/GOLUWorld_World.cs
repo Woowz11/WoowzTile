@@ -23,6 +23,7 @@ internal static class GOLUWorld_World{
         World_Decals.Clear();
 
         World_Time = World_TimeMax / 2;
+        World_Flow = Vector2F.Zero;
         
         Player_Health = Player_HealthMax;
         UI_Interface = 0;
@@ -38,7 +39,7 @@ internal static class GOLUWorld_World{
         Emotion_Happiness = Emotion_Max;
 
         Player_ClearInventory();
-        Player_Inventory[0] = T_Item.FirstAidKit;
+        Player_Inventory[0] = T_Item.Stick;
         Player_Inventory[1] = T_Item.FirstAidKit;
         Player_Inventory[2] = T_Item.GPS;
 
@@ -132,71 +133,7 @@ internal static class GOLUWorld_World{
             
             if(Entity.ID is T_Entity.Table or T_Entity.Spikes or T_Entity.Mob_Spider or T_Entity.Tree){
                 if(Entity.ID == T_Entity.Mob_Spider){
-                    int SpiderSpeed = WL.Math.Random.Fast_Bool(0.8f) ? 1 : 0;
-                    
-                    byte Info = Entity.Info;
-                    if(WL.Math.Random.Fast_Bool(Info == 1 ? 0.5f : 0.05f)){
-                        if(WL.Math.Random.Fast_Bool(0.05f)){
-                            Info = 2;
-                        }else{
-                            Info = (byte)(Info == 1 ? 0 : 1);
-                        }
-                    }
-
-                    int PlayerX__ = Coordinates_Player.X - Coordinates_World.X;
-                    int PlayerY__ = Coordinates_Player.Y - Coordinates_World.Y;
-
-                    float Distance = Vector2I.Distance(new Vector2I(Entity.X, Entity.Y), new Vector2I(PlayerX__, PlayerY__));
-
-                    Vector2I MoveDirection = Vector2I.Zero;
-                    
-                    Vector2I Target = Entity.InfoVector;
-                    Vector2I EntityPositionOriginal = new Vector2I(Entity.X, Entity.Y);
-                    
-                    if(Distance < 100 && Player_Rotting < 10){
-
-                        Target.X = Info is 1 or 2 ? Coordinates_World.X - Coordinates_Player.X : PlayerX__;
-                        Target.Y = Info is 1 or 2 ? Coordinates_World.Y - Coordinates_Player.Y : PlayerY__;
-
-                        MoveDirection.X = WL.Math.Sign(Target.X - Entity.X) * SpiderSpeed;
-                        MoveDirection.Y = WL.Math.Sign(Target.Y - Entity.Y) * SpiderSpeed;
-                        
-                        Entity.X += MoveDirection.X;
-                        Entity.Y += MoveDirection.Y;
-                        Entity.Info = Info;
-                        
-                    }else{
-                        if(WL.Math.Random.Fast_Bool(0.05f) || Target == Vector2I.Zero){
-                            Target = new Vector2I(WL.Math.Random.Fast_Int(-1000, 1000), WL.Math.Random.Fast_Int(-1000, 1000));
-                        }
-                        
-                        MoveDirection.X = WL.Math.Sign(Target.X - Entity.X) * SpiderSpeed;
-                        MoveDirection.Y = WL.Math.Sign(Target.Y - Entity.Y) * SpiderSpeed;
-
-                        Entity.X += MoveDirection.X;
-                        Entity.Y += MoveDirection.Y;
-                        Entity.Info = Info;
-                        Entity.InfoVector = Target;
-                    }
-
-                    if(MoveDirection != Vector2I.Zero){
-                        int DirectionX = 0;
-                        int DirectionY = 0;
-
-                        float DX = Target.X - EntityPositionOriginal.X;
-                        float DY = Target.Y - EntityPositionOriginal.Y;
-
-                        int __AbsX = (int)WL.Math.Abs(DX);
-                        int __AbsY = (int)WL.Math.Abs(DY);
-                        if(__AbsX > __AbsY){
-                            DirectionX = WL.Math.Sign(DX);
-                        }else if(__AbsX < __AbsY){
-                            DirectionY = WL.Math.Sign(DY);
-                        }
-                        
-                        Entity.Rotation = DirectionX == 1 ? TextureRotation.Rotate270 : (DirectionX == -1 ? TextureRotation.Rotate90 : (DirectionY == -1 ? TextureRotation.Rotate180 : TextureRotation.None));
-                    }
-                    World_Entities[KVP.Key] = Entity;
+                    World_Entities[KVP.Key] = World_AI_Spider(Entity);
                 }
                 
                 uint SizeX = 16;
@@ -209,7 +146,7 @@ internal static class GOLUWorld_World{
                 if(Entity.ID == T_Entity.Spikes){
                     Layer = CollisionLayer.L2;
                 }else if(Entity.ID == T_Entity.Mob_Spider){
-                    Layer = CollisionLayer.L3;
+                    Layer = CollisionLayer.L3 | CollisionLayer.L6;
                 }
                 Game.AddCollider(new Collider(Coordinates_World.X + Entity.X + (int)((16 - SizeX)/2), Coordinates_World.Y + Entity.Y + (int)((16 - SizeY)/2), SizeX, SizeY, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, Layer));
             }
@@ -375,8 +312,14 @@ internal static class GOLUWorld_World{
             }
         }
         
-        if(Game.Collision(new Collider(Coordinates_Player.X + PlayerOffset, Coordinates_Player.Y + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, CollisionLayer.L3), out Collider? _)){
-            if(WL.Math.Random.Fast_Bool(0.8f)){
+        if(Game.Collision(new Collider(Coordinates_Player.X + PlayerOffset, Coordinates_Player.Y + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, CollisionLayer.L3), out Collider? Hit)){
+            bool DoDamage = true;
+
+            if(World_Entities.TryGetValue(new EntityKey(Hit.Value.Info2, (uint)Hit.Value.Info3), out Entity Entity)){
+                DoDamage = Entity.Health > 0;
+            }
+            
+            if(DoDamage && WL.Math.Random.Fast_Bool(0.8f)){
                 Damage((uint)(WL.Math.Random.Fast_0_1() * 20), Player_Dead ? 16 : 0);
             }
         }
@@ -394,6 +337,80 @@ internal static class GOLUWorld_World{
         }
     }
 
+    /// <summary>
+    /// Интеллект паука
+    /// </summary>
+    internal static Entity World_AI_Spider(Entity Entity){
+        if(Entity.Health <= 0){ return Entity; }
+        
+        int SpiderSpeed = WL.Math.Random.Fast_Bool(0.8f) ? 1 : 0;
+                    
+        byte Info = Entity.Info;
+        if(WL.Math.Random.Fast_Bool(Info == 1 ? 0.5f : 0.05f)){
+            if(WL.Math.Random.Fast_Bool(0.05f)){
+                Info = 2;
+            }else{
+                Info = (byte)(Info == 1 ? 0 : 1);
+            }
+        }
+
+        int PlayerX__ = Coordinates_Player.X - Coordinates_World.X;
+        int PlayerY__ = Coordinates_Player.Y - Coordinates_World.Y;
+
+        float Distance = Vector2I.Distance(new Vector2I(Entity.X, Entity.Y), new Vector2I(PlayerX__, PlayerY__));
+
+        Vector2I MoveDirection = Vector2I.Zero;
+        
+        Vector2I Target = Entity.InfoVector;
+        Vector2I EntityPositionOriginal = new Vector2I(Entity.X, Entity.Y);
+        
+        if(Distance < 100 && Player_Rotting < 10){
+
+            Target.X = Info is 1 or 2 ? Coordinates_World.X - Coordinates_Player.X : PlayerX__;
+            Target.Y = Info is 1 or 2 ? Coordinates_World.Y - Coordinates_Player.Y : PlayerY__;
+
+            MoveDirection.X = WL.Math.Sign(Target.X - Entity.X) * SpiderSpeed;
+            MoveDirection.Y = WL.Math.Sign(Target.Y - Entity.Y) * SpiderSpeed;
+            
+            Entity.X += MoveDirection.X;
+            Entity.Y += MoveDirection.Y;
+            Entity.Info = Info;
+            
+        }else{
+            if(WL.Math.Random.Fast_Bool(0.05f) || Target == Vector2I.Zero){
+                Target = new Vector2I(WL.Math.Random.Fast_Int(-1000, 1000), WL.Math.Random.Fast_Int(-1000, 1000));
+            }
+            
+            MoveDirection.X = WL.Math.Sign(Target.X - Entity.X) * SpiderSpeed;
+            MoveDirection.Y = WL.Math.Sign(Target.Y - Entity.Y) * SpiderSpeed;
+
+            Entity.X += MoveDirection.X;
+            Entity.Y += MoveDirection.Y;
+            Entity.Info = Info;
+            Entity.InfoVector = Target;
+        }
+
+        if(MoveDirection != Vector2I.Zero){
+            int DirectionX = 0;
+            int DirectionY = 0;
+
+            float DX = Target.X - EntityPositionOriginal.X;
+            float DY = Target.Y - EntityPositionOriginal.Y;
+
+            int __AbsX = (int)WL.Math.Abs(DX);
+            int __AbsY = (int)WL.Math.Abs(DY);
+            if(__AbsX > __AbsY){
+                DirectionX = WL.Math.Sign(DX);
+            }else if(__AbsX < __AbsY){
+                DirectionY = WL.Math.Sign(DY);
+            }
+            
+            Entity.Rotation = DirectionX == 1 ? TextureRotation.Rotate270 : (DirectionX == -1 ? TextureRotation.Rotate90 : (DirectionY == -1 ? TextureRotation.Rotate180 : TextureRotation.None));
+        }
+        
+        return Entity;
+    }
+    
     /// <summary>
     /// Обновляет скорость течения
     /// </summary>
@@ -708,5 +725,14 @@ internal static class GOLUWorld_World{
     /// </summary>
     internal static void World_SpawnItem(int X, int Y, T_Item Item){
         World_SetEntity(new Entity{ X = X, Y = Y, ID = T_Entity.Item, Info = (byte)Item}, false);
+    }
+
+    /// <summary>
+    /// Нанести урон сущности
+    /// </summary>
+    internal static void World_DamageEntity(EntityKey Key, uint Damage){
+        Entity Entity = World_Entities[Key];
+        Entity.Health = WL.Math.SubU(Entity.Health, Damage);
+        World_Entities[Key] = Entity;
     }
 }
