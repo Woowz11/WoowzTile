@@ -6,7 +6,6 @@ using static GOLUWorld.GOLUWorld_Values;
 using static GOLUWorld.GOLUWorld_Resources;
 using static GOLUWorld.GOLUWorld_Objects;
 using static GOLUWorld.GOLUWorld_Info;
-using static GOLUWorld.GOLUWorld_World;
 using static GOLUWorld.GOLUWorld_UI;
 using static GOLUWorld.GOLUWorld_Player;
 
@@ -20,7 +19,7 @@ internal static class GOLUWorld_Render{
         if(UI_MenuSelectedButton == ButtonID || Always){
             RenderOutlineColorText(C, ButtonText, X, Y, ColorB.White, ColorB.Red);
         }else{
-            RenderColorText(C, ButtonText, X, Y, ColorB.Black);   
+            RenderOutlineColorText(C, ButtonText, X, Y, ColorB.Black, ColorB.White);   
         }
     }
     
@@ -117,7 +116,7 @@ internal static class GOLUWorld_Render{
             }
         }
         
-        __RenderQueue.Clear();
+        __RenderQueue      .Clear();
         __RenderQueue_Water.Clear();
         
         __RenderQueue_Water.Add(new Renderable{ X = (int)SunPosition.X, Y = (int)SunPosition.Y, Texture = Texture_Light, Palette = Palette_Alpha, MultiplyColor = new ColorB(255, 255, 200, (byte)(DayAlpha * 255))});
@@ -195,28 +194,7 @@ internal static class GOLUWorld_Render{
     /// </summary>
     internal static void Render_Blocks(Image.ImageContext C){
         foreach(Block Block in World_Blocks.Values){
-            if(Block.ID is T_Block.Ground_Planks or T_Block.Ground_Asphalt or T_Block.Ground_Sand or T_Block.Water or T_Block.Ground_Grass){
-                Texture BlockTexture = Block.ID switch{
-                    T_Block.Ground_Planks  => Texture_Planks,
-                    T_Block.Ground_Asphalt => Texture_Asphalt,
-                    T_Block.Ground_Sand    => Texture_Sand,
-                    T_Block.Water          => (World_Blocks.TryGetValue(new Vector2I(Block.X, Block.Y - 16), out Block __Found) && __Found.ID == Block.ID ? Texture_Water : Texture_Water_Top),
-                    T_Block.Ground_Grass   => Texture_Grass,
-                };
-                
-                Render_RenderQueue_Add(C, new Renderable{Texture = BlockTexture, X = Coordinates_World.X + Block.X, Y = Coordinates_World.Y + Block.Y, Z = Render_Layer_VeryBottom + 1});
-            }
-            
-            if(Block.ID is T_Block.Metal or T_Block.Bricks or T_Block.Black or T_Block.Error){
-                Texture BlockTexture = Block.ID switch{
-                    T_Block.Metal  => Texture_Metal,
-                    T_Block.Bricks => Texture_Bricks,
-                    T_Block.Black  => Texture_Black,
-                    T_Block.Error  => Texture_Error
-                };
-                
-                Render_RenderQueue_Add(C, new Renderable{ Texture = BlockTexture, X = Coordinates_World.X + Block.X, Y = Coordinates_World.Y + Block.Y, Z = Render_Layer_Object(Block.Y)});
-            }
+            Render_RenderQueue_Add(C, new Renderable{Texture = Info_Block_Texture(Block), X = Coordinates_World.X + Block.X, Y = Coordinates_World.Y + Block.Y, Z = Info_Block_Ground(Block.ID) ? Render_Layer_VeryBottom + 1 : Render_Layer_Object(Block.Y), Reflect = Info_Block_Reflect(Block.ID)});
         }
     }
 
@@ -248,7 +226,7 @@ internal static class GOLUWorld_Render{
                         break;
                     
                     case T_Entity.Grass or T_Entity.Bush:
-                        OffsetX = (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.X * 2 + Entity.Y)) * 2);
+                        OffsetX = (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.X * 2 + Entity.Y), 1) * 2);
                         break;
                     
                     case T_Entity.Mob_Spider: {
@@ -275,8 +253,8 @@ internal static class GOLUWorld_Render{
                         __X__ += (X__ - 1) * (X__ == 0 ? 16 : 8);
                         __Y__ += (Y__ - 1) * (Y__ == 0 ? 8 : 16);
 
-                        __X__ += (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.X + __X__) * 432) * 2);
-                        __Y__ += (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.Y + __Y__) * 12) * 2);
+                        __X__ += (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.X + __X__) * 432, 1) * 2);
+                        __Y__ += (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.Y + __Y__) * 12 , 1) * 2);
                         Render_RenderQueue_Add(C, new Renderable{ Texture = Texture_Tree_Leaves, Palette = Palette_Default, X = Coordinates_World.X + Entity.X + __X__, Y = Coordinates_World.Y + Entity.Y + __Y__, Rotation = Entity.Rotation, Z = Render_Layer_Object(Entity.Y) + (X__ + Y__)});
                     }
                     __RenderLeaves(0, 0);
@@ -395,15 +373,21 @@ internal static class GOLUWorld_Render{
                     foreach(Renderable R in __RenderQueue_Water){
                         int LocalX = (int)FX - R.X + (int)R.Texture.Width  / 2;
                         int LocalY = (int)FY - R.Y + (int)R.Texture.Height / 2;
-
-                        float RippleX = WL.Math.Sin((Coordinates_WorldPlayer.X + FX + World_DeltaTick * 10) * 0.1f) * 4f;
-                        float RippleY = WL.Math.Cos((Coordinates_WorldPlayer.Y + FY + World_DeltaTick * 10) * 0.3f) * 2f;
                         
-                        int DistX = (int)(LocalX + RippleX);
-                        int DistY = (int)(LocalY + RippleY + 2);
+                        if(__RenderQueue_Water.Count > 10){
+                            if(LocalX >= 0 && LocalX < R.Texture.Width && LocalY >= 0 && LocalY < R.Texture.Height){
+                                Result = ColorB.BlendAlpha(Result ?? WaterSolid, R.Texture.GetPixelRepeat(R.Palette, LocalX, LocalY, FlipX: R.FlipX, FlipY: R.FlipY) * (R.MultiplyColor ?? ColorB.White));
+                            }
+                        }else{
+                            float RippleX = WL.Math.Sin((Coordinates_WorldPlayer.X + FX + World_DeltaTick * 10) * 0.1f, 1) * 4f;
+                            float RippleY = WL.Math.Cos((Coordinates_WorldPlayer.Y + FY + World_DeltaTick * 10) * 0.3f, 1) * 2f;
                         
-                        if(DistX >= 0 && DistX < R.Texture.Width && DistY >= 0 && DistY < R.Texture.Height){
-                            Result = ColorB.BlendAlpha(Result ?? WaterSolid, R.Texture.GetPixelRepeat(R.Palette, DistX, DistY, FlipX: R.FlipX, FlipY: R.FlipY) * (R.MultiplyColor ?? ColorB.White));
+                            int DistX = (int)(LocalX + RippleX);
+                            int DistY = (int)(LocalY + RippleY + 2);
+                        
+                            if(DistX >= 0 && DistX < R.Texture.Width && DistY >= 0 && DistY < R.Texture.Height){
+                                Result = ColorB.BlendAlpha(Result ?? WaterSolid, R.Texture.GetPixelRepeat(R.Palette, DistX, DistY, FlipX: R.FlipX, FlipY: R.FlipY) * (R.MultiplyColor ?? ColorB.White));
+                            }
                         }
                     }
 
@@ -460,7 +444,7 @@ internal static class GOLUWorld_Render{
     /// </summary>
     internal static void Render_Thoughts(Image.ImageContext C){
         int X = Coordinates_Player.X;
-        int Y = Coordinates_Player.Y - 8 - (int)(WL.Math.Sin(World_DeltaTick) * 3);
+        int Y = Coordinates_Player.Y - 8 - (int)(WL.Math.Sin(World_DeltaTick, 1) * 3);
         
         if(string.IsNullOrWhiteSpace(Player_Thought)){ return; }
         Vector2U ThoughtsSize = Font_Default.TextSize(Player_Thought);

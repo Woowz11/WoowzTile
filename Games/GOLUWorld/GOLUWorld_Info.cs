@@ -1,4 +1,5 @@
-﻿using WoowzTile.Objects;
+﻿using WLO;
+using WoowzTile.Objects;
 using static GOLUWorld.GOLUWorld_Objects;
 using static GOLUWorld.GOLUWorld_Resources;
 using static GOLUWorld.GOLUWorld_Values;
@@ -6,25 +7,6 @@ using static GOLUWorld.GOLUWorld_Values;
 namespace GOLUWorld;
 
 internal static class GOLUWorld_Info{
-    /// <summary>
-    /// Блок твёрдый?
-    /// </summary>
-    internal static bool Info_Block_Solid(T_Block B) => B is T_Block.Black or T_Block.Bricks or T_Block.Metal or T_Block.Water or T_Block.Error;
-
-    /// <summary>
-    /// Отзеркаливается сущность? Возвращает OffsetY
-    /// </summary>
-    internal static int? Info_Entity_Reflect(T_Entity E) => E switch{
-        T_Entity.Mob_Spider => 9,
-        T_Entity.Item       => 3,
-        var _ => null
-    };
-
-    /// <summary>
-    /// Случайная позиция для спавна сущности?
-    /// </summary>
-    internal static bool Info_Entity_RandomSpawnPosition(T_Entity E, byte Info) => E == T_Entity.Item && Info == (byte)T_Item.Stick;
-    
     /// <summary>
     /// Текстура предмета
     /// </summary>
@@ -116,9 +98,45 @@ internal static class GOLUWorld_Info{
             T_Decal.FootStep => Texture_FootStep,
             T_Decal.Blood    => Texture_Blood,
             T_Decal.Zero     => Texture_Zero,
-            T_Decal.One      => Texture_One
+            T_Decal.One      => Texture_One,
+            
+            var _ => Texture_Error,
         };
     }
+
+    /// <summary>
+    /// Текстура блока
+    /// </summary>
+    internal static Texture Info_Block_Texture(Block Block){
+        return Block.ID switch{
+            T_Block.Ground_Planks  => Texture_Planks,
+            T_Block.Ground_Asphalt => Texture_Asphalt,
+            T_Block.Ground_Sand    => Texture_Sand,
+            T_Block.Water          => (World_Blocks.TryGetValue(new Vector2I(Block.X, Block.Y - 16), out Block __Found) && __Found.ID == Block.ID ? Texture_Water : Texture_Water_Top),
+            T_Block.Ground_Grass   => Texture_Grass,
+            T_Block.Metal          => Texture_Metal,
+            T_Block.Bricks         => Texture_Bricks,
+            T_Block.Black          => Texture_Black,
+            T_Block.Error          => Texture_Error,
+            
+            var _ => Texture_Error
+        };
+    }
+    
+    /// <summary>
+    /// Блок твёрдый?
+    /// </summary>
+    internal static bool Info_Block_Solid(T_Block B) => B is T_Block.Black or T_Block.Bricks or T_Block.Metal or T_Block.Water or T_Block.Error;
+
+    /// <summary>
+    /// Блок является полом?
+    /// </summary>
+    internal static bool Info_Block_Ground(T_Block B) => B is T_Block.Ground_Planks or T_Block.Ground_Asphalt or T_Block.Ground_Sand or T_Block.Water or T_Block.Ground_Grass;
+
+    /// <summary>
+    /// Отзеркаливать блок?
+    /// </summary>
+    internal static bool Info_Block_Reflect(T_Block B) => Info_Block_Solid(B) && B != T_Block.Water;
 
     /// <summary>
     /// Текстура сущности
@@ -135,7 +153,9 @@ internal static class GOLUWorld_Info{
             T_Entity.Bush       => Texture_Bush,
             T_Entity.Error      => Texture_Error,
             T_Entity.Rock       => Texture_Rock,
-            T_Entity.Mob_Spider => Entity.Health > 0 ? (World_AnimationTimer > 0.5f ? Texture_Spider_Walk : Texture_Spider) : Texture_Spider_Dead
+            T_Entity.Mob_Spider => Entity.Health > 0 ? (World_AnimationTimer > 0.5f ? Texture_Spider_Walk : Texture_Spider) : Texture_Spider_Dead,
+            
+            var _ => Texture_Error
         };
     }
 
@@ -143,4 +163,18 @@ internal static class GOLUWorld_Info{
     /// Какие сущности рендерить?
     /// </summary>
     internal static bool Info_Entity_DoRender(T_Entity Entity) => Entity is T_Entity.Chair or T_Entity.Table or T_Entity.Spikes or T_Entity.Tree or T_Entity.Item or T_Entity.Crate or T_Entity.Grass or T_Entity.Bush or T_Entity.Error or T_Entity.Rock or T_Entity.Mob_Spider;
+    
+    /// <summary>
+    /// Отзеркаливается сущность? Возвращает OffsetY
+    /// </summary>
+    internal static int? Info_Entity_Reflect(T_Entity E) => E switch{
+        T_Entity.Mob_Spider => 9,
+        T_Entity.Item       => 3,
+        var _ => null
+    };
+
+    /// <summary>
+    /// Случайная позиция для спавна сущности?
+    /// </summary>
+    internal static bool Info_Entity_RandomSpawnPosition(T_Entity E, byte Info) => E == T_Entity.Item && Info == (byte)T_Item.Stick;
 }
