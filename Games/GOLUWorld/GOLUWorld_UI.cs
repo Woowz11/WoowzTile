@@ -120,7 +120,7 @@ internal static class GOLUWorld_UI{
             "[F] - БЫСТРОЕ ВРЕМЯ",
             "[B] - ОТКЛЮЧАЕТ ГРАНИЦЫ",
             "[HOME] - ТЕЛЕПОРТ В ЦЕНТР",
-            "[F1,F2,F3] - ТЕСТОВОЕ",
+            "[F1,F2,F3,F4] - ТЕСТОВОЕ",
             "",
             "[ДВИЖЕНИЕ + SHIFT] - ДВИГАТЬ ПРЕДМЕТЫ\nВ ИНВЕНТОРЕ"
         ];
@@ -305,15 +305,20 @@ internal static class GOLUWorld_UI{
                 }   
             }
 
-            void __GPSPixelPlayer(int __X, int __Y) => __GPSPixel(Coordinates_Player.X - Coordinates_World.X + __X * 16, Coordinates_Player.Y - Coordinates_World.Y + __Y * 16, ColorB.Blue);
-            __GPSPixelPlayer( 0,  1);
-            __GPSPixelPlayer( 0,  2);
-            __GPSPixelPlayer( 0, -1);
-            __GPSPixelPlayer( 0, -2);
-            __GPSPixelPlayer( 1,  0);
-            __GPSPixelPlayer( 2,  0);
-            __GPSPixelPlayer(-1,  0);
-            __GPSPixelPlayer(-2,  0);
+            void __GPSPixelCross(int __X, int __Y, ColorB Color){
+                void __GPSPixelPlayer(int X__, int Y__, int __X, int __Y) => __GPSPixel(X__ + __X * 16, Y__ + __Y * 16, Color);
+                __GPSPixelPlayer(__X, __Y, 0,  1);
+                __GPSPixelPlayer(__X, __Y, 0,  2);
+                __GPSPixelPlayer(__X, __Y, 0, -1);
+                __GPSPixelPlayer(__X, __Y, 0, -2);
+                __GPSPixelPlayer(__X, __Y, 1,  0);
+                __GPSPixelPlayer(__X, __Y, 2,  0);
+                __GPSPixelPlayer(__X, __Y,-1,  0);
+                __GPSPixelPlayer(__X, __Y,-2,  0);
+            }
+            
+            __GPSPixelCross(0, 0, ColorB.Yellow);
+            __GPSPixelCross(Coordinates_PlayerWorld.X, Coordinates_PlayerWorld.Y, ColorB.Blue);
             
             string Coordinates = Coordinates_Beautiful.X + " : " + Coordinates_Beautiful.Y;
             Vector2U __CoordinatesSize = Font_Default.TextSize(Coordinates);
@@ -329,5 +334,5 @@ internal static class GOLUWorld_UI{
     /// <summary>
     /// Название окна
     /// </summary>
-    internal static string UI_WindowTitle => "";
+    internal static string UI_WindowTitle => Player_ClosestEntity?.ID + " | " + Player_ClosestEntity_Distance;
 }

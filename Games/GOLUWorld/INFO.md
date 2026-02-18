@@ -56,9 +56,11 @@ new KeyValuePair<byte, ColorB>(13, new ColorB(148, 133, 118, 255)),
 * '#' - Ящик (толкаемый блок)
 * '~' - Трава
 * '3' - Куст
+* 'G' - Могила
 * 'w' - Окно (блок)
 * 'Д' - [ГЕНЕРАТОР] Случайно, дерево или трава или палка или куст или пустота
 * 'д' - [ГЕНЕРАТОР] Случайно, трава или камень или куст или пустота
+* 'т' - [ГЕНЕРАТОР] Случайно, трава или высокая трава или пустота
 * 'М' - [ГЕНЕРАТОР] Случайная мебель, для дома или пустота
 * 'м' - [ГЕНЕРАТОР] Различный мусор или пустота
 
@@ -69,11 +71,17 @@ new KeyValuePair<byte, ColorB>(13, new ColorB(148, 133, 118, 255)),
 ['w'] = 2,
 ['М'] = 3,
 ['м'] = 4,
+['т'] = 5,
+['д'] = 6,
+['Д'] = 7,
 
 new KeyValuePair<byte, ColorB>(1 , new ColorB(0, 0, 0, 0)),
 new KeyValuePair<byte, ColorB>(2 , new ColorB(109, 196, 255, 255)),
 new KeyValuePair<byte, ColorB>(3 , new ColorB(242, 184, 125, 255)),
 new KeyValuePair<byte, ColorB>(4 , new ColorB(239, 135, 119, 255)),
+new KeyValuePair<byte, ColorB>(5 , new ColorB(0, 255, 0, 255)),
+new KeyValuePair<byte, ColorB>(6 , new ColorB(89, 255, 0, 255)),
+new KeyValuePair<byte, ColorB>(7 , new ColorB(182, 255, 0, 255)),
 ```
 
 ## Потолки
@@ -109,6 +117,6 @@ new KeyValuePair<byte, ColorB>(7 , new ColorB(255, 170, 170, 200)),
 * L1 - Мир и игрок
 * L2 - Наносит урон если ходить в нём
 * L3 - Наносит всегда урон
-* L4 - Предмет
+* L4 - 
 * L5 - Толкаемый блок
 * L6 - Получаемое урон

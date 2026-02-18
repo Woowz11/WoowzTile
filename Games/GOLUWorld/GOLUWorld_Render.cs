@@ -35,7 +35,7 @@ internal static class GOLUWorld_Render{
     internal static void Render_RenderQueue_Add(Image.ImageContext C, Renderable R, int OffsetY = 0){
         R.Y += OffsetY;
             
-        const int BorderOffset = 3 * 16;
+        const int BorderOffset = 5 * 16;
         int Border_L = -BorderOffset;
         int Border_R = (int)C.Width + BorderOffset;
         int Border_U = -BorderOffset;
@@ -304,6 +304,16 @@ internal static class GOLUWorld_Render{
                         OffsetY = -48;
                         break;
                     
+                    case T_Entity.Cattail:
+                    case T_Entity.HighGrass:
+                        OffsetY = -16;
+                        break;
+                    
+                    case T_Entity.Grave:
+                        OffsetX = -8;
+                        OffsetY = -16;
+                        break;
+                    
                     case T_Entity.Mob_Spider: {
                         OffsetX = -8;
                         OffsetY = -8;
@@ -348,7 +358,8 @@ internal static class GOLUWorld_Render{
         Texture PlayerEyes  = Texture_Player_Eyes;
         Texture PlayerNose  = Texture_Player_Nose;
         Texture PlayerMouth = (Player_Dead ? Texture_Player_Mouth : Emotion_Happiness < 25 ? Texture_Player_Mouth_Sad : (Emotion_Happiness > 75 ? Texture_Player_Mouth_Happy : Texture_Player_Mouth));
-
+        if(Player_Mute){ PlayerMouth = Texture_Player_Mouth_Mute; }
+        
         if(Player_BlinkTimer > 3 || Player_Dead){
             PlayerEyes = Texture_Player_Eyes_Blink;
             if(Player_BlinkTimer > 3.25f){
@@ -368,8 +379,10 @@ internal static class GOLUWorld_Render{
         
         T_Item Item = Player_ItemInHands;
         if(Item != T_Item.Empty){
-            int __OffsetX = 0;
-            int __OffsetY = -11;
+            Texture ItemTexture = Info_Item_Texture(Item);
+            
+            int __OffsetX = -((int)ItemTexture.Width - 16) / 2;
+            int __OffsetY = -11 - ((int)ItemTexture.Height - 16);
             TextureRotation RotateItem = TextureRotation.None;
 
             if(Player_AttackTimer > 0){
@@ -378,28 +391,28 @@ internal static class GOLUWorld_Render{
                 switch(Player_AttackDirection){
                     case Direction4.Right:
                         __OffsetX = AttackDistance;
-                        __OffsetY = (int)WL.Math.Lerp(-AttackDistance, AttackDistance, Player_AttackTimer);
+                        __OffsetY = (int)WL.Math.Lerp(-AttackDistance, AttackDistance, Player_AttackTimer) - ((int)ItemTexture.Width - 16) / 2;
                         RotateItem = Player_TextureFlipped ? TextureRotation.Rotate270 : TextureRotation.Rotate90;
                         break;
                     case Direction4.Left:
-                        __OffsetX = -AttackDistance;
-                        __OffsetY = (int)WL.Math.Lerp(AttackDistance, -AttackDistance, Player_AttackTimer);
+                        __OffsetX = -AttackDistance - ((int)ItemTexture.Height - 16);
+                        __OffsetY = (int)WL.Math.Lerp(AttackDistance, -AttackDistance, Player_AttackTimer) - ((int)ItemTexture.Width - 16) / 2;
                         RotateItem = Player_TextureFlipped ? TextureRotation.Rotate90 : TextureRotation.Rotate270;
                         break;
                     case Direction4.Up:
-                        __OffsetX = (int)WL.Math.Lerp(-AttackDistance, AttackDistance, Player_AttackTimer);
-                        __OffsetY = -AttackDistance;
+                        __OffsetX = (int)WL.Math.Lerp(-AttackDistance, AttackDistance, Player_AttackTimer) - ((int)ItemTexture.Width - 16) / 2;
+                        __OffsetY = -AttackDistance - ((int)ItemTexture.Height - 16);
                         RotateItem = TextureRotation.None;
                         break;
                     case Direction4.Down:
-                        __OffsetX = (int)WL.Math.Lerp(AttackDistance, -AttackDistance, Player_AttackTimer);
+                        __OffsetX = (int)WL.Math.Lerp(AttackDistance, -AttackDistance, Player_AttackTimer) - ((int)ItemTexture.Width - 16) / 2;
                         __OffsetY = AttackDistance;
                         RotateItem = TextureRotation.Rotate180;
                         break;
                 }
             }
             
-            __RenderPlayerPart(Info_Item_Texture(Item), null, __OffsetX, __OffsetY, Rotation: RotateItem);
+            __RenderPlayerPart(ItemTexture, null, __OffsetX, __OffsetY, Rotation: RotateItem);
         }
     
         ColorB PlayerColor = ColorB.Lerp(ColorB.White, ColorB.DarkRed, WL.Math.Clamp01((Player_Rotting - 2) / 50));
@@ -434,7 +447,7 @@ internal static class GOLUWorld_Render{
                 int PY = Coordinates_PlayerWorld.Y - ((int)C.Height/2 - (int)FY);
 
                 ColorB __WaterShaderColor_InCeilingWarFog = new ColorB(63, 0, 0);
-                if(Color == __WaterShaderColor || Color == __WaterShaderColor_Dark || Color == __WaterShaderColor_InCeilingWarFog){
+                if(Color == __ShaderColor_Water || Color == __ShaderColor_WaterDark || Color == __WaterShaderColor_InCeilingWarFog){
                     byte __Noise1 = PerlinNoise((int)(PX + World_DeltaTick * 2), (int)(PY + World_DeltaTick * 4));
                     byte __Noise2 = PerlinNoise((int)((FX/1.5f + PX/4f) + 32 + World_DeltaTick), (int)((FY/1.5f + PY/4f) + 32 - World_DeltaTick), 4);
 
@@ -446,28 +459,22 @@ internal static class GOLUWorld_Render{
                     
                     Result = WaterSolid;
                     
+                    float RippleX = WL.Math.Sin((Coordinates_PlayerWorld.X + FX + World_DeltaTick * 10) * 0.1f, 1) * 4f;
+                    float RippleY = WL.Math.Cos((Coordinates_PlayerWorld.Y + FY + World_DeltaTick * 10) * 0.3f, 1) * 2f;
+                    RippleY += RippleX;
                     foreach(Renderable R in __RenderQueue_Water){
                         int LocalX = (int)FX - R.X + (int)R.Texture.Width  / 2;
                         int LocalY = (int)FY - R.Y + (int)R.Texture.Height / 2;
                         
-                        if(__RenderQueue_Water.Count > 10){
-                            if(LocalX >= 0 && LocalX < R.Texture.Width && LocalY >= 0 && LocalY < R.Texture.Height){
-                                Result = ColorB.BlendAlpha(Result ?? WaterSolid, R.Texture.GetPixelRepeat(R.Palette, LocalX, LocalY, FlipX: R.FlipX, FlipY: R.FlipY) * (R.MultiplyColor ?? ColorB.White));
-                            }
-                        }else{
-                            float RippleX = WL.Math.Sin((Coordinates_PlayerWorld.X + FX + World_DeltaTick * 10) * 0.1f, 1) * 4f;
-                            float RippleY = WL.Math.Cos((Coordinates_PlayerWorld.Y + FY + World_DeltaTick * 10) * 0.3f, 1) * 2f;
-                        
-                            int DistX = (int)(LocalX + RippleX);
-                            int DistY = (int)(LocalY + RippleY + 2);
-                        
-                            if(DistX >= 0 && DistX < R.Texture.Width && DistY >= 0 && DistY < R.Texture.Height){
-                                Result = ColorB.BlendAlpha(Result ?? WaterSolid, R.Texture.GetPixelRepeat(R.Palette, DistX, DistY, FlipX: R.FlipX, FlipY: R.FlipY) * (R.MultiplyColor ?? ColorB.White));
-                            }
+                        int DistX = (int)(LocalX + RippleX);
+                        int DistY = (int)(LocalY + RippleY + 2);
+                    
+                        if(DistX >= 0 && DistX < R.Texture.Width && DistY >= 0 && DistY < R.Texture.Height){
+                            Result = ColorB.BlendAlpha(Result ?? WaterSolid, R.Texture.GetPixelRepeat(R.Palette, DistX, DistY, FlipX: R.FlipX, FlipY: R.FlipY) * (R.MultiplyColor ?? ColorB.White));
                         }
                     }
 
-                    if(Color == __WaterShaderColor_Dark){
+                    if(Color == __ShaderColor_WaterDark){
                         Result -= new ColorB(64, 64, 64);
                     }else if(Color == __WaterShaderColor_InCeilingWarFog){
                         Result -= new ColorB(128, 128, 128);
@@ -504,14 +511,13 @@ internal static class GOLUWorld_Render{
     /// Рендерит название лежащего предмета
     /// </summary>
     internal static void Render_DroppedItemName(Image.ImageContext C){
-        if(Player_InteractingCollision == CollisionLayer.L4){
-            T_Item ItemOnGround = (T_Item)Player_CollisionInfo1;
+        if(Player_ClosestEntity != null && Player_ClosestEntity_Distance < 1500){
+            T_Item ItemOnGround = (T_Item)Player_ClosestEntity.Value.Info;
             if(ItemOnGround != T_Item.Empty){
-                Entity ItemOnGroundEntity = World_Entities[new EntityKey(Player_CollisionInfo2, (uint)Player_CollisionInfo3)];
                 string ItemName__ = Info_Item_Name(ItemOnGround);
                 Vector2U ItemNameSize__ = Font_Default.TextSize(ItemName__);
-                int X__ = ItemOnGroundEntity.X + Coordinates_World.X - (int)(ItemNameSize__.X / 2) + (16 / 2);
-                int Y__ = ItemOnGroundEntity.Y + Coordinates_World.Y;
+                int X__ = Player_ClosestEntity.Value.X + Coordinates_World.X - (int)(ItemNameSize__.X / 2) + (16 / 2);
+                int Y__ = Player_ClosestEntity.Value.Y + Coordinates_World.Y;
                 C.Fill(X__ - 1, Y__ - 1, ItemNameSize__.X + 2, ItemNameSize__.Y + 2, ColorB.White.SetA(192), ImageBlend.Alpha);
                 C.Border(X__ - 2, Y__ - 2, ItemNameSize__.X + 4, ItemNameSize__.Y + 4, 1, ColorB.White);
                 Font_Default.Render(C, Palette_Default, ItemName__, X__, Y__);
@@ -523,6 +529,8 @@ internal static class GOLUWorld_Render{
     /// Рендерит мысли игрока
     /// </summary>
     internal static void Render_Thoughts(Image.ImageContext C){
+        if(Player_Mute){ return; }
+        
         int X = Coordinates_Player.X;
         int Y = Coordinates_Player.Y - 8 - (int)(WL.Math.Sin(World_DeltaTick, 1) * 3);
         

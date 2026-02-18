@@ -18,9 +18,9 @@ internal static class GOLUWorld_World{
     internal static void World_Start(){
         UI_InMainMenu = false;
         
-        Coordinates_Camera = Vector2F.Zero;
+        World_Seed = World_GenerateNewSeed();
         
-        World_Decals.Clear();
+        Coordinates_Camera = Vector2F.Zero;
 
         World_Time = World_TimeMax / 2;
         World_Flow = Vector2F.Zero;
@@ -39,11 +39,12 @@ internal static class GOLUWorld_World{
         Emotion_Happiness = Emotion_Max;
 
         Player_ClearInventory();
-        Player_Inventory[0] = T_Item.Stick;
+        Player_Inventory[0] = T_Item.Crowbar;
         Player_Inventory[1] = T_Item.FirstAidKit;
         Player_Inventory[2] = T_Item.GPS;
 
-        World_Seed = World_GenerateNewSeed();
+        uint __Seed = World_Seed - 17312;
+        Player_Mute = WL.Math.Random.Fast_Bool(0.1f, ref __Seed);
         
         World_GoToWorld(T_World.Calm);
     }
@@ -62,6 +63,8 @@ internal static class GOLUWorld_World{
         World_DeltaTick = 0;
 
         Player_AttackTimer = 0;
+
+        World_Size = new Vector2U(150, 150);
         
         Generator_World(World);
         
@@ -168,10 +171,6 @@ internal static class GOLUWorld_World{
                 Game.AddCollider(new Collider(Coordinates_World.X + Entity.X + (int)((16 - SizeX)/2), Coordinates_World.Y + Entity.Y + (int)((16 - SizeY)/2), SizeX, SizeY, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, Layer));
             }
             
-            if(Entity.ID is T_Entity.Item){
-                Game.AddCollider(new Collider(Coordinates_World.X + Entity.X, Coordinates_World.Y + Entity.Y, 16, 16, Entity.Info, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L4));
-            }
-            
             if(Entity.ID is T_Entity.Crate){
                 Game.AddCollider(new Collider(Coordinates_World.X + Entity.X + 2, Coordinates_World.Y + Entity.Y + 2, 12, 12, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L5));
             }
@@ -192,10 +191,10 @@ internal static class GOLUWorld_World{
     internal static void World_UpdatePlayer(TickData TD){
         if(Cheat_Immortality){ if(Player_Health < 1){ Player_Health = 1; } }
 
-        Player_Floor   = World_GetBlock  (Coordinates_PlayerWorldCenter.X, Coordinates_PlayerWorldCenter.Y, Relative: true);
-        Player_Ceiling = World_GetCeiling(Coordinates_PlayerWorldCenter.X, Coordinates_PlayerWorldCenter.Y, Relative: true);
+        Player_Floor   = World_GetBlock  (Coordinates_PlayerWorld_Center.X, Coordinates_PlayerWorld_Center.Y, Relative: true);
+        Player_Ceiling = World_GetCeiling(Coordinates_PlayerWorld_Center.X, Coordinates_PlayerWorld_Center.Y, Relative: true);
         
-        if(Game.KeyPressed(Key.F4)){ World_SetBlock(new Block{ ID = T_Block.Bricks, X = Coordinates_PlayerWorldCenter.X/16, Y = (Coordinates_PlayerWorldCenter.Y)/16 + 1}); }
+        if(Game.KeyPressed(Key.F4)){ World_SetBlock(new Block{ ID = T_Block.Bricks, X = Coordinates_PlayerWorld_Center.X/16, Y = (Coordinates_PlayerWorld_Center.Y)/16 + 1}); }
         
         if(Player_Dead){
             UI_Interface = 0;
@@ -207,6 +206,9 @@ internal static class GOLUWorld_World{
             Player_Rotting += (float)TD.DeltaTimeS;
 
             Player_AttackTimer = 0;
+            
+            Player_ClosestEntity = null;
+            Player_ClosestEntity_Distance = WL.Math.MaxValue;
         }else{
             if(Player_OutBounds){
                 Damage(WL.Math.Random.Fast_Bool(0.05f) ? (uint)WL.Math.Random.Fast_Int(1, 10) : 0);
@@ -219,6 +221,18 @@ internal static class GOLUWorld_World{
             if(WL.Math.Random.Fast_Bool(0.001f)){ SayThoughts(T_Thoughts.Idle); }
 
             Player_AttackTimer -= Info_Item_MeleeAttackSpeed(Player_ItemInHands);
+            
+            Player_ClosestEntity_Distance = WL.Math.MaxValue;
+            foreach(Entity Entity in World_Entities.Values){
+                float DX = Entity.X - Coordinates_PlayerWorld_Center.X;
+                float DY = Entity.Y - Coordinates_PlayerWorld_Center.Y;
+                float DistanceSquare = WL.Math.Sqr(DX) + WL.Math.Sqr(DY);
+
+                if(Info_Entity_Interacting(Entity.ID) && DistanceSquare < Player_ClosestEntity_Distance){
+                    Player_ClosestEntity_Distance = DistanceSquare;
+                    Player_ClosestEntity = Entity;
+                }
+            }
         }
 
         if(Player_ThoughtTimer < 0 || Player_Dead){ Player_Thought = ""; Player_ThoughtContext = T_Thoughts.Idle; }else{ Player_ThoughtTimer -= (float)TD.DeltaTimeS; }
@@ -554,8 +568,9 @@ internal static class GOLUWorld_World{
         bool HasUniqueID = Entity.ID is T_Entity.Crate or T_Entity.Item or T_Entity.Mob_Spider;
         
         EntityKey Key = new EntityKey(new Vector2I(Entity.X, Entity.Y), HasUniqueID);
+        Entity.UniqueID = Key.UniqueID;
         
-        uint __Seed = World_Seed + (uint)Entity.X;
+        uint __Seed = World_Seed + (uint)Entity.X - (uint)Entity.Y;
         __Seed *= (uint)Entity.Y;
         
         if(!IgnoreBlocks){
@@ -593,6 +608,13 @@ internal static class GOLUWorld_World{
                 World_Entities[Key] = Entity;
             }
         }
+    }
+
+    /// <summary>
+    /// Уничтожает указанную сущность
+    /// </summary>
+    internal static void World_RemoveEntity(Entity Entity){
+        World_Entities.Remove(new EntityKey(new Vector2I(Entity.X, Entity.Y), Entity.UniqueID));
     }
     
     /// <summary>

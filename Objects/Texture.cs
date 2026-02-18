@@ -79,19 +79,19 @@ public class Texture{
             float CX = Width / 2f, CY = Height / 2f;
             
             for(int y__ = 0; y__ < DH; y__++){
-                int sy = FlipY ? SrcY + SH - 1 - ((y__ + OffsetY) % SH) : SrcY + ((y__ + OffsetY) % SH);
+                int SY__ = FlipY ? SrcY + SH - 1 - ((y__ + OffsetY) % SH) : SrcY + ((y__ + OffsetY) % SH);
                 for (int x__ = 0; x__ < DW; x__++){
-                    int sx = FlipX ? SrcX + SW - 1 - ((x__ + OffsetX) % SW) : SrcX + ((x__ + OffsetX) % SW);
-                    float dx = sx - CX, dy = sy - CY;
+                    int SX = FlipX ? SrcX + SW - 1 - ((x__ + OffsetX) % SW) : SrcX + ((x__ + OffsetX) % SW);
+                    float DX__ = SX - CX, DY__ = SY__ - CY;
                     
-                    int rx = Rotation switch { TextureRotation.None => sx, TextureRotation.Rotate90 => (int)(CX + dy), TextureRotation.Rotate180 => (int)(CX - dx), TextureRotation.Rotate270 => (int)(CX - dy), var _ => sx },
-                        ry = Rotation switch { TextureRotation.None => sy, TextureRotation.Rotate90 => (int)(CY - dx), TextureRotation.Rotate180 => (int)(CY - dy), TextureRotation.Rotate270 => (int)(CY + dx), var _ => sy };
+                    int RX = Rotation switch { TextureRotation.None => SX, TextureRotation.Rotate90 => (int)(CX + DY__), TextureRotation.Rotate180 => (int)(CX - DX__), TextureRotation.Rotate270 => (int)(CX - DY__), var _ => SX },
+                        RY = Rotation switch { TextureRotation.None => SY__, TextureRotation.Rotate90 => (int)(CY - DX__), TextureRotation.Rotate180 => (int)(CY - DY__), TextureRotation.Rotate270 => (int)(CY + DX__), var _ => SY__ };
                     
-                    if (rx < 0 || rx >= Width || ry < 0 || ry >= Height){ continue; }
-                    ColorB color = Palette[Pixels[ry * (int)Width + rx]];
+                    if(RX < 0 || RX >= Width || RY < 0 || RY >= Height){ continue; }
+                    ColorB color = Palette[Pixels[RY * (int)Width + RX]];
                     if(color.A == 0){ continue; }
                     uint DX = (uint)(X + x__), DY = (uint)(Y + y__);
-                    if(DX < C.Width && DY < C.Height) C.SetPixel(DX, DY, color * MultiplyColor.Value, ImageBlend.Alpha);
+                    if(DX < C.Width && DY < C.Height){ C.SetPixel(DX, DY, color * MultiplyColor.Value, ImageBlend.Alpha); }
                 }
             }
         }catch (Exception e) { throw new Exception($"Произошла ошибка при рендере текстуры [{this}]!", e); }

@@ -6,17 +6,18 @@ namespace GOLUWorld;
 
 internal static class GOLUWorld_Objects{
     internal enum T_Block : byte{
-        Empty          = 0,
-        Metal          = 1,
-        Ground_Planks  = 2,
-        Ground_Asphalt = 3,
-        Bricks         = 4,
-        Ground_Sand    = 5,
-        Water          = 6,
-        Black          = 7,
-        Ground_Grass   = 8,
-        Error          = 9,
-        Concrete       = 10
+        Empty              = 0,
+        Metal              = 1,
+        Ground_Planks      = 2,
+        Ground_Asphalt     = 3,
+        Bricks             = 4,
+        Ground_Sand        = 5,
+        Water              = 6,
+        Black              = 7,
+        Ground_Grass       = 8,
+        Error              = 9,
+        Concrete           = 10,
+        Ground_Cobblestone = 11,
     }
 
     internal enum T_Entity : byte{
@@ -31,10 +32,12 @@ internal static class GOLUWorld_Objects{
         Grass      = 8,
         Bush       = 9,
         Error      = 10,
-        Rock       = 11,
-        Window     = 12,
-        TrashBag   = 13,
-        Tire       = 14
+        Window     = 11,
+        TrashBag   = 12,
+        Tire       = 13,
+        HighGrass  = 14,
+        Cattail    = 15,
+        Grave      = 16
     }
     
     internal enum T_Ceiling : byte{
@@ -50,7 +53,10 @@ internal static class GOLUWorld_Objects{
         FirstAidKit = 1,
         GPS         = 2,
         Error       = 3,
-        Stick       = 4
+        Stick       = 4,
+        Crowbar     = 5,
+        Rock        = 6,
+        Destroyer   = 7
     }
 
     internal enum T_Decal : byte{
@@ -139,6 +145,7 @@ internal static class GOLUWorld_Objects{
         internal TextureRotation Rotation   = TextureRotation.None;
         internal uint            Health     = 100;
         internal bool            Dead       => Health == 0;
+        internal uint            UniqueID   = 0;
     }
     
     internal struct Decal{

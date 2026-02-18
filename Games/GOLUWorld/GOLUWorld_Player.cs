@@ -97,8 +97,8 @@ internal static class GOLUWorld_Player{
     /// <summary>
     /// Игрок атакует в ближнем бою
     /// </summary>
-    internal static void Player_AttackMelee(Direction4? Direction = null){
-        Player_AttackDirection = Direction ?? Player_LastDirection;
+    internal static void Player_AttackMelee(Direction4 Direction){
+        Player_AttackDirection = Direction;
         Player_AttackTimer = 1;
 
         const int PlayerColliderSize = 16;
@@ -142,7 +142,6 @@ internal static class GOLUWorld_Player{
         }
         
         if(Game.Collision(new Collider(AttackX, AttackY, (uint)Width, (uint)Height, Mask: CollisionLayer.L6), out Collider? Hit)){
-                //World_DamageBlock(Hit.Value.Info2, Item_Info_MeleeAttackDamage(Player_ItemInHands));
             World_DamageEntity(new EntityKey(Hit!.Value.Info2, (uint)Hit.Value.Info3), Item_Info_MeleeAttackDamage(Player_ItemInHands));   
         }
     }
@@ -153,6 +152,8 @@ internal static class GOLUWorld_Player{
     /// <param name="Direction">Направление действия</param>
     internal static void Player_ItemUse(Direction4? Direction = null){
         if(Player_AttackTimer > 0 || Player_Dead){ return; }
+
+        Direction4 Direction__ = Direction ?? Player_LastDirection;
         
         T_Item Item = Player_ItemInHands;
 
@@ -169,8 +170,31 @@ internal static class GOLUWorld_Player{
                     break;
                 }
 
+                case T_Item.Destroyer:
+                case T_Item.Crowbar:
                 case T_Item.Stick: {
-                    Player_AttackMelee(Direction);
+                    Player_AttackMelee(Direction__);
+                    break;
+                }
+
+                case T_Item.Rock:{
+                    int OffsetX = Direction__ switch{
+                        Direction4.Left  => -1,
+                        Direction4.Right => 1,
+                        var _ => 0
+                    };
+                    int OffsetY = Direction__ switch{
+                        Direction4.Up   => -1,
+                        Direction4.Down => 1,
+                        var _ => 0
+                    };
+
+                    Block Block = World_GetBlock(Coordinates_PlayerWorld_Center.X + OffsetX * 16, Coordinates_PlayerWorld_Center.Y + OffsetY * 16, Relative: true);
+                    if(Info_Block_Pit(Block.ID)){
+                        World_SetBlock(new Block{ X = Block.X, Y = Block.Y, ID = T_Block.Ground_Cobblestone }, SnapToGrid: false);
+                        RemoveItem = true;
+                    }
+                    
                     break;
                 }
             }
@@ -214,11 +238,14 @@ internal static class GOLUWorld_Player{
         return false;
     }
     
-    internal static void Use(){
-        if(Player_InteractingCollision == CollisionLayer.L4){
-            T_Item Item = (T_Item)Player_CollisionInfo1;
+    /// <summary>
+    /// Взаимодействует с сущностью
+    /// </summary>
+    internal static void Player_Interact(){
+        if(Player_ClosestEntity != null && Player_ClosestEntity_Distance < 1500){
+            T_Item Item = (T_Item)Player_ClosestEntity.Value.Info;
             if(Item != T_Item.Empty){
-                if(AddToInventory(Item)){ World_Entities.Remove(new EntityKey(Player_CollisionInfo2, (uint)Player_CollisionInfo3)); }
+                if(AddToInventory(Item)){ World_RemoveEntity(Player_ClosestEntity.Value); }
             }
         }
     }

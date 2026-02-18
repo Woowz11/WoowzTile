@@ -53,6 +53,7 @@ internal static class GOLUWorld_Input{
                 if(Key == Key.F3){
                     Generator_DebugStructure(Coordinates_PlayerWorld.X / 16, Coordinates_PlayerWorld.Y / 16);
                 }
+                if(Key == Key.F4){ World_Start(); }
 
                 if(Key == Key.Escape || (UI_Interface == T_Interface.Menu && UI_MenuSelectedButton == 0 && __Enter)){
                     if(UI_Interface == T_Interface.None){ UI_Interface = T_Interface.Menu; }else{ UI_Interface = T_Interface.None; UI_MenuSelectedButton = 0; }
@@ -74,7 +75,7 @@ internal static class GOLUWorld_Input{
                         }
                     }
                     
-                    if(Key == Key.E){ Use(); }
+                    if(Key == Key.E){ Player_Interact(); }
 
                     if(Key == Key.Backspace){ Player_ItemDrop(); }
                     

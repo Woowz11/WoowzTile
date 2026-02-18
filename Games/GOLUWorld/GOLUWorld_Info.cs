@@ -19,6 +19,9 @@ internal static class GOLUWorld_Info{
             T_Item.FirstAidKit => Texture_FirstAidKit,
             T_Item.GPS         => Texture_GPS,
             T_Item.Stick       => Texture_Stick,
+            T_Item.Crowbar     => Texture_Crowbar,
+            T_Item.Rock        => Texture_Rock,
+            T_Item.Destroyer   => Texture_Destroyer,
             
             var _ => Texture_Error
         };
@@ -34,6 +37,9 @@ internal static class GOLUWorld_Info{
             T_Item.FirstAidKit => Texture_FirstAidKit_Icon,
             T_Item.GPS         => Texture_GPS_Icon,
             T_Item.Stick       => Texture_Stick_Icon,
+            T_Item.Crowbar     => Texture_Crowbar_Icon,
+            T_Item.Rock        => Texture_Rock_Icon,
+            T_Item.Destroyer   => Texture_Destroyer_Icon,
                     
             var _ => Texture_Error_Icon
         };
@@ -50,6 +56,9 @@ internal static class GOLUWorld_Info{
             T_Item.GPS         => "GPS",
             T_Item.Error       => "ОШИБКА",
             T_Item.Stick       => "ПАЛКА",
+            T_Item.Crowbar     => "МОНТИРОВКА",
+            T_Item.Rock        => "КАМЕНЬ",
+            T_Item.Destroyer   => "РАЗРУШИТЕЛЬ",
             
             var _ => "ПРЕДМЕТ [" + (byte)I + "]"
         };
@@ -65,6 +74,9 @@ internal static class GOLUWorld_Info{
             T_Item.FirstAidKit => "ЛЕЧИТ БЕДНЫЙ КУБИК ГУЛУ (+ с50)",
             T_Item.GPS => "ЕСЛИ ДЕРЖАТЬ В РУКАХ,\nПОКАЗЫВАЕТ КАРТУ",
             T_Item.Stick => "ИЗБЕЙ ВСЕХ ВЕТКОЙ (у10)",
+            T_Item.Crowbar => "ЛОМ (у30)",
+            T_Item.Rock => "МОЖНО ЗАВАЛИВАТЬ ЯМЫ",
+            T_Item.Destroyer => "БЕССКОНЕЧНЫЙ УРОН (уi)",
                         
             var _ => "О БОЖЕ ЧТО ЭТО ТАКОЕ?"
         };
@@ -76,6 +88,8 @@ internal static class GOLUWorld_Info{
     internal static float Info_Item_MeleeAttackSpeed(T_Item I){
         return I switch{
             T_Item.Stick => 0.15f,
+            T_Item.Crowbar => 0.15f,
+            T_Item.Destroyer => 0.15f,
                         
             var _ => 0
         };
@@ -87,6 +101,8 @@ internal static class GOLUWorld_Info{
     internal static uint Item_Info_MeleeAttackDamage(T_Item I){
         return I switch{
             T_Item.Stick => 10,
+            T_Item.Crowbar => 30,
+            T_Item.Destroyer => uint.MaxValue,
 
             var _ => 0
         };
@@ -120,16 +136,17 @@ internal static class GOLUWorld_Info{
     /// </summary>
     internal static Texture Info_Block_Texture(Block B){
         return B.ID switch{
-            T_Block.Ground_Planks  => Texture_Planks,
-            T_Block.Ground_Asphalt => Texture_Asphalt,
-            T_Block.Ground_Sand    => Texture_Sand,
-            T_Block.Water          => (World_Blocks.TryGetValue(new Vector2I(B.X, B.Y - 16), out Block __Found) && __Found.ID == B.ID ? Texture_Water : Texture_Water_Top),
-            T_Block.Ground_Grass   => Texture_Grass,
-            T_Block.Metal          => Texture_Metal,
-            T_Block.Bricks         => Texture_Bricks,
-            T_Block.Black          => Texture_Black,
-            T_Block.Error          => Texture_Error,
-            T_Block.Concrete       => Texture_Concrete_Beam,
+            T_Block.Ground_Planks      => Texture_Planks,
+            T_Block.Ground_Asphalt     => Texture_Asphalt,
+            T_Block.Ground_Sand        => Texture_Sand,
+            T_Block.Water              => (World_Blocks.TryGetValue(new Vector2I(B.X, B.Y - 16), out Block __Found) && __Found.ID == B.ID ? Texture_Water : Texture_Water_Top),
+            T_Block.Ground_Grass       => Texture_Grass,
+            T_Block.Metal              => Texture_Metal,
+            T_Block.Bricks             => Texture_Bricks,
+            T_Block.Black              => Texture_Black,
+            T_Block.Error              => Texture_Error,
+            T_Block.Concrete           => Texture_Concrete_Beam,
+            T_Block.Ground_Cobblestone => Texture_Cobblestone,
             
             var _ => Texture_Error
         };
@@ -143,17 +160,27 @@ internal static class GOLUWorld_Info{
     /// <summary>
     /// Блок является полом?
     /// </summary>
-    internal static bool Info_Block_Ground(T_Block B) => B is T_Block.Ground_Planks or T_Block.Ground_Asphalt or T_Block.Ground_Sand or T_Block.Water or T_Block.Ground_Grass;
+    internal static bool Info_Block_Ground(T_Block B) => B is T_Block.Ground_Planks or T_Block.Ground_Asphalt or T_Block.Ground_Sand or T_Block.Water or T_Block.Ground_Grass or T_Block.Ground_Cobblestone;
 
     /// <summary>
     /// Отзеркаливать блок?
     /// </summary>
-    internal static bool Info_Block_Reflect(T_Block B) => Info_Block_Solid(B) && B != T_Block.Water;
+    internal static bool Info_Block_Reflect(T_Block B) => Info_Block_Solid(B) && !Info_Block_Water(B);
 
+    /// <summary>
+    /// Блок вода?
+    /// </summary>
+    internal static bool Info_Block_Water(T_Block B) => B is T_Block.Water;
+
+    /// <summary>
+    /// Блок яма?
+    /// </summary>
+    internal static bool Info_Block_Pit(T_Block B) => Info_Block_Water(B);
+    
     /// <summary>
     /// Поддерживает декали?
     /// </summary>
-    internal static bool Info_Block_SupportDecals(T_Block B) => B != T_Block.Water;
+    internal static bool Info_Block_SupportDecals(T_Block B) => !Info_Block_Water(B);
 
     /// <summary>
     /// На блоке может расти трава?
@@ -177,15 +204,21 @@ internal static class GOLUWorld_Info{
             case 'P':
                 ID = T_Block.Ground_Planks;
                 break;
-            case 'A':
+            case 'A':{
+                T_Block B = World_GetBlock(X, Y).ID;
+                if(Info_Block_Water(B)){ return null; }
                 ID = T_Block.Ground_Asphalt;
                 break;
+            }
             case 'B':
                 ID = T_Block.Bricks;
                 break;
-            case 'S':
+            case 'S':{
+                T_Block B = World_GetBlock(X, Y).ID;
+                if(Info_Block_Water(B)){ return null; }
                 ID = T_Block.Ground_Sand;
                 break;
+            }
             case 'W':
                 ID = T_Block.Water;
                 break;
@@ -204,12 +237,15 @@ internal static class GOLUWorld_Info{
                     WL.Math.Random.Fast_0_1(ref __Seed),
                     [(T_Block.Ground_Grass, 0, 1), (T_Block.Empty, 0, 1)]
                 );
-            case 'П':
+            case 'П': {
+                T_Block B = World_GetBlock(X, Y).ID;
+                if(Info_Block_Water(B)){ return null; }
                 __Seed += 774743;
                 return Generator_SelectWeightedObject(
                     WL.Math.Random.Fast_0_1(ref __Seed),
                     [(T_Block.Ground_Sand, 0, 1), (T_Block.Empty, 0, 1)]
                 );
+            }
             case 'Ũ':
                 ID = WL.Math.Random.Fast_Bool(ref __Seed1) ? T_Block.Ground_Planks : T_Block.Bricks;
                 break;
@@ -243,11 +279,13 @@ internal static class GOLUWorld_Info{
             T_Entity.Grass      => Texture_TallGrass,
             T_Entity.Bush       => Texture_Bush,
             T_Entity.Error      => Texture_Error,
-            T_Entity.Rock       => Texture_Rock,
             T_Entity.Mob_Spider => E.Health > 0 ? (World_AnimationTimer > 0.5f ? Texture_Spider_Walk : Texture_Spider) : Texture_Spider_Dead,
             T_Entity.Window     => E.Info == 1 ? Texture_Window_Boarded : Texture_Window,
             T_Entity.TrashBag   => Texture_TrashBag,
             T_Entity.Tire       => Texture_Tire,
+            T_Entity.HighGrass  => Texture_TallGrass_High,
+            T_Entity.Cattail    => Texture_Cattail,
+            T_Entity.Grave      => Texture_Grave,
             
             var _ => Texture_Error
         };
@@ -264,13 +302,21 @@ internal static class GOLUWorld_Info{
     internal static int? Info_Entity_Reflect(T_Entity E) => E switch{
         T_Entity.Mob_Spider => 9,
         T_Entity.Item       => 3,
+        T_Entity.Window     => 0,
+        T_Entity.Cattail    => 0,
+        
         var _ => null
     };
 
     /// <summary>
+    /// Взаимодействующие сущности
+    /// </summary>
+    internal static bool Info_Entity_Interacting(T_Entity E) => E is T_Entity.Item;
+
+    /// <summary>
     /// Случайная позиция для спавна сущности?
     /// </summary>
-    internal static bool Info_Entity_RandomSpawnPosition(T_Entity E, byte Info) => E == T_Entity.Item && Info == (byte)T_Item.Stick;
+    internal static bool Info_Entity_RandomSpawnPosition(T_Entity E, byte Info) => E == T_Entity.Item && Info is (byte)T_Item.Stick or (byte)T_Item.Rock;
 
     /// <summary>
     /// Сущности которые может толкать вода
@@ -280,7 +326,7 @@ internal static class GOLUWorld_Info{
     /// <summary>
     /// Является растением? (случайная позиция и ветер)
     /// </summary>
-    internal static bool Info_Entity_Plant(T_Entity E) => E is T_Entity.Grass or T_Entity.Bush;
+    internal static bool Info_Entity_Plant(T_Entity E) => E is T_Entity.Grass or T_Entity.Bush or T_Entity.HighGrass or T_Entity.Cattail;
 
     /// <summary>
     /// Стартовое здоровье сущности
@@ -324,6 +370,9 @@ internal static class GOLUWorld_Info{
             case '3':
                 ID = T_Entity.Bush;
                 break;
+            case 'G':
+                ID = T_Entity.Grave;
+                break;
             case 'w':
                 __Seed += 88555;
                 return (T_Entity.Window, (byte)WL.Math.Random.Fast_Int(0, 1, ref __Seed));
@@ -331,18 +380,24 @@ internal static class GOLUWorld_Info{
                 __Seed += 1667;
                 T_Block B = World_GetBlock(X, Y).ID;
                 if(!Info_Block_SupportGrass(B)){ return null; }
-                return World_GetBlock(X, Y).ID == T_Block.Ground_Sand
-                    ? Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Rock, 0, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Empty, 0, 99)])
+                return B == T_Block.Ground_Sand
+                    ? Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Item, (byte)T_Item.Rock, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Empty, 0, 99)])
                     : Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed),
-                        [(T_Entity.Tree, 0, 20), (T_Entity.Rock, 0, 10), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Bush, 0, 5), (T_Entity.Grass, 0, 43), (T_Entity.Empty, 0, 32)]);
+                        [(T_Entity.Tree, 0, 20), (T_Entity.Item, (byte)T_Item.Rock, 10), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Bush, 0, 5), (T_Entity.Grass, 0, 43), (T_Entity.Empty, 0, 32)]);
             }
             case 'д': {
                 __Seed += 1532;
                 T_Block B = World_GetBlock(X, Y).ID;
                 if(!Info_Block_SupportGrass(B)){ return null; }
-                return World_GetBlock(X, Y).ID == T_Block.Ground_Sand
-                    ? Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Empty, 0, 99)])
-                    : Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Bush, 0, 5), (T_Entity.Grass, 0, 43), (T_Entity.Empty, 0, 32)]);
+                return B == T_Block.Ground_Sand
+                    ? Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Cattail, 0, 10), (T_Entity.Empty, 0, 99)])
+                    : Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Bush, 0, 1), (T_Entity.HighGrass, 0, 1), (T_Entity.Grass, 0, 43), (T_Entity.Empty, 0, 32)]);
+            }
+            case 'т': {
+                __Seed += 8543;
+                T_Block B = World_GetBlock(X, Y).ID;
+                if(!Info_Block_SupportGrass(B) || B is T_Block.Ground_Sand){ return null; }
+                return Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Grass, 0, 1), (T_Entity.HighGrass, 0, 5), (T_Entity.Empty, 0, 1)]);
             }
             case 'М':
                 __Seed += 99533221;

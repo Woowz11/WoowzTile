@@ -108,16 +108,16 @@ internal static class GOLUWorld_Generator{
             Generator_Water(Seed);
 
             Generator_Village(Seed);
+
+            Generator_Pond(Seed);
             
             Generator_SandPatch(Seed);
             
             Generator_GrassLand(Seed);
             
             Generator_GrassPatch(Seed);
-
-            for(int i = 0; i < 1000; i++){
-                World_AddDecal(new Decal{ ID = Info_Decal_RandomTrash(), X = WL.Math.Random.Fast_Int(-(int)World_SizeWorld.X, (int)World_SizeWorld.X), Y = WL.Math.Random.Fast_Int(-(int)World_SizeWorld.Y, (int)World_SizeWorld.Y) }, RandomRotation: true);
-            }
+            
+            Generator_Trash(Seed);
         }
         
         switch(World){
@@ -148,10 +148,23 @@ internal static class GOLUWorld_Generator{
     internal static void Generator_Village(uint Seed){
         Seed += 9182783;
 
-        int TotalBuildings = WL.Math.Random.Fast_Int(0, 10, ref Seed);
+        int Total = WL.Math.Random.Fast_Int(0, 10, ref Seed);
+        Seed += 6231;
+        
+        for(int i = 0; i < Total; i++){
+            uint __Seed1 = Seed + (uint)i * 2332223;
+            uint __Seed2 = Seed + (uint)i * 2332224;
+            uint __Seed3 = Seed + (uint)i * 1334125;
+            
+            Structure __Road = Structure_Roads[WL.Math.Random.Fast_Int(0, Structure_Roads.Length - 1, ref __Seed3)];
+            
+            Generator_Structure(WL.Math.Random.Fast_Int(Generator_Border_L, Generator_Border_R, ref __Seed1), WL.Math.Random.Fast_Int(Generator_Border_U, Generator_Border_D, ref __Seed2), __Road, Seed + (uint)i, Replace: true);
+        }
+        
+        Total = WL.Math.Random.Fast_Int(0, 10, ref Seed);
         Seed += 123;
-
-        for(int i = 0; i < TotalBuildings; i++){
+        
+        for(int i = 0; i < Total; i++){
             uint __Seed1 = Seed + (uint)i * 232223;
             uint __Seed2 = Seed + (uint)i * 232224;
             uint __Seed3 = Seed + (uint)i * 134125;
@@ -161,14 +174,37 @@ internal static class GOLUWorld_Generator{
     }
     
     /// <summary>
+    /// Генерирует пруды
+    /// </summary>
+    internal static void Generator_Pond(uint Seed){
+        Seed += 18844;
+        
+        int Total = WL.Math.Random.Fast_Int(0, 20, ref Seed);
+        Seed += 12577;
+        
+        for(int i = 0; i < Total; i++){
+            Seed -= 152676;
+                    
+            uint SeedOffset = (uint)i;
+            uint __Seed1 = Seed + SeedOffset * 22285223;
+            uint __Seed2 = Seed + SeedOffset * 212346224;
+            uint __Seed3 = Seed + SeedOffset * 12844125;
+
+            Structure __Pond = Structure_Ponds[WL.Math.Random.Fast_Int(0, Structure_Ponds.Length - 1, ref __Seed3)];
+                    
+            Generator_Structure(WL.Math.Random.Fast_Int(Generator_Border_L, Generator_Border_R, ref __Seed1), WL.Math.Random.Fast_Int(Generator_Border_U, Generator_Border_D, ref __Seed2), __Pond, Seed + SeedOffset);
+        }
+    }
+    
+    /// <summary>
     /// Генерирует кусок травы
     /// </summary>
     internal static void Generator_GrassPatch(uint Seed){
         Seed += 111125;
-        for(int x = 0; x < 50; x++){
+        for(int i = 0; i < 50; i++){
             Seed -= 161616;
                     
-            uint SeedOffset = (uint)x;
+            uint SeedOffset = (uint)i;
             uint __Seed1 = Seed + SeedOffset * 222223;
             uint __Seed2 = Seed + SeedOffset * 212224;
             uint __Seed3 = Seed + SeedOffset * 124125;
@@ -199,20 +235,45 @@ internal static class GOLUWorld_Generator{
     }
     
     /// <summary>
+    /// Генерирует мусор
+    /// </summary>
+    internal static void Generator_Trash(uint Seed){
+        Seed += 95694;
+        
+        int Total = WL.Math.Random.Fast_Int(100, 300, ref Seed);
+        Seed += 1256;
+        
+        for(int i = 0; i < Total; i++){
+            Seed -= 1976;
+                    
+            uint SeedOffset = (uint)i;
+            uint __Seed1 = Seed + SeedOffset * 34678223;
+            uint __Seed2 = Seed + SeedOffset * 21964724;
+            uint __Seed3 = Seed + SeedOffset * 1223512125;
+
+            Generator_Structure(WL.Math.Random.Fast_Int(Generator_Border_L, Generator_Border_R, ref __Seed1), WL.Math.Random.Fast_Int(Generator_Border_U, Generator_Border_D, ref __Seed2), Generator_SelectWeightedObject<Structure>(WL.Math.Random.Fast_0_1(ref __Seed3), Structure_Trash).Item1, Seed + SeedOffset);
+        }
+        
+        for(int i = 0; i < 1000; i++){
+            World_AddDecal(new Decal{ ID = Info_Decal_RandomTrash(), X = WL.Math.Random.Fast_Int(-(int)World_SizeWorld.X, (int)World_SizeWorld.X), Y = WL.Math.Random.Fast_Int(-(int)World_SizeWorld.Y, (int)World_SizeWorld.Y) }, RandomRotation: true);
+        }
+    }
+    
+    /// <summary>
     /// Генерирует площадь травы
     /// </summary>
     internal static void Generator_GrassLand(uint Seed){
         Seed -= 32;
-        for(int y = -(int)World_Size.Y; y < World_Size.Y; y += 10){
+        for(int y = -(int)World_Size.Y; y < World_Size.Y + 10; y += 10){
             Seed += 511;
-            for(int x = -(int)World_Size.X; x < World_Size.X; x += 10){
+            for(int x = -(int)World_Size.X; x < World_Size.X + 10; x += 10){
                 Seed *= 51;
                         
                 uint SeedOffset = (uint)((x + y) * (x * y));
                 uint __Seed1 = Seed + SeedOffset * 222223;
                 uint __Seed2 = Seed + SeedOffset * 212224;
                     
-                Generator_Structure(x + WL.Math.Random.Fast_Int(-5, 5, ref __Seed1), y + WL.Math.Random.Fast_Int(-5, 5, ref __Seed2), Structure_GrassLand, Seed + SeedOffset);
+                Generator_Structure(x + WL.Math.Random.Fast_Int(-20, 20, ref __Seed1), y + WL.Math.Random.Fast_Int(-20, 20, ref __Seed2), Structure_GrassLand, Seed + SeedOffset);
             }
         }   
     }
@@ -223,13 +284,10 @@ internal static class GOLUWorld_Generator{
     internal static void Generator_Water(uint Seed){
         Seed -= 1313;
 
-        uint __Seed2 = Seed + 14;
-        Vector2I StartPoint = new Vector2I(
-            WL.Math.Random.Fast_Int(-(int)World_Size.X, (int)World_Size.X, ref Seed),
-            WL.Math.Random.Fast_Int(-(int)World_Size.Y, (int)World_Size.Y, ref __Seed2)
-        );
-        
-        Generator_Structure(StartPoint.X, StartPoint.Y, Structure_Lake, Seed);
+        Vector2I StartPoint = Vector2I.Zero;
+
+        uint __Seed = Seed + 177238;
+        Generator_Structure(StartPoint.X, StartPoint.Y, Structure_Lakes[WL.Math.Random.Fast_Int(0, Structure_Lakes.Length - 1, ref __Seed)], Seed);
         
         Generator_RiverSystem(Seed: Seed, MainStartOverride: StartPoint);
     }

@@ -9,7 +9,7 @@ namespace GOLUWorld;
 internal static class GOLUWorld_Values{
     #region Константы игры
 
-        internal const string Game_Version = "0.7";
+        internal const string Game_Version = "0.8";
         internal const string Game_Name    = "GOLUWorld";
 
     #endregion
@@ -30,7 +30,7 @@ internal static class GOLUWorld_Values{
 
                 Coordinates_PlayerWorld = new Vector2I(Coordinates_Player.X - Coordinates_World.X, Coordinates_Player.Y - Coordinates_World.Y);
 
-                Coordinates_PlayerWorldCenter = Coordinates_PlayerWorld + new Vector2I(8, 8);
+                Coordinates_PlayerWorld_Center = Coordinates_PlayerWorld + new Vector2I(8, 8);
                 
                 Coordinates_Beautiful = new Vector2I(-(Coordinates_World.X / 16) + 8, -(Coordinates_World.Y / 16) + 8);
             }
@@ -50,7 +50,7 @@ internal static class GOLUWorld_Values{
         /// <summary>
         /// Координаты игрока в МИРЕ (в центре игрока)
         /// </summary>
-        internal static Vector2I Coordinates_PlayerWorldCenter{ get; private set; }
+        internal static Vector2I Coordinates_PlayerWorld_Center{ get; private set; }
         
         /// <summary>
         /// Координаты МИРА
@@ -115,6 +115,16 @@ internal static class GOLUWorld_Values{
         /// Потолок под которым находится игрок
         /// </summary>
         internal static Ceiling Player_Ceiling;
+
+        /// <summary>
+        /// Ближайшая сущность к игроку
+        /// </summary>
+        internal static Entity? Player_ClosestEntity;
+
+        /// <summary>
+        /// Дистанция до ближайшей сущности к игроку
+        /// </summary>
+        internal static float Player_ClosestEntity_Distance;
         
         /// <summary>
         /// Максимальное здоровье
@@ -213,6 +223,11 @@ internal static class GOLUWorld_Values{
         /// Направление атаки
         /// </summary>
         internal static Direction4 Player_AttackDirection;
+
+        /// <summary>
+        /// Игрок не может разговаривать?
+        /// </summary>
+        internal static bool Player_Mute;
         
         /// <summary>
         /// Рендерить коллизии?
