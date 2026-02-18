@@ -35,7 +35,7 @@ internal static class GOLUWorld_Render{
     internal static void Render_RenderQueue_Add(Image.ImageContext C, Renderable R, int OffsetY = 0){
         R.Y += OffsetY;
             
-        const int BorderOffset = 5 * 16;
+        const int BorderOffset = 3 * 16;
         int Border_L = -BorderOffset;
         int Border_R = (int)C.Width + BorderOffset;
         int Border_U = -BorderOffset;
@@ -152,12 +152,20 @@ internal static class GOLUWorld_Render{
     /// Рендерит RenderQueue
     /// </summary>
     internal static void Render_RenderQueue(Image.ImageContext C){
-        __RenderQueue.Sort((A, B) => A.Z.CompareTo(B.Z));
-        foreach(Renderable R in __RenderQueue){
-            switch(R.Type){
-                case RenderableType.Tile: R.Texture.Render(C, R.Palette, R.X, R.Y, FlipX: R.FlipX, FlipY: R.FlipY, MultiplyColor: R.MultiplyColor, Rotation: R.Rotation); break;
-                case RenderableType.Tiles: R.Texture.RenderTiles(C, R.Palette, R.X, R.Y, R.W, R.H); break;
+        try{
+            __RenderQueue.Sort((A, B) => A.Z.CompareTo(B.Z));
+            foreach(Renderable R in __RenderQueue){
+                try{
+                    switch(R.Type){
+                        case RenderableType.Tile : R.Texture.Render(C, R.Palette, R.X, R.Y, FlipX: R.FlipX, FlipY: R.FlipY, MultiplyColor: R.MultiplyColor, Rotation: R.Rotation); break;
+                        case RenderableType.Tiles: R.Texture.RenderTiles(C, R.Palette, R.X, R.Y, R.W, R.H); break;
+                    }
+                }catch(Exception e){
+                    throw new Exception("Произошла ошибка при рендере [" + R + "]!", e);
+                }
             }
+        }catch(Exception e){
+            throw new Exception("Произошла ошибка в Render_RenderQueue!");
         }
     }
     
@@ -226,8 +234,8 @@ internal static class GOLUWorld_Render{
                     int X = X__ * 16 + OffsetX;
                     int Y = Y__ * 16 + OffsetY;
                     
-                    int TileX = ((Coordinates_WorldPlayer.X + 8) + X - 8 * 16) / 16;
-                    int TileY = ((Coordinates_WorldPlayer.Y + 8) + Y - 8 * 16) / 16;
+                    int TileX = ((Coordinates_PlayerWorld.X + 8) + X - 8 * 16) / 16;
+                    int TileY = ((Coordinates_PlayerWorld.Y + 8) + Y - 8 * 16) / 16;
                     
                     bool HasNeighborCeiling = false;
 
@@ -275,10 +283,21 @@ internal static class GOLUWorld_Render{
             int? __ReflectOffsetY = Info_Entity_Reflect(Entity.ID);
             
             if(Info_Entity_DoRender(Entity.ID)){
-                int Z = Render_Layer_Object(Entity.Y);
-                
                 int OffsetX = 0;
                 int OffsetY = 0;
+                
+                if(Info_Entity_Plant(Entity.ID)){
+                    if(Entity.Info != 0){
+                        uint __Seed = Entity.Info;
+                        OffsetX += WL.Math.Random.Fast_Int(-8, 8, ref __Seed);
+                        __Seed += 256;
+                        OffsetY += WL.Math.Random.Fast_Int(-8, 8, ref __Seed);
+                    }
+                        
+                    OffsetX += (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.X * 2 + Entity.Y), 1) * 2);
+                }
+                
+                int Z = Render_Layer_Object(Entity.Y + OffsetY);
                 
                 switch(Entity.ID){
                     case T_Entity.Tree:
@@ -295,17 +314,6 @@ internal static class GOLUWorld_Render{
                     case T_Entity.Spikes:
                         Z = Render_Layer_VeryBottom + 3;
                         break;
-                }
-
-                if(Info_Entity_Plant(Entity.ID)){
-                    if(Entity.Info != 0){
-                        uint __Seed = Entity.Info;
-                        OffsetX += WL.Math.Random.Fast_Int(-8, 8, ref __Seed);
-                        __Seed += 256;
-                        OffsetY += WL.Math.Random.Fast_Int(-8, 8, ref __Seed);
-                    }
-                        
-                    OffsetX += (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.X * 2 + Entity.Y), 1) * 2);
                 }
 
                 if(Entity.ID is T_Entity.Crate or T_Entity.Item){ Z++; }
@@ -422,8 +430,8 @@ internal static class GOLUWorld_Render{
                 ColorB Color = C[FX, FY];
                 ColorB? Result = null;
 
-                int PX = Coordinates_WorldPlayer.X - ((int)C.Width /2 - (int)FX);
-                int PY = Coordinates_WorldPlayer.Y - ((int)C.Height/2 - (int)FY);
+                int PX = Coordinates_PlayerWorld.X - ((int)C.Width /2 - (int)FX);
+                int PY = Coordinates_PlayerWorld.Y - ((int)C.Height/2 - (int)FY);
 
                 ColorB __WaterShaderColor_InCeilingWarFog = new ColorB(63, 0, 0);
                 if(Color == __WaterShaderColor || Color == __WaterShaderColor_Dark || Color == __WaterShaderColor_InCeilingWarFog){
@@ -447,8 +455,8 @@ internal static class GOLUWorld_Render{
                                 Result = ColorB.BlendAlpha(Result ?? WaterSolid, R.Texture.GetPixelRepeat(R.Palette, LocalX, LocalY, FlipX: R.FlipX, FlipY: R.FlipY) * (R.MultiplyColor ?? ColorB.White));
                             }
                         }else{
-                            float RippleX = WL.Math.Sin((Coordinates_WorldPlayer.X + FX + World_DeltaTick * 10) * 0.1f, 1) * 4f;
-                            float RippleY = WL.Math.Cos((Coordinates_WorldPlayer.Y + FY + World_DeltaTick * 10) * 0.3f, 1) * 2f;
+                            float RippleX = WL.Math.Sin((Coordinates_PlayerWorld.X + FX + World_DeltaTick * 10) * 0.1f, 1) * 4f;
+                            float RippleY = WL.Math.Cos((Coordinates_PlayerWorld.Y + FY + World_DeltaTick * 10) * 0.3f, 1) * 2f;
                         
                             int DistX = (int)(LocalX + RippleX);
                             int DistY = (int)(LocalY + RippleY + 2);
@@ -466,15 +474,15 @@ internal static class GOLUWorld_Render{
                     }
                 }
 
-                if((PX <= -World_BlocksSize.X || PX >= World_BlocksSize.X || PY <= -World_BlocksSize.Y || PY >= World_BlocksSize.Y) && !Cheat_DisableWorldLimit){
+                if((PX <= -World_SizeWorld.X || PX >= World_SizeWorld.X || PY <= -World_SizeWorld.Y || PY >= World_SizeWorld.Y) && !Cheat_DisableWorldLimit){
                     int DistanceX = 0;
                     int DistanceY = 0;
 
-                    if(PX < -World_BlocksSize.X){ DistanceX = -(int)World_BlocksSize.X - PX; }
-                    else if(PX > World_BlocksSize.X){ DistanceX = PX - (int)World_BlocksSize.X; }
+                    if(PX < -World_SizeWorld.X){ DistanceX = -(int)World_SizeWorld.X - PX; }
+                    else if(PX > World_SizeWorld.X){ DistanceX = PX - (int)World_SizeWorld.X; }
                 
-                    if(PY < -World_BlocksSize.Y){ DistanceY = -(int)World_BlocksSize.Y - PY; }
-                    else if(PY > World_BlocksSize.Y){ DistanceY = PY - (int)World_BlocksSize.Y; }
+                    if(PY < -World_SizeWorld.Y){ DistanceY = -(int)World_SizeWorld.Y - PY; }
+                    else if(PY > World_SizeWorld.Y){ DistanceY = PY - (int)World_SizeWorld.Y; }
 
                     int Distance = WL.Math.MaxI(DistanceX, DistanceY);
 

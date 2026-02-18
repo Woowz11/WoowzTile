@@ -287,12 +287,12 @@ internal static class GOLUWorld_UI{
                     int PX = Coordinates_Player.X - Coordinates_World.X + __X__ * 16;
                     int PY = Coordinates_Player.Y - Coordinates_World.Y + __Y__ * 16;
 
-                    if((PX <= -World_BlocksSize.X || PX >= World_BlocksSize.X || PY <= -World_BlocksSize.Y || PY >= World_BlocksSize.Y) && !Cheat_DisableWorldLimit){
+                    if((PX <= -World_SizeWorld.X || PX >= World_SizeWorld.X || PY <= -World_SizeWorld.Y || PY >= World_SizeWorld.Y) && !Cheat_DisableWorldLimit){
                         int DistanceX = 0;
                         int DistanceY = 0;
 
-                        if(PX < -World_BlocksSize.X){ DistanceX = -(int)World_BlocksSize.X - PX; }else if(PX > World_BlocksSize.X){ DistanceX = PX - (int)World_BlocksSize.X; }
-                        if(PY < -World_BlocksSize.Y){ DistanceY = -(int)World_BlocksSize.Y - PY; }else if(PY > World_BlocksSize.Y){ DistanceY = PY - (int)World_BlocksSize.Y; }
+                        if(PX < -World_SizeWorld.X){ DistanceX = -(int)World_SizeWorld.X - PX; }else if(PX > World_SizeWorld.X){ DistanceX = PX - (int)World_SizeWorld.X; }
+                        if(PY < -World_SizeWorld.Y){ DistanceY = -(int)World_SizeWorld.Y - PY; }else if(PY > World_SizeWorld.Y){ DistanceY = PY - (int)World_SizeWorld.Y; }
 
                         int Distance = WL.Math.MaxI(DistanceX, DistanceY);
 
@@ -329,5 +329,5 @@ internal static class GOLUWorld_UI{
     /// <summary>
     /// Название окна
     /// </summary>
-    internal static string UI_WindowTitle => Emotion_Happiness + " | " + Player_InteractingCollision + " (" + Player_CollisionInfo1 + ", " + Player_CollisionInfo2 + ", " + Player_CollisionInfo3 + ") | " + World_Seed + " | " + Cheat_IgnoreColliders + " | " + World_Time + " (" + World_DayPhase + ") | " + World_Flow + " | " + Player_AttackTimer;
+    internal static string UI_WindowTitle => "";
 }

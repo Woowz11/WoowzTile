@@ -16,16 +16,7 @@ internal static class GOLUWorld_Objects{
         Black          = 7,
         Ground_Grass   = 8,
         Error          = 9,
-        Concrete       = 10,
-        Window         = 11
-    }
-    
-    internal enum T_Ceiling : byte{
-        Empty     = 0,
-        Invisible = 1,
-        Concrete  = 2,
-        Error     = 3,
-        RoofTiles = 4
+        Concrete       = 10
     }
 
     internal enum T_Entity : byte{
@@ -40,7 +31,18 @@ internal static class GOLUWorld_Objects{
         Grass      = 8,
         Bush       = 9,
         Error      = 10,
-        Rock       = 11
+        Rock       = 11,
+        Window     = 12,
+        TrashBag   = 13,
+        Tire       = 14
+    }
+    
+    internal enum T_Ceiling : byte{
+        Empty     = 0,
+        Invisible = 1,
+        Concrete  = 2,
+        Error     = 3,
+        RoofTiles = 4
     }
 
     internal enum T_Item : byte{
@@ -52,11 +54,14 @@ internal static class GOLUWorld_Objects{
     }
 
     internal enum T_Decal : byte{
-        FootStep = 0,
-        Blood    = 1,
-        Zero     = 2,
-        One      = 3,
-        Glass    = 4
+        FootStep       = 0,
+        Blood          = 1,
+        Zero           = 2,
+        One            = 3,
+        Glass          = 4,
+        PlasticBag     = 5,
+        Paper          = 6,
+        BrokenTrashBag = 7,
     }
     
     internal enum T_Interface : byte{
@@ -162,6 +167,23 @@ internal static class GOLUWorld_Objects{
         internal ColorB?         MultiplyColor  = null;
         internal bool            Reflect        = false;
         internal Texture?        ReflectTexture = null;
+        
+        public override string ToString(){
+            return
+                $"Renderable(" +
+                $"Type={Type}, " +
+                $"X={X}, Y={Y}, " +
+                $"W={W}, H={H}, " +
+                $"Z={Z}, " +
+                $"Rotation={Rotation}, " +
+                $"FlipX={FlipX}, FlipY={FlipY}, " +
+                $"Reflect={Reflect}, " +
+                $"Palette={(Palette != null ? Palette.GetType().Name : "null")}, " +
+                $"Texture={(Texture != null ? Texture.GetType().Name : "null")}, " +
+                $"ReflectTexture={(ReflectTexture != null ? ReflectTexture.GetType().Name : "null")}, " +
+                $"MultiplyColor={(MultiplyColor.HasValue ? MultiplyColor.Value.ToString() : "null")}" +
+                $")";
+        }
     }
     
     internal struct Structure{

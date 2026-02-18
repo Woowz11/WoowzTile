@@ -9,9 +9,10 @@
 * 'b' - Чёрный блок (блок)
 * '^' - Трава (пол)
 * 'C' - Бетонная балка (блок)
-* 'w' - Окно (блок)
 * 'Д' - [ГЕНЕРАТОР] Случайно, трава или пустота
 * 'П' - [ГЕНЕРАТОР] Случайно, песок или пустота
+* 'Ũ' - [ГЕНЕРАТОР] Генерирует стену или пол (уникально для структуры), доски или кирпичи
+* 'ũ' - [ГЕНЕРАТОР] Генерирует стену или пол (уникально для структуры), доски или кирпичи (2-й вариант)
 
 ## Карта блоков
 
@@ -27,6 +28,8 @@
 ['П'] = 9,
 ['C'] = 10,
 ['P'] = 11,
+['Ũ'] = 12,
+['ũ'] = 13,
 
 new KeyValuePair<byte, ColorB>(1 , new ColorB(0, 0, 0, 0)),
 new KeyValuePair<byte, ColorB>(2 , new ColorB(0, 0, 0, 255)),
@@ -39,6 +42,8 @@ new KeyValuePair<byte, ColorB>(8 , new ColorB(0, 255, 0, 255)),
 new KeyValuePair<byte, ColorB>(9 , new ColorB(191, 191, 191, 128)),
 new KeyValuePair<byte, ColorB>(10, new ColorB(198, 151, 151, 255)),
 new KeyValuePair<byte, ColorB>(11, new ColorB(196, 149, 100, 255)),
+new KeyValuePair<byte, ColorB>(12, new ColorB(161, 137, 113, 255)),
+new KeyValuePair<byte, ColorB>(13, new ColorB(148, 133, 118, 255)),
 ```
 
 ## Сущности
@@ -51,12 +56,24 @@ new KeyValuePair<byte, ColorB>(11, new ColorB(196, 149, 100, 255)),
 * '#' - Ящик (толкаемый блок)
 * '~' - Трава
 * '3' - Куст
+* 'w' - Окно (блок)
 * 'Д' - [ГЕНЕРАТОР] Случайно, дерево или трава или палка или куст или пустота
 * 'д' - [ГЕНЕРАТОР] Случайно, трава или камень или куст или пустота
+* 'М' - [ГЕНЕРАТОР] Случайная мебель, для дома или пустота
+* 'м' - [ГЕНЕРАТОР] Различный мусор или пустота
 
 ## Карта сущностей
 
 ```
+['.'] = 1,
+['w'] = 2,
+['М'] = 3,
+['м'] = 4,
+
+new KeyValuePair<byte, ColorB>(1 , new ColorB(0, 0, 0, 0)),
+new KeyValuePair<byte, ColorB>(2 , new ColorB(109, 196, 255, 255)),
+new KeyValuePair<byte, ColorB>(3 , new ColorB(242, 184, 125, 255)),
+new KeyValuePair<byte, ColorB>(4 , new ColorB(239, 135, 119, 255)),
 ```
 
 ## Потолки
@@ -65,6 +82,8 @@ new KeyValuePair<byte, ColorB>(11, new ColorB(196, 149, 100, 255)),
 * 'C' - Бетон
 * 'R' - Черепица
 * 'r' - Черепица (повёрнутая вверх)
+* 'Ũ' - [ГЕНЕРАТОР] Генерирует черепицу или пустоту (уникально для структуры), доски или кирпичи
+* 'ũ' - [ГЕНЕРАТОР] Генерирует черепицу (повёрнутая вверх) или пустоту (уникально для структуры), доски или кирпичи
 
 ## Карта потолков
 
@@ -72,10 +91,18 @@ new KeyValuePair<byte, ColorB>(11, new ColorB(196, 149, 100, 255)),
 ['.'] = 1,
 ['_'] = 2,
 ['C'] = 3,
+['R'] = 4,
+['r'] = 5,
+['Ũ'] = 6,
+['ũ'] = 7,
 
 new KeyValuePair<byte, ColorB>(1 , new ColorB(0, 0, 0, 0)),
 new KeyValuePair<byte, ColorB>(2 , new ColorB(255, 255, 255, 255)),
 new KeyValuePair<byte, ColorB>(3 , new ColorB(198, 151, 151, 255)),
+new KeyValuePair<byte, ColorB>(4 , new ColorB(255, 86, 86, 255)),
+new KeyValuePair<byte, ColorB>(5 , new ColorB(255, 170, 170, 255)),
+new KeyValuePair<byte, ColorB>(6 , new ColorB(255, 86, 86, 200)),
+new KeyValuePair<byte, ColorB>(7 , new ColorB(255, 170, 170, 200)),
 ```
 
 ## Коллизии

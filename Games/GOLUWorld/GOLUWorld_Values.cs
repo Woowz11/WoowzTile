@@ -28,9 +28,9 @@ internal static class GOLUWorld_Values{
         
                 Coordinates_World = new Vector2I((int)(Coordinates_Camera.X + Game.SceneSize.X / 2F), (int)(Coordinates_Camera.Y + Game.SceneSize.Y / 2F));
 
-                Coordinates_WorldPlayer = new Vector2I(Coordinates_Player.X - Coordinates_World.X, Coordinates_Player.Y - Coordinates_World.Y);
+                Coordinates_PlayerWorld = new Vector2I(Coordinates_Player.X - Coordinates_World.X, Coordinates_Player.Y - Coordinates_World.Y);
 
-                Coordinates_WorldPlayerCenter = Coordinates_WorldPlayer + new Vector2I(8, 8);
+                Coordinates_PlayerWorldCenter = Coordinates_PlayerWorld + new Vector2I(8, 8);
                 
                 Coordinates_Beautiful = new Vector2I(-(Coordinates_World.X / 16) + 8, -(Coordinates_World.Y / 16) + 8);
             }
@@ -45,12 +45,12 @@ internal static class GOLUWorld_Values{
         /// <summary>
         /// Координаты игрока в МИРЕ
         /// </summary>
-        internal static Vector2I Coordinates_WorldPlayer{ get; private set; }
+        internal static Vector2I Coordinates_PlayerWorld{ get; private set; }
         
         /// <summary>
         /// Координаты игрока в МИРЕ (в центре игрока)
         /// </summary>
-        internal static Vector2I Coordinates_WorldPlayerCenter{ get; private set; }
+        internal static Vector2I Coordinates_PlayerWorldCenter{ get; private set; }
         
         /// <summary>
         /// Координаты МИРА
@@ -260,14 +260,14 @@ internal static class GOLUWorld_Values{
         internal static T_World  World_Type = T_World.None;
         
         /// <summary>
-        /// Размер мира
+        /// Размер мира (в блоках 16x16)
         /// </summary>
         internal static Vector2U World_Size = new Vector2U(100, 100);
         
         /// <summary>
-        /// Размер мира в блоках
+        /// Размер мира в пикселях
         /// </summary>
-        internal static Vector2U World_BlocksSize => World_Size * 16;
+        internal static Vector2U World_SizeWorld => World_Size * 16;
 
         /// <summary>
         /// Максимальное время

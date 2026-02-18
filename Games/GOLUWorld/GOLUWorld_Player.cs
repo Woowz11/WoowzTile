@@ -141,12 +141,9 @@ internal static class GOLUWorld_Player{
                 break;
         }
         
-        if(Game.Collision(new Collider(AttackX, AttackY, (uint)Width, (uint)Height, Mask: CollisionLayer.L6), out Collider? HitEntity)){
-            World_DamageEntity(new EntityKey(HitEntity!.Value.Info2, (uint)HitEntity.Value.Info3), Item_Info_MeleeAttackDamage(Player_ItemInHands));
-        }
-        
-        if(Game.Collision(new Collider(AttackX, AttackY, (uint)Width, (uint)Height, Mask: CollisionLayer.L1), out Collider? HitBlock)){
-            World_DamageBlock(HitBlock!.Value.Info2, Item_Info_MeleeAttackDamage(Player_ItemInHands));
+        if(Game.Collision(new Collider(AttackX, AttackY, (uint)Width, (uint)Height, Mask: CollisionLayer.L6), out Collider? Hit)){
+                //World_DamageBlock(Hit.Value.Info2, Item_Info_MeleeAttackDamage(Player_ItemInHands));
+            World_DamageEntity(new EntityKey(Hit!.Value.Info2, (uint)Hit.Value.Info3), Item_Info_MeleeAttackDamage(Player_ItemInHands));   
         }
     }
     
@@ -192,7 +189,7 @@ internal static class GOLUWorld_Player{
         
         T_Item Item = Player_ItemInHands;
         if(Item != T_Item.Empty){
-            World_SpawnItem(Coordinates_WorldPlayer.X, Coordinates_WorldPlayer.Y, Item);
+            World_SpawnItem(Coordinates_PlayerWorld.X, Coordinates_PlayerWorld.Y, Item);
             Player_ItemInHands = T_Item.Empty;
         }
     }

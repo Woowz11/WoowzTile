@@ -51,7 +51,7 @@ internal static class GOLUWorld_Input{
                 if(Key == Key.F1){ UpdSeed(); World_GoToWorld(T_World.Calm); }
                 if(Key == Key.F2){ UpdSeed(); World_GoToWorld(T_World.Industrial); }
                 if(Key == Key.F3){
-                    Generator_DebugStructure(Coordinates_WorldPlayer.X / 16, Coordinates_WorldPlayer.Y / 16);
+                    Generator_DebugStructure(Coordinates_PlayerWorld.X / 16, Coordinates_PlayerWorld.Y / 16);
                 }
 
                 if(Key == Key.Escape || (UI_Interface == T_Interface.Menu && UI_MenuSelectedButton == 0 && __Enter)){

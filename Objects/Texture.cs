@@ -58,8 +58,7 @@ public class Texture{
     }
 
     public void Render(Image.ImageContext C, Palette Palette, int X = 0, int Y = 0, int SrcX = 0, int SrcY = 0, uint SrcW = 0, uint SrcH = 0, uint DstW = 0, uint DstH = 0, bool FlipX = false, bool FlipY = false, TextureRotation Rotation = TextureRotation.None, ColorB? MultiplyColor = null){
-        try
-        {
+        try{
             MultiplyColor ??= ColorB.White;
             
             int SW = (int)(SrcW == 0 ? Width : SrcW), SH = (int)(SrcH == 0 ? Height : SrcH);
@@ -69,7 +68,7 @@ public class Texture{
             if(DW <= 0 || DH <= 0){ return; }
             int OffsetX = X < 0 ? -X : 0, OffsetY = Y < 0 ? -Y : 0;
             
-            if (X < 0){ DW += X; X = 0; } 
+            if(X < 0){ DW += X; X = 0; } 
             if(Y < 0){ DH += Y; Y = 0; }
             
             if(X + DW > C.Width ){ DW = (int)C.Width  - X; }
@@ -95,8 +94,7 @@ public class Texture{
                     if(DX < C.Width && DY < C.Height) C.SetPixel(DX, DY, color * MultiplyColor.Value, ImageBlend.Alpha);
                 }
             }
-        }
-        catch (Exception e) { throw new Exception($"Произошла ошибка при рендере текстуры [{this}]!", e); }
+        }catch (Exception e) { throw new Exception($"Произошла ошибка при рендере текстуры [{this}]!", e); }
     }
 
     public void RenderTiles(Image.ImageContext C, Palette Palette, int X, int Y, uint TileWidth, uint TileHeight = 1, int SrcX = 0, int SrcY = 0, uint SrcW = 0, uint SrcH = 0, bool FlipX = false, bool FlipY = false, TextureRotation Rotation = TextureRotation.None, ColorB? MultiplyColor = null){

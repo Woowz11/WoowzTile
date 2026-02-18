@@ -97,15 +97,23 @@ internal static class GOLUWorld_Info{
     /// </summary>
     internal static Texture Info_Decal_Texture(T_Decal D){
         return D switch{
-            T_Decal.FootStep => Texture_FootStep,
-            T_Decal.Blood    => Texture_Blood,
-            T_Decal.Zero     => Texture_Zero,
-            T_Decal.One      => Texture_One,
-            T_Decal.Glass    => Texture_GlassShard,
+            T_Decal.FootStep       => Texture_FootStep,
+            T_Decal.Blood          => Texture_Blood,
+            T_Decal.Zero           => Texture_Zero,
+            T_Decal.One            => Texture_One,
+            T_Decal.Glass          => Texture_GlassShard,
+            T_Decal.PlasticBag     => Texture_PlasticBag,
+            T_Decal.Paper          => Texture_Paper,
+            T_Decal.BrokenTrashBag => Texture_TrashBag_Broken,
             
             var _ => Texture_Error,
         };
     }
+
+    /// <summary>
+    /// Возвращает случайную мусорную декаль
+    /// </summary>
+    internal static T_Decal Info_Decal_RandomTrash() => Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(), [(T_Decal.PlasticBag, 0, 1), (T_Decal.Glass, 0, 1), (T_Decal.Paper, 0, 1), (T_Decal.BrokenTrashBag, 0, 1)]).Item1;
 
     /// <summary>
     /// Текстура блока
@@ -122,7 +130,6 @@ internal static class GOLUWorld_Info{
             T_Block.Black          => Texture_Black,
             T_Block.Error          => Texture_Error,
             T_Block.Concrete       => Texture_Concrete_Beam,
-            T_Block.Window         => Texture_Window,
             
             var _ => Texture_Error
         };
@@ -131,7 +138,7 @@ internal static class GOLUWorld_Info{
     /// <summary>
     /// Блок твёрдый?
     /// </summary>
-    internal static bool Info_Block_Solid(T_Block B) => B is T_Block.Black or T_Block.Bricks or T_Block.Metal or T_Block.Water or T_Block.Error or T_Block.Concrete or T_Block.Window;
+    internal static bool Info_Block_Solid(T_Block B) => B is T_Block.Black or T_Block.Bricks or T_Block.Metal or T_Block.Water or T_Block.Error or T_Block.Concrete;
 
     /// <summary>
     /// Блок является полом?
@@ -160,6 +167,9 @@ internal static class GOLUWorld_Info{
         T_Block ID = T_Block.Empty;
         byte Info = 0;
 
+        uint __Seed1 = __Seed + 888542135;
+        uint __Seed2 = __Seed1 - 12516;
+        
         switch (C){
             case '#':
                 ID = T_Block.Metal;
@@ -188,9 +198,6 @@ internal static class GOLUWorld_Info{
             case 'C':
                 ID = T_Block.Concrete;
                 break;
-            case 'w':
-                ID = T_Block.Window;
-                break;
             case 'Д':
                 __Seed += 121;
                 return Generator_SelectWeightedObject(
@@ -203,6 +210,12 @@ internal static class GOLUWorld_Info{
                     WL.Math.Random.Fast_0_1(ref __Seed),
                     [(T_Block.Ground_Sand, 0, 1), (T_Block.Empty, 0, 1)]
                 );
+            case 'Ũ':
+                ID = WL.Math.Random.Fast_Bool(ref __Seed1) ? T_Block.Ground_Planks : T_Block.Bricks;
+                break;
+            case 'ũ':
+                ID = WL.Math.Random.Fast_Bool(ref __Seed2) ? T_Block.Ground_Planks : T_Block.Bricks;
+                break;
             
             case '\r':
             case '\n':
@@ -232,6 +245,9 @@ internal static class GOLUWorld_Info{
             T_Entity.Error      => Texture_Error,
             T_Entity.Rock       => Texture_Rock,
             T_Entity.Mob_Spider => E.Health > 0 ? (World_AnimationTimer > 0.5f ? Texture_Spider_Walk : Texture_Spider) : Texture_Spider_Dead,
+            T_Entity.Window     => E.Info == 1 ? Texture_Window_Boarded : Texture_Window,
+            T_Entity.TrashBag   => Texture_TrashBag,
+            T_Entity.Tire       => Texture_Tire,
             
             var _ => Texture_Error
         };
@@ -240,7 +256,7 @@ internal static class GOLUWorld_Info{
     /// <summary>
     /// Какие сущности рендерить?
     /// </summary>
-    internal static bool Info_Entity_DoRender(T_Entity E) => E is T_Entity.Chair or T_Entity.Table or T_Entity.Spikes or T_Entity.Tree or T_Entity.Item or T_Entity.Crate or T_Entity.Grass or T_Entity.Bush or T_Entity.Error or T_Entity.Rock or T_Entity.Mob_Spider;
+    internal static bool Info_Entity_DoRender(T_Entity E) => true;
     
     /// <summary>
     /// Отзеркаливается сущность? Возвращает OffsetY
@@ -265,6 +281,16 @@ internal static class GOLUWorld_Info{
     /// Является растением? (случайная позиция и ветер)
     /// </summary>
     internal static bool Info_Entity_Plant(T_Entity E) => E is T_Entity.Grass or T_Entity.Bush;
+
+    /// <summary>
+    /// Стартовое здоровье сущности
+    /// </summary>
+    internal static uint Info_Entity_Health(T_Entity E) => E switch{
+        T_Entity.Window => 50,
+        T_Entity.TrashBag => 30,
+        
+        var _ => 100
+    };
     
     /// <summary>
     /// Превращает символ в сущность
@@ -272,7 +298,7 @@ internal static class GOLUWorld_Info{
     internal static (T_Entity, byte)? Info_Entity_Symbol(char C, int X, int Y, ref uint __Seed){
         T_Entity ID = T_Entity.Empty;
         byte Info = 0;
-
+        
         switch (C){
            case 'C':
                 ID = T_Entity.Chair;
@@ -298,6 +324,9 @@ internal static class GOLUWorld_Info{
             case '3':
                 ID = T_Entity.Bush;
                 break;
+            case 'w':
+                __Seed += 88555;
+                return (T_Entity.Window, (byte)WL.Math.Random.Fast_Int(0, 1, ref __Seed));
             case 'Д': {
                 __Seed += 1667;
                 T_Block B = World_GetBlock(X, Y).ID;
@@ -315,6 +344,12 @@ internal static class GOLUWorld_Info{
                     ? Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Empty, 0, 99)])
                     : Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Bush, 0, 5), (T_Entity.Grass, 0, 43), (T_Entity.Empty, 0, 32)]);
             }
+            case 'М':
+                __Seed += 99533221;
+                return Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Empty, 0, 1), (T_Entity.Chair, 0, 1), (T_Entity.Table, 0, 1), (T_Entity.Crate, 0, 1)]);
+            case 'м':
+                __Seed += 995321154;
+                return Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Empty, 0, 2), (T_Entity.TrashBag, 0, 2), (T_Entity.Tire, 0, 1)]);
 
             case '\r':
             case '\n':
@@ -347,6 +382,9 @@ internal static class GOLUWorld_Info{
         T_Ceiling ID = T_Ceiling.Empty;
         byte Info = 0;
 
+        uint __Seed1 = __Seed + 88348835;
+        uint __Seed2 = __Seed1 - 1241256;
+        
         switch (C){
             case '_':
                 ID = T_Ceiling.Invisible;
@@ -359,6 +397,18 @@ internal static class GOLUWorld_Info{
                 break;
             case 'r':
                 return (T_Ceiling.RoofTiles, 1);
+            case 'Ũ':
+                if(WL.Math.Random.Fast_Bool(ref __Seed1)){
+                    return (T_Ceiling.RoofTiles, 0);
+                }
+                ID = T_Ceiling.Invisible;
+                break;
+            case 'ũ':
+                if(WL.Math.Random.Fast_Bool(ref __Seed2)){
+                    return (T_Ceiling.RoofTiles, 1);
+                }
+                ID = T_Ceiling.Invisible;
+                break;
             
             case '\r':
             case '\n':
