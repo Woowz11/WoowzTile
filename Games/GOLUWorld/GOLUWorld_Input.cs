@@ -60,7 +60,7 @@ internal static class GOLUWorld_Input{
                 }
 
                 if(!Player_Dead){
-                    if(Key == Key.Tab && Player_AttackTimer <= 0){ UI_Interface = UI_Interface == T_Interface.None ? T_Interface.Inventory : T_Interface.None; }
+                    if(Key == Key.Tab && Player_Attack_Timer <= 0){ UI_Interface = UI_Interface == T_Interface.None ? T_Interface.Inventory : T_Interface.None; }
                     
                     if(__Enter){ Player_ItemUse(); }
 
@@ -119,7 +119,7 @@ internal static class GOLUWorld_Input{
                     }
                 }
 
-                if(UI_Interface == T_Interface.Inventory && Player_AttackTimer <= 0){
+                if(UI_Interface == T_Interface.Inventory && Player_Attack_Timer <= 0){
                     byte OldSelectedItem = Player_InventorySelectedSlot;
                     
                     if(__Right){

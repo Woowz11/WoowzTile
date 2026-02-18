@@ -125,11 +125,16 @@ internal static class GOLUWorld_Values{
         /// Дистанция до ближайшей сущности к игроку
         /// </summary>
         internal static float Player_ClosestEntity_Distance;
+
+        /// <summary>
+        /// Дистанция взаимодействия
+        /// </summary>
+        internal const float Player_Interact_Distance = 1500;
         
         /// <summary>
         /// Максимальное здоровье
         /// </summary>
-        internal const  uint Player_HealthMax   = 100;
+        internal const  uint Player_Health_Max = 100;
         
         /// <summary>
         /// Низкое здоровье
@@ -139,7 +144,17 @@ internal static class GOLUWorld_Values{
         /// <summary>
         /// Текущее здоровье
         /// </summary>
-        internal static uint Player_Health = Player_HealthMax;
+        internal static uint Player_Health = Player_Health_Max;
+        
+        /// <summary>
+        /// Максимальная энергия
+        /// </summary>
+        internal const  uint Player_Energy_Max = 100;
+        
+        /// <summary>
+        /// Текущая энергия
+        /// </summary>
+        internal static uint Player_Energy = Player_Energy_Max;
         
         /// <summary>
         /// Игрок мёртв?
@@ -149,7 +164,7 @@ internal static class GOLUWorld_Values{
         /// <summary>
         /// Всего слотов в инвентаре
         /// </summary>
-        internal const  byte Player_InventorySlotsMax     = 12;
+        internal const  byte Player_InventorySlotsMax = 12;
 
         /// <summary>
         /// Выбранный слот в инвентаре
@@ -172,7 +187,7 @@ internal static class GOLUWorld_Values{
         /// <summary>
         /// Когда последний раз лечили
         /// </summary>
-        internal static float Player_LastTimeWereTreatedTimer = 0;
+        internal static float Player_LastTimeWereTreated_Timer = 0;
 
         /// <summary>
         /// Гниение
@@ -197,7 +212,7 @@ internal static class GOLUWorld_Values{
         /// <summary>
         /// Таймер мысли
         /// </summary>
-        internal static float Player_ThoughtTimer   = 0;
+        internal static float Player_Thought_Timer   = 0;
         
         /// <summary>
         /// Основа мысли
@@ -217,7 +232,7 @@ internal static class GOLUWorld_Values{
         /// <summary>
         /// Таймер атаки (0-1)
         /// </summary>
-        internal static float Player_AttackTimer = 0;
+        internal static float Player_Attack_Timer = 0;
 
         /// <summary>
         /// Направление атаки
@@ -293,6 +308,11 @@ internal static class GOLUWorld_Values{
         /// Текущее время в мире
         /// </summary>
         internal static float World_Time = World_TimeMax / 2;
+
+        /// <summary>
+        /// Текущий день
+        /// </summary>
+        internal static uint World_Day = 0;
         
         /// <summary>
         /// Скорость времени

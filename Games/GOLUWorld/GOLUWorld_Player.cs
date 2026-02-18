@@ -44,12 +44,12 @@ internal static class GOLUWorld_Player{
 
     internal static void SayThoughts(T_Thoughts Thoughts){
         if((Player_ThoughtContext == Thoughts && Thoughts != T_Thoughts.Idle) || Player_Dead){ return; }
-        if(Thoughts == T_Thoughts.Idle && Player_ThoughtTimer > 0){ return; }
+        if(Thoughts == T_Thoughts.Idle && Player_Thought_Timer > 0){ return; }
         Player_ThoughtContext = Thoughts;
         
         GOLUWorld_Values.Player_Thought = GetRandomThoughts(Thoughts);
 
-        Player_ThoughtTimer = WL.Math.Random.Fast_Int(3, 6);
+        Player_Thought_Timer = WL.Math.Random.Fast_Int(3, 6);
     }
 
     internal static void EmotionChange(T_Emotion Emotion, int Value){
@@ -71,7 +71,10 @@ internal static class GOLUWorld_Player{
         }
     }
     
-    internal static void Damage(uint Damage, int Range = 0){
+    /// <summary>
+    /// Нанести урон игроку
+    /// </summary>
+    internal static void Player_Damage(uint Damage, int Range = 0){
         if(Damage == 0 || Cheat_Immortality || Player_Dead){ return; }
         
         Player_Health = WL.Math.SubU(Player_Health, Damage);
@@ -83,15 +86,37 @@ internal static class GOLUWorld_Player{
         SayThoughts(T_Thoughts.Damage);
     }
     
-    internal static void Heal(uint Heal, bool FirstAidKit = false){
+    /// <summary>
+    /// Восстановить здоровье игроку
+    /// </summary>
+    internal static void Player_Heal(uint Heal, bool FirstAidKit = false){
         if(Heal == 0){ return; }
         
         Player_Health += Heal;
-        if(Player_Health > Player_HealthMax){ Player_Health = Player_HealthMax; }
+        if(Player_Health > Player_Health_Max){ Player_Health = Player_Health_Max; }
 
-        if(FirstAidKit){ Player_LastTimeWereTreatedTimer = 60; SayThoughts(T_Thoughts.Heal); }
+        if(FirstAidKit){ Player_LastTimeWereTreated_Timer = 60; SayThoughts(T_Thoughts.Heal); }
         
         EmotionChange(T_Emotion.Happiness, (int)(Heal / 2));
+    }
+    
+    /// <summary>
+    /// Убавляет энергии
+    /// </summary>
+    internal static void Player_PowerDown(uint Value){
+        if(Value == 0 || Cheat_Immortality || Player_Dead){ return; }
+        
+        Player_Energy = WL.Math.SubU(Player_Energy, Value);
+    }
+    
+    /// <summary>
+    /// Прибавляет энергии
+    /// </summary>
+    internal static void Player_PowerUp(uint Value){
+        if(Value == 0){ return; }
+        
+        Player_Energy += Value;
+        if(Player_Energy > Player_Energy_Max){ Player_Energy = Player_Energy_Max; }
     }
     
     /// <summary>
@@ -99,7 +124,7 @@ internal static class GOLUWorld_Player{
     /// </summary>
     internal static void Player_AttackMelee(Direction4 Direction){
         Player_AttackDirection = Direction;
-        Player_AttackTimer = 1;
+        Player_Attack_Timer = 1;
 
         const int PlayerColliderSize = 16;
         const int AttackRange        = 16;
@@ -151,7 +176,7 @@ internal static class GOLUWorld_Player{
     /// </summary>
     /// <param name="Direction">Направление действия</param>
     internal static void Player_ItemUse(Direction4? Direction = null){
-        if(Player_AttackTimer > 0 || Player_Dead){ return; }
+        if(Player_Attack_Timer > 0 || Player_Dead){ return; }
 
         Direction4 Direction__ = Direction ?? Player_LastDirection;
         
@@ -162,9 +187,9 @@ internal static class GOLUWorld_Player{
             
             switch(Item){
                 case T_Item.FirstAidKit: {
-                    if(Player_Health == Player_HealthMax){ return; }
+                    if(Player_Health == Player_Health_Max){ return; }
                     
-                    Heal(50, true);
+                    Player_Heal(50, true);
                     
                     RemoveItem = true;
                     break;
@@ -197,6 +222,13 @@ internal static class GOLUWorld_Player{
                     
                     break;
                 }
+                
+                case T_Item.Mushroom:
+                    Player_Heal(10);
+                    Player_PowerUp(10);
+                    
+                    RemoveItem = true;
+                    break;
             }
 
             if(RemoveItem){
@@ -209,7 +241,7 @@ internal static class GOLUWorld_Player{
     /// Выкидывает предмет в руках
     /// </summary>
     internal static void Player_ItemDrop(){
-        if(Player_AttackTimer > 0 || Player_Dead){ return; }
+        if(Player_Attack_Timer > 0 || Player_Dead){ return; }
         
         T_Item Item = Player_ItemInHands;
         if(Item != T_Item.Empty){
@@ -222,7 +254,7 @@ internal static class GOLUWorld_Player{
     /// Меняет выбранный слот
     /// </summary>
     internal static void Player_ItemSwitch(byte Slot){
-        if(Player_AttackTimer > 0 || Player_Dead){ return; }
+        if(Player_Attack_Timer > 0 || Player_Dead){ return; }
         
         Player_InventorySelectedSlot = Slot;
     }
@@ -242,10 +274,16 @@ internal static class GOLUWorld_Player{
     /// Взаимодействует с сущностью
     /// </summary>
     internal static void Player_Interact(){
-        if(Player_ClosestEntity != null && Player_ClosestEntity_Distance < 1500){
-            T_Item Item = (T_Item)Player_ClosestEntity.Value.Info;
-            if(Item != T_Item.Empty){
-                if(AddToInventory(Item)){ World_RemoveEntity(Player_ClosestEntity.Value); }
+        if(Player_ClosestEntity != null && Player_ClosestEntity_Distance < Player_Interact_Distance){
+            if(Player_ClosestEntity.Value.ID == T_Entity.Item){
+                T_Item Item = (T_Item)Player_ClosestEntity.Value.Info;
+                if(Item != T_Item.Empty){
+                    if(AddToInventory(Item)){ World_RemoveEntity(Player_ClosestEntity.Value); }
+                }
+            }else if(Player_ClosestEntity.Value.ID == T_Entity.Door){
+                Entity Entity = Player_ClosestEntity.Value;
+                Entity.Info = (byte)(Entity.Info == 0 ? 1 : 0);
+                World_Entities[Entity.Key] = Entity;
             }
         }
     }

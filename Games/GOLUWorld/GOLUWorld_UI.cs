@@ -139,15 +139,20 @@ internal static class GOLUWorld_UI{
     /// </summary>
     internal static void UI_Render(Image.ImageContext C){
         Texture_Frame.Render(C, Palette_Default);
-        
-        C.Fill(23 - 1, (int)C.Height - 19 - 1, Player_HealthMax + 2, 8 + 2, ColorB.DarkRed);
-        C.Fill(23, (int)C.Height - 19, Player_HealthMax, 8, ColorB.Black);
-        C.Fill(23, (int)C.Height - 19, Player_Health, 8, ColorB.Red);
-        C.Fill(23, (int)C.Height - 19 + 3, Player_Health, 8 - 6, ColorB.LightRed);
 
-        Font_Default.Render(C, Palette_Default, Cheat_Immortality ? "i" : Player_Health.ToString(), 23, (int)C.Height - 19);
+        void RenderSlideBar(int X, int Y, ColorB Color, uint Value, uint MaxValue, string Text, Texture Icon){
+            C.Fill(X + 17 - 1, (int)C.Height + Y - 1, MaxValue + 2, 8 + 2, Color - new ColorB(64, 64, 64));
+            C.Fill(X + 17, (int)C.Height + Y, MaxValue, 8, ColorB.Black);
+            C.Fill(X + 17, (int)C.Height + Y, Value, 8, Color);
+            C.Fill(X + 17, (int)C.Height + Y + 3, Value, 8 - 6, Color + new ColorB(64, 64, 64));
+
+            Font_Default.Render(C, Palette_Default, Text, X + 17, (int)C.Height + Y);
         
-        Texture_Health.Render(C, Palette_Default, 6, (int)C.Height - 23);
+            Icon.Render(C, Palette_Default, X - 1, (int)C.Height + (Y - 4));
+        }
+        
+        RenderSlideBar(6, -19, ColorB.Red, Player_Health, Player_Health_Max, Cheat_Immortality ? "i" : Player_Health.ToString(), Texture_Health);
+        RenderSlideBar(6, -19 - 16, Palette_Default[19], Player_Energy, Player_Energy_Max, Cheat_Immortality ? "i" : Player_Energy.ToString(), Texture_Energy);
         
         T_Item Item = Player_ItemInHands;
         string __Text = (Item == T_Item.Empty ? "" : Info_Item_Name(Item)) + " [" + (Player_InventorySelectedSlot + 1) + "]";
@@ -223,112 +228,141 @@ internal static class GOLUWorld_UI{
     /// Рендерит GPS UI
     /// </summary>
     internal static void UI_RenderGPS(Image.ImageContext C){
-        T_Item Item = Player_ItemInHands;
-        if(Item == T_Item.GPS && UI_Interface is T_Interface.None or T_Interface.Menu && !Player_Dead){
-            Vector2I __RenderCenterPanel(uint Size, ColorB Color){
-                int __X = (int)(C.Width  - Size) / 2;
-                int __Y = (int)(C.Height - Size) / 2;
-                C.Fill(__X, __Y, Size, Size, Color);
-                return new Vector2I(__X, __Y);
-            }
-            const uint GPSSize = 180;
+        if(!(Player_ItemInHands == T_Item.GPS && UI_Interface is T_Interface.None or T_Interface.Menu && !Player_Dead)){ return; }
+
+        Vector2I __RenderCenterPanel(uint Size, ColorB Color){
+            int __X = (int)(C.Width  - Size) / 2;
+            int __Y = (int)(C.Height - Size) / 2;
+            C.Fill(__X, __Y, Size, Size, Color);
+            return new Vector2I(__X, __Y);
+        }
+        const uint GPSSize = 180;
+        
+        Vector2I GPSOffset = __RenderCenterPanel(GPSSize, World_BackgroundColor);
+        
+        float Energy = (float)Player_Energy / Player_Energy_Max;
+        Energy /= (Energy + 0.05f * (1 - Energy));
+        
+        void __GPSPixel(int X__, int Y__, ColorB Color, bool Fixed = false){
+            if(Color.A <= 5){ return; }
             
-            Vector2I GPSOffset = __RenderCenterPanel(GPSSize, World_BackgroundColor);
+            uint __X = (uint)GPSOffset.X;
+            uint __Y = (uint)GPSOffset.Y;
 
-            void __GPSPixel(int X__, int Y__, ColorB Color, bool Fixed = false){
-                uint __X = (uint)GPSOffset.X;
-                uint __Y = (uint)GPSOffset.Y;
-
-                if(!Fixed){
-                    X__ += (int)Coordinates_Camera.X;
-                    Y__ += (int)Coordinates_Camera.Y;
-                    
-                    X__ = (int)WL.Math.Floor((float)X__ / 16);
-                    Y__ = (int)WL.Math.Floor((float)Y__ / 16);
-                }
+            if(!Fixed){
+                X__ += (int)Coordinates_Camera.X;
+                Y__ += (int)Coordinates_Camera.Y;
                 
-                X__ += (int)GPSSize / 2;
-                Y__ += (int)GPSSize / 2;
-            
-                __X += (uint)X__;
-                __Y += (uint)Y__;   
-                
-                if(__X < GPSOffset.X || __Y < GPSOffset.Y || __X > GPSOffset.X + GPSSize - 1 || __Y > GPSOffset.Y + GPSSize - 1){ return; }
-
-                C.SetPixel(__X, __Y, Color, ImageBlend.Alpha);
+                X__ = (int)WL.Math.Floor((float)X__ / 16);
+                Y__ = (int)WL.Math.Floor((float)Y__ / 16);
             }
             
-            foreach(Block Block in World_Blocks.Values){
-                __GPSPixel(Block.X, Block.Y, Palette_World[MapBlocksColor.GetValueOrDefault(Block.ID, (byte)1)]);
-            }
-
-            foreach(Entity Entity in World_Entities.Values){
-                byte __PaletteIndex = MapEntitiesColor.GetValueOrDefault(Entity.ID, (byte)0);
-                if(__PaletteIndex == 0){ continue; }
-                ColorB EntityColor = Palette_World[__PaletteIndex];
-                __GPSPixel(Entity.X, Entity.Y, EntityColor);
-
-                if(Entity.ID == T_Entity.Tree){
-                    __GPSPixel(Entity.X, Entity.Y + 16, EntityColor);
-                    __GPSPixel(Entity.X, Entity.Y + 16 * 2, EntityColor);
-                }
-            }
+            X__ += (int)GPSSize / 2;
+            Y__ += (int)GPSSize / 2;
+        
+            __X += (uint)X__;
+            __Y += (uint)Y__;   
             
-            foreach(Ceiling Ceiling in World_Ceilings.Values){
-                byte __PaletteIndex = MapCeilingsColor.GetValueOrDefault(Ceiling.ID, (byte)0);
-                if(__PaletteIndex == 0){ continue; }
-                ColorB CeilingColor = Palette_World[__PaletteIndex];
-                if(Ceiling is{ ID: T_Ceiling.RoofTiles, Info: 1 }){ CeilingColor = Palette_World[3]; }
-                __GPSPixel(Ceiling.X, Ceiling.Y, CeilingColor);
-            }
-            
-            for(int __Y__ = -(int)GPSSize/2; __Y__ < GPSSize/2; __Y__++){
-                for(int __X__ = -(int)GPSSize/2; __X__ < GPSSize/2; __X__++){
-                    int PX = Coordinates_Player.X - Coordinates_World.X + __X__ * 16;
-                    int PY = Coordinates_Player.Y - Coordinates_World.Y + __Y__ * 16;
+            if(__X < GPSOffset.X || __Y < GPSOffset.Y || __X > GPSOffset.X + GPSSize - 1 || __Y > GPSOffset.Y + GPSSize - 1){ return; }
 
-                    if((PX <= -World_SizeWorld.X || PX >= World_SizeWorld.X || PY <= -World_SizeWorld.Y || PY >= World_SizeWorld.Y) && !Cheat_DisableWorldLimit){
-                        int DistanceX = 0;
-                        int DistanceY = 0;
+            C.SetPixel(__X, __Y, Color, ImageBlend.Alpha);
+        }
+        
+        foreach(Block Block in World_Blocks.Values){
+            __GPSPixel(Block.X, Block.Y, Palette_World[MapBlocksColor.GetValueOrDefault(Block.ID, (byte)1)]);
+        }
 
-                        if(PX < -World_SizeWorld.X){ DistanceX = -(int)World_SizeWorld.X - PX; }else if(PX > World_SizeWorld.X){ DistanceX = PX - (int)World_SizeWorld.X; }
-                        if(PY < -World_SizeWorld.Y){ DistanceY = -(int)World_SizeWorld.Y - PY; }else if(PY > World_SizeWorld.Y){ DistanceY = PY - (int)World_SizeWorld.Y; }
+        foreach(Entity Entity in World_Entities.Values){
+            byte __PaletteIndex = MapEntitiesColor.GetValueOrDefault(Entity.ID, (byte)0);
+            if(__PaletteIndex == 0){ continue; }
+            ColorB EntityColor = Palette_World[__PaletteIndex];
+            __GPSPixel(Entity.X, Entity.Y, EntityColor);
 
-                        int Distance = WL.Math.MaxI(DistanceX, DistanceY);
-
-                        const int FadeDistance = 128;
-
-                        float FadeFactor = WL.Math.Clamp01((float)Distance / FadeDistance);
-
-                        __GPSPixel(__X__, __Y__, new ColorB((byte)(WL.Math.Random.Fast_Int(128, 255)), 0, 0, (byte)(255 * FadeFactor)), true);
-                    }
-                }   
-            }
-
-            void __GPSPixelCross(int __X, int __Y, ColorB Color){
-                void __GPSPixelPlayer(int X__, int Y__, int __X, int __Y) => __GPSPixel(X__ + __X * 16, Y__ + __Y * 16, Color);
-                __GPSPixelPlayer(__X, __Y, 0,  1);
-                __GPSPixelPlayer(__X, __Y, 0,  2);
-                __GPSPixelPlayer(__X, __Y, 0, -1);
-                __GPSPixelPlayer(__X, __Y, 0, -2);
-                __GPSPixelPlayer(__X, __Y, 1,  0);
-                __GPSPixelPlayer(__X, __Y, 2,  0);
-                __GPSPixelPlayer(__X, __Y,-1,  0);
-                __GPSPixelPlayer(__X, __Y,-2,  0);
-            }
-            
-            __GPSPixelCross(0, 0, ColorB.Yellow);
-            __GPSPixelCross(Coordinates_PlayerWorld.X, Coordinates_PlayerWorld.Y, ColorB.Blue);
-            
-            string Coordinates = Coordinates_Beautiful.X + " : " + Coordinates_Beautiful.Y;
-            Vector2U __CoordinatesSize = Font_Default.TextSize(Coordinates);
-            Render_TextOutlineColor(C, Coordinates, (int)(GPSOffset.X + GPSSize) - (int)__CoordinatesSize.X - 2, (int)(GPSOffset.Y + GPSSize) - (int)__CoordinatesSize.Y - 2, ColorB.Red, ColorB.Black);
-            
-            Texture_GPS_Overlay.Render(C, Palette_Default);
-            if(World_AnimationTimer > 0.5f){
-                Texture_GPS_Overlay_Button.Render(C, Palette_Default, 122, 221);
+            if(Entity.ID == T_Entity.Tree){
+                __GPSPixel(Entity.X, Entity.Y + 16, EntityColor);
+                __GPSPixel(Entity.X, Entity.Y + 16 * 2, EntityColor);
             }
         }
+        
+        foreach(Ceiling Ceiling in World_Ceilings.Values){
+            byte __PaletteIndex = MapCeilingsColor.GetValueOrDefault(Ceiling.ID, (byte)0);
+            if(__PaletteIndex == 0){ continue; }
+            ColorB CeilingColor = Palette_World[__PaletteIndex];
+            if(Ceiling is{ ID: T_Ceiling.RoofTiles, Info: 1 }){ CeilingColor = Palette_World[3]; }
+            __GPSPixel(Ceiling.X, Ceiling.Y, CeilingColor);
+        }
+        
+        for(int __Y__ = -(int)GPSSize/2; __Y__ < GPSSize/2; __Y__++){
+            for(int __X__ = -(int)GPSSize/2; __X__ < GPSSize/2; __X__++){
+                int PX = Coordinates_Player.X - Coordinates_World.X + __X__ * 16;
+                int PY = Coordinates_Player.Y - Coordinates_World.Y + __Y__ * 16;
+
+                if((PX <= -World_SizeWorld.X || PX >= World_SizeWorld.X || PY <= -World_SizeWorld.Y || PY >= World_SizeWorld.Y) && !Cheat_DisableWorldLimit){
+                    int DistanceX = 0;
+                    int DistanceY = 0;
+
+                    if(PX < -World_SizeWorld.X){ DistanceX = -(int)World_SizeWorld.X - PX; }else if(PX > World_SizeWorld.X){ DistanceX = PX - (int)World_SizeWorld.X; }
+                    if(PY < -World_SizeWorld.Y){ DistanceY = -(int)World_SizeWorld.Y - PY; }else if(PY > World_SizeWorld.Y){ DistanceY = PY - (int)World_SizeWorld.Y; }
+
+                    int Distance = WL.Math.MaxI(DistanceX, DistanceY);
+
+                    const int FadeDistance = 128;
+
+                    float FadeFactor = WL.Math.Clamp01((float)Distance / FadeDistance);
+
+                    __GPSPixel(__X__, __Y__, new ColorB((byte)(WL.Math.Random.Fast_Int(128, 255)), 0, 0, (byte)(255 * FadeFactor)), true);
+                }
+            }   
+        }
+
+        void __GPSPixelCross(int __X, int __Y, ColorB Color){
+            void __GPSPixelPlayer(int X__, int Y__, int __X, int __Y) => __GPSPixel(X__ + __X * 16, Y__ + __Y * 16, Color);
+            __GPSPixelPlayer(__X, __Y, 0,  1);
+            __GPSPixelPlayer(__X, __Y, 0,  2);
+            __GPSPixelPlayer(__X, __Y, 0, -1);
+            __GPSPixelPlayer(__X, __Y, 0, -2);
+            __GPSPixelPlayer(__X, __Y, 1,  0);
+            __GPSPixelPlayer(__X, __Y, 2,  0);
+            __GPSPixelPlayer(__X, __Y,-1,  0);
+            __GPSPixelPlayer(__X, __Y,-2,  0);
+        }
+        
+        __GPSPixelCross(0, 0, ColorB.Yellow);
+        __GPSPixelCross(Coordinates_PlayerWorld.X, Coordinates_PlayerWorld.Y, ColorB.Blue);
+        
+        string Coordinates = Coordinates_Beautiful.X + " : " + Coordinates_Beautiful.Y;
+        Vector2U __CoordinatesSize = Font_Default.TextSize(Coordinates);
+        Render_TextOutlineColor(C, Coordinates, (int)(GPSOffset.X + GPSSize) - (int)__CoordinatesSize.X - 2, (int)(GPSOffset.Y + GPSSize) - (int)__CoordinatesSize.Y - 2, ColorB.Red, ColorB.Black);
+
+        for(int __Y__ = -(int)GPSSize/2; __Y__ < GPSSize/2; __Y__++){
+            for(int __X__ = -(int)GPSSize/2; __X__ < GPSSize/2; __X__++){
+                byte Color = WL.Math.Random.Fast_Byte();
+                __GPSPixel(__X__, __Y__, new ColorB(Color, Color, Color, (byte)(255 * (1 - Energy))), true);
+            }
+        }
+
+        Texture_GPS_Overlay.Render(C, Palette_Default);
+        if(World_AnimationTimer > 0.5f){
+            Texture_GPS_Overlay_Button.Render(C, Palette_Default, 122, 221);
+        }
+    }
+
+    /// <summary>
+    /// Рендерит интерфейс часов
+    /// </summary>
+    internal static void UI_RenderClock(Image.ImageContext C){
+        if(!(Player_ItemInHands == T_Item.Clock && UI_Interface is T_Interface.None or T_Interface.Menu && !Player_Dead)){ return; }
+        
+        Texture_Clock_Overlay.Render(C, Palette_Default);
+
+        void __RenderDigital(int X, int Y, int N){
+            Font_Digital.Render(C, Palette_Default, N.ToString(), X, Y);
+        }
+        
+        __RenderDigital(69 , 92, 0);
+        __RenderDigital(97 , 92, 1);
+        __RenderDigital(132, 92, 2);
+        __RenderDigital(160, 92, 3);
     }
     
     /// <summary>

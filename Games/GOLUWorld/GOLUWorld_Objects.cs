@@ -37,7 +37,8 @@ internal static class GOLUWorld_Objects{
         Tire       = 13,
         HighGrass  = 14,
         Cattail    = 15,
-        Grave      = 16
+        Grave      = 16,
+        Door       = 17
     }
     
     internal enum T_Ceiling : byte{
@@ -56,7 +57,9 @@ internal static class GOLUWorld_Objects{
         Stick       = 4,
         Crowbar     = 5,
         Rock        = 6,
-        Destroyer   = 7
+        Destroyer   = 7,
+        Clock       = 8,
+        Mushroom    = 9
     }
 
     internal enum T_Decal : byte{
@@ -146,6 +149,8 @@ internal static class GOLUWorld_Objects{
         internal uint            Health     = 100;
         internal bool            Dead       => Health == 0;
         internal uint            UniqueID   = 0;
+
+        internal EntityKey Key => new EntityKey(new Vector2I(X, Y), UniqueID);
     }
     
     internal struct Decal{
@@ -260,6 +265,19 @@ internal static class GOLUWorld_Objects{
         
         internal readonly Vector2I Position;
         internal readonly uint     UniqueID;
+        
+        public bool Equals(EntityKey other)
+        {
+            return Position.Equals(other.Position) && UniqueID == other.UniqueID;
+        }
+
+        public override bool Equals(object? Obj) => Obj is EntityKey other && Equals(other);
+
+        public override int GetHashCode() => HashCode.Combine(Position, UniqueID);
+
+        public static bool operator ==(EntityKey L, EntityKey R) => L.Equals(R);
+
+        public static bool operator !=(EntityKey L, EntityKey R) => !L.Equals(R);
     }
     internal static uint __TotalUniqueID = 1;
 }

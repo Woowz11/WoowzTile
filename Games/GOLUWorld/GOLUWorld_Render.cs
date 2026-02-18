@@ -32,7 +32,7 @@ internal static class GOLUWorld_Render{
     /// <summary>
     /// Добавляет элемент в рендер цикл
     /// </summary>
-    internal static void Render_RenderQueue_Add(Image.ImageContext C, Renderable R, int OffsetY = 0){
+    internal static void Render_RenderQueue_Add(Image.ImageContext C, Renderable R, int OffsetY = 0, int? ReflectOffsetY = null){
         R.Y += OffsetY;
             
         const int BorderOffset = 5 * 16;
@@ -45,7 +45,7 @@ internal static class GOLUWorld_Render{
             __RenderQueue.Add(R);
 
             if(R.Reflect){
-                Render_RenderQueue_Water_Add(R, OffsetY);
+                Render_RenderQueue_Water_Add(R, ReflectOffsetY ?? OffsetY);
             }
         }
     }
@@ -75,7 +75,7 @@ internal static class GOLUWorld_Render{
         
         float DTS = World_StopGameTime ? 0 : (float)TD.DeltaTimeS;
         
-        if(!Player_Dead){ Player_LastTimeWereTreatedTimer -= DTS; }
+        if(!Player_Dead){ Player_LastTimeWereTreated_Timer -= DTS; }
         
         World_DeltaTick      += DTS;
         World_AnimationTimer += DTS;
@@ -142,8 +142,11 @@ internal static class GOLUWorld_Render{
         Render_Thoughts(C);
 
         UI_RenderGPS(C);
+        UI_RenderClock(C);
         
         UI_Render(C);
+        
+        Render_PostPostProcessing(C, TD);
     }
     private static readonly List<Renderable> __RenderQueue       = [];
     private static readonly List<Renderable> __RenderQueue_Water = [];
@@ -271,7 +274,8 @@ internal static class GOLUWorld_Render{
     /// </summary>
     internal static void Render_Decals(Image.ImageContext C){
         foreach(Decal Decal in World_Decals){
-            Render_RenderQueue_Add(C, new Renderable{ Texture = Info_Decal_Texture(Decal.ID), Palette = Palette_Default, X = Coordinates_World.X + Decal.X, Y = Coordinates_World.Y + Decal.Y, Rotation = Decal.Rotation, Z = Render_Layer_VeryBottom + 2});
+            uint __Seed = (uint)((Decal.X + Decal.Y) * Decal.Y);
+            Render_RenderQueue_Add(C, new Renderable{ Texture = Info_Decal_Texture(Decal.ID), Palette = Palette_Default, X = Coordinates_World.X + Decal.X, Y = Coordinates_World.Y + Decal.Y, Rotation = Decal.Rotation, Z = Render_Layer_VeryBottom + WL.Math.Random.Fast_Int(2, 1000, ref __Seed)});
         }
     }
 
@@ -322,13 +326,19 @@ internal static class GOLUWorld_Render{
                         break;
                     }
                     case T_Entity.Spikes:
-                        Z = Render_Layer_VeryBottom + 3;
+                        Z = Render_Layer_VeryBottom + 3000;
+                        break;
+                    case T_Entity.Door:
+                        Z = Render_Layer_Object(Entity.Y + 16 + OffsetY);
+                        break;
+                    case T_Entity.Tire:
+                        Z = Render_Layer_Object(Entity.Y - 16 + OffsetY);
                         break;
                 }
 
                 if(Entity.ID is T_Entity.Crate or T_Entity.Item){ Z++; }
 
-                Render_RenderQueue_Add(C, new Renderable{ Texture = Info_Entity_Texture(Entity), Palette = Palette_Default, X = Coordinates_World.X + Entity.X + OffsetX, Y = Coordinates_World.Y + Entity.Y + OffsetY, Rotation = Entity.Rotation, Z = Z, Reflect = __ReflectOffsetY.HasValue}, __ReflectOffsetY ?? 0);
+                Render_RenderQueue_Add(C, new Renderable{ Texture = Info_Entity_Texture(Entity), Palette = Palette_Default, X = Coordinates_World.X + Entity.X + OffsetX, Y = Coordinates_World.Y + Entity.Y + OffsetY, Rotation = Entity.Rotation, Z = Z, Reflect = __ReflectOffsetY.HasValue, MultiplyColor = Player_ClosestEntity.HasValue && Player_ClosestEntity_Distance < Player_Interact_Distance && Player_ClosestEntity.Value.Key == Entity.Key ? ColorB.Red : null}, __ReflectOffsetY ?? 0);
 
                 if(Entity.ID == T_Entity.Tree){
                     void __RenderLeaves(int X__, int Y__){
@@ -372,8 +382,8 @@ internal static class GOLUWorld_Render{
         }
         
         int __PlayerZ = 0;
-        void __RenderPlayerPart(Texture T, ColorB? Color, int OffsetX = 0, int OffsetY = 0, Texture? UniqueReflectionTexture = null, TextureRotation Rotation = TextureRotation.None){
-            Render_RenderQueue_Add(C, new Renderable{ Texture = T, Palette = Palette_Default, X = Coordinates_Player.X + OffsetX, Y = Coordinates_Player.Y, FlipX = Player_TextureFlipped, MultiplyColor = Color, Z = Render_Layer_Object(Coordinates_Player.Y - Coordinates_World.Y + 1) + __PlayerZ, Reflect = true, ReflectTexture = UniqueReflectionTexture, Rotation = Rotation}, OffsetY);
+        void __RenderPlayerPart(Texture T, ColorB? Color, int OffsetX = 0, int OffsetY = 0, Texture? UniqueReflectionTexture = null, TextureRotation Rotation = TextureRotation.None, int? ReflectOffsetY = null){
+            Render_RenderQueue_Add(C, new Renderable{ Texture = T, Palette = Palette_Default, X = Coordinates_Player.X + OffsetX, Y = Coordinates_Player.Y, FlipX = Player_TextureFlipped, MultiplyColor = Color, Z = Render_Layer_Object(Coordinates_Player.Y - Coordinates_World.Y + 1) + __PlayerZ, Reflect = true, ReflectTexture = UniqueReflectionTexture, Rotation = Rotation}, OffsetY, ReflectOffsetY);
             __PlayerZ++;
         }
         
@@ -385,34 +395,34 @@ internal static class GOLUWorld_Render{
             int __OffsetY = -11 - ((int)ItemTexture.Height - 16);
             TextureRotation RotateItem = TextureRotation.None;
 
-            if(Player_AttackTimer > 0){
+            if(Player_Attack_Timer > 0){
                 const int AttackDistance = 13;
 
                 switch(Player_AttackDirection){
                     case Direction4.Right:
                         __OffsetX = AttackDistance;
-                        __OffsetY = (int)WL.Math.Lerp(-AttackDistance, AttackDistance, Player_AttackTimer) - ((int)ItemTexture.Width - 16) / 2;
+                        __OffsetY = (int)WL.Math.Lerp(-AttackDistance, AttackDistance, Player_Attack_Timer) - ((int)ItemTexture.Width - 16) / 2;
                         RotateItem = Player_TextureFlipped ? TextureRotation.Rotate270 : TextureRotation.Rotate90;
                         break;
                     case Direction4.Left:
                         __OffsetX = -AttackDistance - ((int)ItemTexture.Height - 16);
-                        __OffsetY = (int)WL.Math.Lerp(AttackDistance, -AttackDistance, Player_AttackTimer) - ((int)ItemTexture.Width - 16) / 2;
+                        __OffsetY = (int)WL.Math.Lerp(AttackDistance, -AttackDistance, Player_Attack_Timer) - ((int)ItemTexture.Width - 16) / 2;
                         RotateItem = Player_TextureFlipped ? TextureRotation.Rotate90 : TextureRotation.Rotate270;
                         break;
                     case Direction4.Up:
-                        __OffsetX = (int)WL.Math.Lerp(-AttackDistance, AttackDistance, Player_AttackTimer) - ((int)ItemTexture.Width - 16) / 2;
+                        __OffsetX = (int)WL.Math.Lerp(-AttackDistance, AttackDistance, Player_Attack_Timer) - ((int)ItemTexture.Width - 16) / 2;
                         __OffsetY = -AttackDistance - ((int)ItemTexture.Height - 16);
                         RotateItem = TextureRotation.None;
                         break;
                     case Direction4.Down:
-                        __OffsetX = (int)WL.Math.Lerp(AttackDistance, -AttackDistance, Player_AttackTimer) - ((int)ItemTexture.Width - 16) / 2;
+                        __OffsetX = (int)WL.Math.Lerp(AttackDistance, -AttackDistance, Player_Attack_Timer) - ((int)ItemTexture.Width - 16) / 2;
                         __OffsetY = AttackDistance;
                         RotateItem = TextureRotation.Rotate180;
                         break;
                 }
             }
             
-            __RenderPlayerPart(ItemTexture, null, __OffsetX, __OffsetY, Rotation: RotateItem);
+            __RenderPlayerPart(ItemTexture, null, __OffsetX, __OffsetY, Rotation: RotateItem, ReflectOffsetY: __OffsetY + ((int)ItemTexture.Height - 16));
         }
     
         ColorB PlayerColor = ColorB.Lerp(ColorB.White, ColorB.DarkRed, WL.Math.Clamp01((Player_Rotting - 2) / 50));
@@ -427,7 +437,7 @@ internal static class GOLUWorld_Render{
             __RenderPlayerPart(PlayerBlood, ColorB.Lerp(ColorB.White, ColorB.DarkGreen, WL.Math.Clamp01((Player_Rotting - 2) / 50)));
         }
     
-        if(Player_LastTimeWereTreatedTimer > 0){
+        if(Player_LastTimeWereTreated_Timer > 0){
             __RenderPlayerPart(Texture_Player_Healed, null);
         }
     }
@@ -480,7 +490,7 @@ internal static class GOLUWorld_Render{
                         Result -= new ColorB(128, 128, 128);
                     }
                 }
-
+                
                 if((PX <= -World_SizeWorld.X || PX >= World_SizeWorld.X || PY <= -World_SizeWorld.Y || PY >= World_SizeWorld.Y) && !Cheat_DisableWorldLimit){
                     int DistanceX = 0;
                     int DistanceY = 0;
@@ -506,12 +516,51 @@ internal static class GOLUWorld_Render{
             }   
         }
     }
+    
+     /// <summary>
+    /// Делает пост-процессинг после интерфейса
+    /// </summary>
+    internal static void Render_PostPostProcessing(Image.ImageContext C, TickData TD){
+        for(uint FY = 0; FY < C.Height; FY++){
+            for(uint FX = 0; FX < C.Width; FX++){
+                ColorB Color = C[FX, FY];
+                ColorB? Result = null;
+
+                if(Color == __ShaderColor_GlowRed){
+                    int GlowRadius = (int)(WL.Math.DSin((float)TD.DeltaTick * 50, 1) * 4) + 2;
+
+                    ColorB GlowColor = ColorB.Red;
+                    int GlowRadiusSqr = WL.Math.SqrI(GlowRadius);
+                    
+                    for(int DY = -GlowRadius; DY <= GlowRadius; DY++){
+                        for(int DX = -GlowRadius; DX <= GlowRadius; DX++){
+                            uint FX2 = (uint)(FX + DX);
+                            uint FY2 = (uint)(FY + DY);
+
+                            if(FX2 >= C.Width || FY2 >= C.Height){ continue; }
+
+                            int DistSqr = WL.Math.SqrI(DX) + WL.Math.SqrI(DY);
+                            if(DistSqr > GlowRadiusSqr){ continue; }
+
+                            float Factor = (1f - (float)DistSqr / GlowRadiusSqr) / 2;
+
+                            C.SetPixel(FX2, FY2, ColorB.BlendAlpha(C[FX2, FY2], new ColorB(GlowColor.R, GlowColor.G, GlowColor.B, (byte)(GlowColor.A * Factor))));
+                        }
+                    }
+
+                    Result = ColorB.BlendAlpha(Result ?? Color, GlowColor);
+                }
+                
+                if(Result.HasValue){ C.SetPixel(FX, FY, Result.Value); }
+            }   
+        }
+    }
 
     /// <summary>
     /// Рендерит название лежащего предмета
     /// </summary>
     internal static void Render_DroppedItemName(Image.ImageContext C){
-        if(Player_ClosestEntity != null && Player_ClosestEntity_Distance < 1500){
+        if(Player_ClosestEntity != null && Player_ClosestEntity_Distance < Player_Interact_Distance && Player_ClosestEntity.Value.ID == T_Entity.Item){
             T_Item ItemOnGround = (T_Item)Player_ClosestEntity.Value.Info;
             if(ItemOnGround != T_Item.Empty){
                 string ItemName__ = Info_Item_Name(ItemOnGround);

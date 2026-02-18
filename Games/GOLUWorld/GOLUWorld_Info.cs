@@ -22,6 +22,8 @@ internal static class GOLUWorld_Info{
             T_Item.Crowbar     => Texture_Crowbar,
             T_Item.Rock        => Texture_Rock,
             T_Item.Destroyer   => Texture_Destroyer,
+            T_Item.Clock       => Texture_Clock,
+            T_Item.Mushroom    => Texture_Mushroom,
             
             var _ => Texture_Error
         };
@@ -40,6 +42,8 @@ internal static class GOLUWorld_Info{
             T_Item.Crowbar     => Texture_Crowbar_Icon,
             T_Item.Rock        => Texture_Rock_Icon,
             T_Item.Destroyer   => Texture_Destroyer_Icon,
+            T_Item.Clock       => Texture_Clock_Icon,
+            T_Item.Mushroom    => Texture_Mushroom_Icon,
                     
             var _ => Texture_Error_Icon
         };
@@ -59,6 +63,8 @@ internal static class GOLUWorld_Info{
             T_Item.Crowbar     => "МОНТИРОВКА",
             T_Item.Rock        => "КАМЕНЬ",
             T_Item.Destroyer   => "РАЗРУШИТЕЛЬ",
+            T_Item.Clock       => "ЧАСЫ",
+            T_Item.Mushroom    => "ГРИБ",
             
             var _ => "ПРЕДМЕТ [" + (byte)I + "]"
         };
@@ -77,7 +83,9 @@ internal static class GOLUWorld_Info{
             T_Item.Crowbar => "ЛОМ (у30)",
             T_Item.Rock => "МОЖНО ЗАВАЛИВАТЬ ЯМЫ",
             T_Item.Destroyer => "БЕССКОНЕЧНЫЙ УРОН (уi)",
-                        
+            T_Item.Clock => "ЭЛЕКТРОННЫЕ? Я УМЕЮ ОПРЕДЕЛЯТЬ\nТОЛЬКО ПО МЕХАНИЧЕСКИМ",
+            T_Item.Mushroom => "НЕЧТО СОЧЕТАЮЩЕЕ ПРИЗНАКИ\nРАСТЕНИЙ И ЖИВОТНЫХ (+ с10, +э10)",
+            
             var _ => "О БОЖЕ ЧТО ЭТО ТАКОЕ?"
         };
     }
@@ -286,6 +294,7 @@ internal static class GOLUWorld_Info{
             T_Entity.HighGrass  => Texture_TallGrass_High,
             T_Entity.Cattail    => Texture_Cattail,
             T_Entity.Grave      => Texture_Grave,
+            T_Entity.Door       => E.Info == 1 ? Texture_Door_Open : Texture_Door,
             
             var _ => Texture_Error
         };
@@ -304,6 +313,7 @@ internal static class GOLUWorld_Info{
         T_Entity.Item       => 3,
         T_Entity.Window     => 0,
         T_Entity.Cattail    => 0,
+        T_Entity.Door       => 0,
         
         var _ => null
     };
@@ -311,7 +321,7 @@ internal static class GOLUWorld_Info{
     /// <summary>
     /// Взаимодействующие сущности
     /// </summary>
-    internal static bool Info_Entity_Interacting(T_Entity E) => E is T_Entity.Item;
+    internal static bool Info_Entity_Interacting(T_Entity E) => E is T_Entity.Item or T_Entity.Door;
 
     /// <summary>
     /// Случайная позиция для спавна сущности?
@@ -373,6 +383,9 @@ internal static class GOLUWorld_Info{
             case 'G':
                 ID = T_Entity.Grave;
                 break;
+            case 'D':
+                ID = T_Entity.Door;
+                break;
             case 'w':
                 __Seed += 88555;
                 return (T_Entity.Window, (byte)WL.Math.Random.Fast_Int(0, 1, ref __Seed));
@@ -383,7 +396,7 @@ internal static class GOLUWorld_Info{
                 return B == T_Block.Ground_Sand
                     ? Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Item, (byte)T_Item.Rock, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Empty, 0, 99)])
                     : Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed),
-                        [(T_Entity.Tree, 0, 20), (T_Entity.Item, (byte)T_Item.Rock, 10), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Bush, 0, 5), (T_Entity.Grass, 0, 43), (T_Entity.Empty, 0, 32)]);
+                        [(T_Entity.Tree, 0, 20), (T_Entity.Item, (byte)T_Item.Rock, 10), (T_Entity.Item, (byte)T_Item.Mushroom, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Bush, 0, 5), (T_Entity.Grass, 0, 43), (T_Entity.Empty, 0, 32)]);
             }
             case 'д': {
                 __Seed += 1532;

@@ -23,18 +23,20 @@ internal static class GOLUWorld_World{
         Coordinates_Camera = Vector2F.Zero;
 
         World_Time = World_TimeMax / 2;
+        World_Day = 0;
         World_Flow = Vector2F.Zero;
         
-        Player_Health = Player_HealthMax;
+        Player_Health = Player_Health_Max;
+        Player_Energy = Player_Energy_Max;
         UI_Interface = 0;
 
         Player_InventorySelectedSlot = 0;
 
-        Player_LastTimeWereTreatedTimer = 0;
+        Player_LastTimeWereTreated_Timer = 0;
         Player_Rotting = 0;
 
         Player_Thought = "";
-        Player_ThoughtTimer = 0;
+        Player_Thought_Timer = 0;
         
         Emotion_Happiness = Emotion_Max;
 
@@ -62,7 +64,7 @@ internal static class GOLUWorld_World{
         
         World_DeltaTick = 0;
 
-        Player_AttackTimer = 0;
+        Player_Attack_Timer = 0;
 
         World_Size = new Vector2U(150, 150);
         
@@ -182,6 +184,10 @@ internal static class GOLUWorld_World{
             if(Entity.ID is T_Entity.Window){
                 Game.AddCollider(new Collider(Coordinates_World.X + Entity.X, Coordinates_World.Y + Entity.Y, 16, 16, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L1 | CollisionLayer.L6));
             }
+            
+            if(Entity.ID is T_Entity.Door && Entity.Info == 0){
+                Game.AddCollider(new Collider(Coordinates_World.X + Entity.X, Coordinates_World.Y + Entity.Y, 16, 16, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L1));
+            }
         }
     }
 
@@ -205,22 +211,24 @@ internal static class GOLUWorld_World{
 
             Player_Rotting += (float)TD.DeltaTimeS;
 
-            Player_AttackTimer = 0;
+            Player_Attack_Timer = 0;
             
             Player_ClosestEntity = null;
             Player_ClosestEntity_Distance = WL.Math.MaxValue;
         }else{
             if(Player_OutBounds){
-                Damage(WL.Math.Random.Fast_Bool(0.05f) ? (uint)WL.Math.Random.Fast_Int(1, 10) : 0);
+                Player_Damage(WL.Math.Random.Fast_Bool(0.05f) ? (uint)WL.Math.Random.Fast_Int(1, 10) : 0);
             }else{
-                Heal((uint)(WL.Math.Random.Fast_Bool(0.001f) ? 1 : 0));   
+                Player_Heal((uint)(WL.Math.Random.Fast_Bool(0.001f) ? 1 : 0));   
             }
+            
+            Player_PowerDown((uint)(WL.Math.Random.Fast_Bool(0.005f) ? 1 : 0));
             
             EmotionChange(T_Emotion.Happiness, WL.Math.Random.Fast_Bool(0.01f) ? 1 : 0);
             
             if(WL.Math.Random.Fast_Bool(0.001f)){ SayThoughts(T_Thoughts.Idle); }
 
-            Player_AttackTimer -= Info_Item_MeleeAttackSpeed(Player_ItemInHands);
+            Player_Attack_Timer -= Info_Item_MeleeAttackSpeed(Player_ItemInHands);
             
             Player_ClosestEntity_Distance = WL.Math.MaxValue;
             foreach(Entity Entity in World_Entities.Values){
@@ -235,9 +243,9 @@ internal static class GOLUWorld_World{
             }
         }
 
-        if(Player_ThoughtTimer < 0 || Player_Dead){ Player_Thought = ""; Player_ThoughtContext = T_Thoughts.Idle; }else{ Player_ThoughtTimer -= (float)TD.DeltaTimeS; }
+        if(Player_Thought_Timer < 0 || Player_Dead){ Player_Thought = ""; Player_ThoughtContext = T_Thoughts.Idle; }else{ Player_Thought_Timer -= (float)TD.DeltaTimeS; }
         
-        uint PlayerSize = (uint)(Texture_Player_Body.Width * 0.8f);
+        uint PlayerSize  = (uint)(Texture_Player_Body.Width * 0.8f);
         int PlayerOffset = (int)((Texture_Player_Body.Width - PlayerSize) / 2);
         
         bool CanMove = !Player_Dead;
@@ -322,7 +330,7 @@ internal static class GOLUWorld_World{
 
                 if(Game.Collision(new Collider(Coordinates_Player.X + PlayerOffset, Coordinates_Player.Y + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, CollisionLayer.L2), out Collider? _)){
                     if(WL.Math.Random.Fast_Bool(0.5f)){
-                        Damage((uint)(WL.Math.Random.Fast_0_1() * 5));
+                        Player_Damage((uint)(WL.Math.Random.Fast_0_1() * 5));
                     }
                 }
 
@@ -355,7 +363,7 @@ internal static class GOLUWorld_World{
             }
             
             if(DoDamage && WL.Math.Random.Fast_Bool(0.8f)){
-                Damage((uint)(WL.Math.Random.Fast_0_1() * 20), Player_Dead ? 16 : 0);
+                Player_Damage((uint)(WL.Math.Random.Fast_0_1() * 20), Player_Dead ? 16 : 0);
             }
         }
         
@@ -614,7 +622,7 @@ internal static class GOLUWorld_World{
     /// Уничтожает указанную сущность
     /// </summary>
     internal static void World_RemoveEntity(Entity Entity){
-        World_Entities.Remove(new EntityKey(new Vector2I(Entity.X, Entity.Y), Entity.UniqueID));
+        World_Entities.Remove(Entity.Key);
     }
     
     /// <summary>
