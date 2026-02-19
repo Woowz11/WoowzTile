@@ -5,6 +5,7 @@ using static GOLUWorld.GOLUWorld_Objects;
 using static GOLUWorld.GOLUWorld_World;
 using static GOLUWorld.GOLUWorld_Resources;
 using static GOLUWorld.GOLUWorld_Info;
+using static GOLUWorld.GOLUWorld_Utility;
 
 namespace GOLUWorld;
 
@@ -13,37 +14,6 @@ internal static class GOLUWorld_Generator{
     internal static int Generator_Border_R =>  (int)World_Size.X + 3;
     internal static int Generator_Border_U => -(int)World_Size.Y - 3;
     internal static int Generator_Border_D =>  (int)World_Size.Y + 3;
-
-    /// <summary>
-    /// Берёт случайный элемент с учётом весов
-    /// </summary>
-    /// <param name="RandomValue">от 0 до 1</param>
-    internal static (T, byte) Generator_SelectWeightedObject<T>(float RandomValue, ReadOnlySpan<(T Value, byte Info, int Weight)> Variants){
-        int TotalWeight = 0;
-
-        for(int i = 0; i < Variants.Length; i++){ TotalWeight += Variants[i].Weight; }
-
-        int Scaled = (int)(RandomValue * TotalWeight);
-
-        if(Scaled >= TotalWeight){ Scaled = TotalWeight - 1; }
-
-        for(int i = 0; i < Variants.Length; i++){
-            if(Scaled < Variants[i].Weight){ return (Variants[i].Value, Variants[i].Info); }
-            Scaled -= Variants[i].Weight;
-        }
-
-        return (Variants[^1].Value, Variants[^1].Info);
-    }
-
-    /// <summary>
-    /// Случайный поворот
-    /// </summary>
-    internal static TextureRotation Generator_RandomRotation(uint Seed) => Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(TextureRotation.None, 0, 1), (TextureRotation.Rotate90, 0, 1), (TextureRotation.Rotate180, 0, 1), (TextureRotation.Rotate270, 0, 1)]).Item1;
-    /// <summary>
-    /// Случайный поворот
-    /// </summary>
-    internal static TextureRotation Generator_RandomRotation() => Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(), [(TextureRotation.None, 0, 1), (TextureRotation.Rotate90, 0, 1), (TextureRotation.Rotate180, 0, 1), (TextureRotation.Rotate270, 0, 1)]).Item1;
-    
     
     /// <summary>
     /// Генерирует все блоки, сущности, предметы, потолки
@@ -169,7 +139,9 @@ internal static class GOLUWorld_Generator{
             uint __Seed2 = Seed + (uint)i * 232224;
             uint __Seed3 = Seed + (uint)i * 134125;
             
-            Generator_Structure(WL.Math.Random.Fast_Int(Generator_Border_L, Generator_Border_R, ref __Seed1), WL.Math.Random.Fast_Int(Generator_Border_U, Generator_Border_D, ref __Seed2), Structure_House, Seed + (uint)i, Replace: true);
+            Structure __House = Structure_Houses[WL.Math.Random.Fast_Int(0, Structure_Houses.Length - 1, ref __Seed3)];
+            
+            Generator_Structure(WL.Math.Random.Fast_Int(Generator_Border_L, Generator_Border_R, ref __Seed1), WL.Math.Random.Fast_Int(Generator_Border_U, Generator_Border_D, ref __Seed2), __House, Seed + (uint)i, Replace: true);
         }
     }
     

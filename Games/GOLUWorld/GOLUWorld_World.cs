@@ -8,6 +8,7 @@ using static GOLUWorld.GOLUWorld_Player;
 using static GOLUWorld.GOLUWorld_Info;
 using static GOLUWorld.GOLUWorld_Generator;
 using static GOLUWorld.GOLUWorld_Resources;
+using static GOLUWorld.GOLUWorld_Utility;
 
 namespace GOLUWorld;
 
@@ -40,13 +41,15 @@ internal static class GOLUWorld_World{
         
         Emotion_Happiness = Emotion_Max;
 
+        Player_Money = 0;
+        
         Player_ClearInventory();
         Player_Inventory[0] = T_Item.Crowbar;
         Player_Inventory[1] = T_Item.FirstAidKit;
         Player_Inventory[2] = T_Item.GPS;
 
         uint __Seed = World_Seed - 17312;
-        Player_Mute = WL.Math.Random.Fast_Bool(0.1f, ref __Seed);
+        Player_Character_Mute = WL.Math.Random.Fast_Bool(0.1f, ref __Seed);
         
         World_GoToWorld(T_World.Calm);
     }
@@ -154,7 +157,7 @@ internal static class GOLUWorld_World{
                 }
             }
 
-            if(Entity.ID is T_Entity.Table or T_Entity.Spikes or T_Entity.Mob_Spider or T_Entity.Tree){
+            if(Entity.ID is T_Entity.Table or T_Entity.Spikes or T_Entity.Tree || (Entity.ID == T_Entity.Mob_Spider && Entity.Health > 0)){
                 if(Entity.ID == T_Entity.Mob_Spider){
                     World_Entities[KVP.Key] = World_AI_Spider(Entity);
                 }
@@ -186,7 +189,7 @@ internal static class GOLUWorld_World{
                 Game.AddCollider(new Collider(Coordinates_World.X + Entity.X, Coordinates_World.Y + Entity.Y, 16, 16, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L1 | CollisionLayer.L6));
             }
             
-            if(Entity.ID is T_Entity.Door && Entity.Info == 0){
+            if(Entity.ID is T_Entity.Door && Entity.Info is 0 or 2){
                 Game.AddCollider(new Collider(Coordinates_World.X + Entity.X, Coordinates_World.Y + Entity.Y, 16, 16, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L1));
             }
         }
@@ -200,6 +203,8 @@ internal static class GOLUWorld_World{
 
         Player_Floor   = World_GetBlock  (Coordinates_PlayerWorld_Center.X, Coordinates_PlayerWorld_Center.Y, Relative: true);
         Player_Ceiling = World_GetCeiling(Coordinates_PlayerWorld_Center.X, Coordinates_PlayerWorld_Center.Y, Relative: true);
+
+        Player_Running = false;
         
         if(Game.KeyPressed(Key.F4)){ World_SetBlock(new Block{ ID = T_Block.Bricks, X = Coordinates_PlayerWorld_Center.X/16, Y = (Coordinates_PlayerWorld_Center.Y)/16 + 1}); }
         
@@ -220,12 +225,23 @@ internal static class GOLUWorld_World{
             if(Player_OutBounds){
                 Player_Damage(WL.Math.Random.Fast_Bool(0.05f) ? (uint)WL.Math.Random.Fast_Int(1, 10) : 0);
             }else{
-                Player_Heal((uint)(WL.Math.Random.Fast_Bool(0.001f) ? 1 : 0));   
+                if(Player_Energy > 0){
+                    if(WL.Math.Random.Fast_Bool(0.001f) && Player_Health < Player_Health_Max){
+                        Player_Heal(1);
+                        Player_PowerDown(1);
+                    }
+                }else{
+                    Player_Damage((uint)(WL.Math.Random.Fast_Bool(0.001f) ? 1 : 0), Comment: false);
+                }
             }
             
-            Player_PowerDown((uint)(WL.Math.Random.Fast_Bool(0.005f) ? 1 : 0));
-            
-            EmotionChange(T_Emotion.Happiness, WL.Math.Random.Fast_Bool(0.01f) ? 1 : 0);
+            Player_PowerDown((uint)(WL.Math.Random.Fast_Bool(Player_Running ? 0.1f : 0.005f) ? 1 : 0));
+
+            if(Player_Energy > 0){
+                EmotionChange(T_Emotion.Happiness, WL.Math.Random.Fast_Bool(0.01f) ? 1 : 0);
+            }else{
+                Emotion_Happiness = 0;
+            }
             
             if(WL.Math.Random.Fast_Bool(0.001f)){ SayThoughts(T_Thoughts.Idle); }
 
@@ -251,6 +267,7 @@ internal static class GOLUWorld_World{
         
         bool CanMove = !Player_Dead;
         if(CanMove){
+            Player_Running = Game.KeyPressed(Key.Shift);
             uint __Player_Speed = Player_Speed(TD);
             if(Player_Health < Player_HealthLow){ __Player_Speed /= 2; }
 
@@ -397,50 +414,42 @@ internal static class GOLUWorld_World{
                 Info = (byte)(Info == 1 ? 0 : 1);
             }
         }
-
-        int PlayerX__ = Coordinates_Player.X - Coordinates_World.X;
-        int PlayerY__ = Coordinates_Player.Y - Coordinates_World.Y;
-
-        float Distance = Vector2I.Distance(new Vector2I(Entity.X, Entity.Y), new Vector2I(PlayerX__, PlayerY__));
-
-        Vector2I MoveDirection = Vector2I.Zero;
         
+        float Distance = Vector2I.Distance(new Vector2I(Entity.X, Entity.Y), new Vector2I(Coordinates_PlayerWorld.X, Coordinates_PlayerWorld.Y));
+
         Vector2I Target = Entity.InfoVector;
-        Vector2I EntityPositionOriginal = new Vector2I(Entity.X, Entity.Y);
         
-        if(Distance < 100 && Player_Rotting < 10){
-            Target.X = Info is 1 or 2 ? Coordinates_World.X - Coordinates_Player.X : PlayerX__;
-            Target.Y = Info is 1 or 2 ? Coordinates_World.Y - Coordinates_Player.Y : PlayerY__;
+        if(Distance < 1000 && Player_Rotting < 10){
+            Target.X = Info is 1 or 2 ? -Coordinates_PlayerWorld.X : Coordinates_PlayerWorld.X;
+            Target.Y = Info is 1 or 2 ? -Coordinates_PlayerWorld.Y : Coordinates_PlayerWorld.Y;
         }else{
             if(WL.Math.Random.Fast_Bool(0.005f) || Target == Vector2I.Zero || Target == new Vector2I(Entity.X, Entity.Y)){
                 Target = new Vector2I(WL.Math.Random.Fast_Int(-(int)World_SizeWorld.X, (int)World_SizeWorld.X), WL.Math.Random.Fast_Int(-(int)World_SizeWorld.Y, (int)World_SizeWorld.Y));
             }
         }
         
-        MoveDirection.X = WL.Math.Sign(Target.X - Entity.X) * SpiderSpeed;
-        MoveDirection.Y = WL.Math.Sign(Target.Y - Entity.Y) * SpiderSpeed;
+        float DX = Target.X - Entity.X;
+        float DY = Target.Y - Entity.Y;
+        float DistanceToTarget = WL.Math.Sqrt(DX * DX + DY * DY);
 
-        Entity.X += MoveDirection.X;
-        Entity.Y += MoveDirection.Y;
+        if(DistanceToTarget > 0f){
+            float Step = WL.Math.Min(SpiderSpeed, DistanceToTarget);
+
+            float MoveX = DX / DistanceToTarget * Step;
+            float MoveY = DY / DistanceToTarget * Step;
+
+            Entity.X += (int)WL.Math.Round(MoveX);
+            Entity.Y += (int)WL.Math.Round(MoveY);
+        }
+
         Entity.Info = Info;
         Entity.InfoVector = Target;
 
-        if(MoveDirection != Vector2I.Zero){
-            int DirectionX = 0;
-            int DirectionY = 0;
-
-            float DX = Target.X - EntityPositionOriginal.X;
-            float DY = Target.Y - EntityPositionOriginal.Y;
-
-            int __AbsX = (int)WL.Math.Abs(DX);
-            int __AbsY = (int)WL.Math.Abs(DY);
-            if(__AbsX > __AbsY){
-                DirectionX = WL.Math.Sign(DX);
-            }else if(__AbsX < __AbsY){
-                DirectionY = WL.Math.Sign(DY);
-            }
-            
-            Entity.Rotation = DirectionX == 1 ? TextureRotation.Rotate270 : (DirectionX == -1 ? TextureRotation.Rotate90 : (DirectionY == -1 ? TextureRotation.Rotate180 : TextureRotation.None));
+        if(DX != 0 || DY != 0){
+            Entity.Rotation = DX > 0 ? TextureRotation.Rotate270 :
+                DX < 0 ? TextureRotation.Rotate90 :
+                DY < 0 ? TextureRotation.Rotate180 :
+                TextureRotation.None;
         }
         
         return Entity;
@@ -651,25 +660,30 @@ internal static class GOLUWorld_World{
                     int FX = X__;
                     int FY = Y__;
 
-                    switch(Rotation){
-                        case TextureRotation.Rotate90:
-                            FX = CY - Y__;
-                            FY = X__ - CX;
-                            break;
-                        case TextureRotation.Rotate180:
-                            FX = W - 1 - X__;
-                            FY = H - 1 - Y__;
-                            break;
-                        case TextureRotation.Rotate270:
-                            FX = Y__ - CY;
-                            FY = CX - X__;
-                            break;
+                    if(Rotation != TextureRotation.None){
+                        int RX = X__ - CX;
+                        int RY = Y__ - CY;
+
+                        switch(Rotation){
+                            case TextureRotation.Rotate90:
+                                FX = CX - RY;
+                                FY = CY + RX;
+                                break;
+                            case TextureRotation.Rotate180:
+                                FX = CX - RX;
+                                FY = CY - RY;
+                                break;
+                            case TextureRotation.Rotate270:
+                                FX = CX + RY;
+                                FY = CY - RX;
+                                break;
+                        }
                     }
 
                     FX += X;
                     FY += Y;
 
-                    (T_Block ID, byte Info)? ID_and_Info = Info_Block_Symbol(C, FX, FY, ref Seed);
+                    (T_Block ID, byte Info)? ID_and_Info = Info_Block_Symbol(C, FX, FY, Seed, Rotation);
                     if(ID_and_Info != null && ID_and_Info.Value.ID != T_Block.Empty){
                         World_SetBlock(new Block{ X = FX, Y = FY, ID = ID_and_Info.Value.ID, Info = ID_and_Info.Value.Info}, Replace: Replace);
                     }
@@ -705,25 +719,30 @@ internal static class GOLUWorld_World{
                     int FX = X__;
                     int FY = Y__;
 
-                    switch(Rotation){
-                        case TextureRotation.Rotate90:
-                            FX = CY - Y__;
-                            FY = X__ - CX;
-                            break;
-                        case TextureRotation.Rotate180:
-                            FX = W - 1 - X__;
-                            FY = H - 1 - Y__;
-                            break;
-                        case TextureRotation.Rotate270:
-                            FX = Y__ - CY;
-                            FY = CX - X__;
-                            break;
+                    if(Rotation != TextureRotation.None){
+                        int RX = X__ - CX;
+                        int RY = Y__ - CY;
+
+                        switch(Rotation){
+                            case TextureRotation.Rotate90:
+                                FX = CX - RY;
+                                FY = CY + RX;
+                                break;
+                            case TextureRotation.Rotate180:
+                                FX = CX - RX;
+                                FY = CY - RY;
+                                break;
+                            case TextureRotation.Rotate270:
+                                FX = CX + RY;
+                                FY = CY - RX;
+                                break;
+                        }
                     }
 
                     FX += X;
                     FY += Y;
 
-                    (T_Entity ID, byte Info)? ID_and_Info = Info_Entity_Symbol(C, FX, FY, ref Seed);
+                    (T_Entity ID, byte Info)? ID_and_Info = Info_Entity_Symbol(C, FX, FY, Seed, Rotation);
                     if(ID_and_Info != null && ID_and_Info.Value.ID != T_Entity.Empty){
                         int OffsetX = 0;
                         int OffsetY = 0;
@@ -745,7 +764,7 @@ internal static class GOLUWorld_World{
     }
 
     /// <summary>
-    /// Устанавливает потлок
+    /// Устанавливает потолок
     /// </summary>
     internal static void World_SetCeiling(Ceiling Ceiling__, bool SnapToGrid = true, bool IgnoreEntities = false, bool Replace = true){
         if(SnapToGrid){
@@ -814,25 +833,30 @@ internal static class GOLUWorld_World{
                     int FX = X__;
                     int FY = Y__;
 
-                    switch(Rotation){
-                        case TextureRotation.Rotate90:
-                            FX = CY - Y__;
-                            FY = X__ - CX;
-                            break;
-                        case TextureRotation.Rotate180:
-                            FX = W - 1 - X__;
-                            FY = H - 1 - Y__;
-                            break;
-                        case TextureRotation.Rotate270:
-                            FX = Y__ - CY;
-                            FY = CX - X__;
-                            break;
+                    if(Rotation != TextureRotation.None){
+                        int RX = X__ - CX;
+                        int RY = Y__ - CY;
+
+                        switch(Rotation){
+                            case TextureRotation.Rotate90:
+                                FX = CX - RY;
+                                FY = CY + RX;
+                                break;
+                            case TextureRotation.Rotate180:
+                                FX = CX - RX;
+                                FY = CY - RY;
+                                break;
+                            case TextureRotation.Rotate270:
+                                FX = CX + RY;
+                                FY = CY - RX;
+                                break;
+                        }
                     }
 
                     FX += X;
                     FY += Y;
 
-                    (T_Ceiling ID, byte Info)? ID_and_Info = Info_Ceiling_Symbol(C, FX, FY, ref Seed);
+                    (T_Ceiling ID, byte Info)? ID_and_Info = Info_Ceiling_Symbol(C, FX, FY, Seed, Rotation);
                     if(ID_and_Info != null && ID_and_Info.Value.ID != T_Ceiling.Empty){
                         World_SetCeiling(new Ceiling{ X = FX, Y = FY, ID = ID_and_Info.Value.ID, Info = ID_and_Info.Value.Info}, Replace: Replace);
                     }
@@ -859,26 +883,33 @@ internal static class GOLUWorld_World{
 
         bool DoRemove = false;
         
-        if(Entity.ID is T_Entity.Mob_Spider && !Entity.Dead){
-            World_SpatterBlood(Entity.X, Entity.Y);
-        }
-
-        if(Entity.ID is T_Entity.Window){
-            if(Entity.Info == 0){
+        switch(Entity.ID){
+            case T_Entity.Mob_Spider when !Entity.Dead:
+                World_SpatterBlood(Entity.X, Entity.Y);
+                break;
+            
+            case T_Entity.Window when Entity.Info == 0:{
                 DoRemove = true;
                 for(int i = 0; i < 6; i++){
                     World_AddDecal(new Decal{ ID = T_Decal.Glass, X = Entity.X, Y = Entity.Y}, 16, true);
-                }   
-            }else{
-                if(Entity.Dead){ Entity.Info = 0; }
-            }
-        }
+                }
 
-        if(Entity.ID is T_Entity.TrashBag && Entity.Dead){
-            DoRemove = true;
-            for(int i = 0; i < 6; i++){
-                World_AddDecal(new Decal{ ID = Info_Decal_RandomTrash(), X = Entity.X, Y = Entity.Y}, 16, true);
-            }  
+                break;
+            }
+            
+            case T_Entity.Window:{
+                if(Entity.Dead){ Entity.Info = 0; }
+                break;
+            }
+            
+            case T_Entity.TrashBag when Entity.Dead:{
+                DoRemove = true;
+                for(int i = 0; i < 6; i++){
+                    World_AddDecal(new Decal{ ID = Info_Decal_RandomTrash(), X = Entity.X, Y = Entity.Y}, 16, true);
+                }
+
+                break;
+            }
         }
 
         if(DoRemove){

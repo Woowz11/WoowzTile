@@ -61,9 +61,11 @@ public class Texture{
         try{
             MultiplyColor ??= ColorB.White;
             
-            int SW = (int)(SrcW == 0 ? Width : SrcW), SH = (int)(SrcH == 0 ? Height : SrcH);
-            
-            int DW = DstW == 0 ? SW : (int)DstW, DH = DstH == 0 ? SH : (int)DstH;
+            int SW = (int)(SrcW == 0 ? Width : SrcW);
+            int SH = (int)(SrcH == 0 ? Height : SrcH);
+
+            int DW = DstW == 0 ? SW : (int)DstW;
+            int DH = DstH == 0 ? SH : (int)DstH;
             
             if(DW <= 0 || DH <= 0){ return; }
             int OffsetX = X < 0 ? -X : 0, OffsetY = Y < 0 ? -Y : 0;
@@ -76,22 +78,45 @@ public class Texture{
             
             if(DW <= 0 || DH <= 0){ return; }
             
-            float CX = Width / 2f, CY = Height / 2f;
+            float CX = (Width - 1) / 2f, CY = (Height - 1) / 2f;
             
             for(int y__ = 0; y__ < DH; y__++){
-                int SY__ = FlipY ? SrcY + SH - 1 - ((y__ + OffsetY) % SH) : SrcY + ((y__ + OffsetY) % SH);
-                for (int x__ = 0; x__ < DW; x__++){
-                    int SX = FlipX ? SrcX + SW - 1 - ((x__ + OffsetX) % SW) : SrcX + ((x__ + OffsetX) % SW);
-                    float DX__ = SX - CX, DY__ = SY__ - CY;
-                    
-                    int RX = Rotation switch { TextureRotation.None => SX, TextureRotation.Rotate90 => (int)(CX + DY__), TextureRotation.Rotate180 => (int)(CX - DX__), TextureRotation.Rotate270 => (int)(CX - DY__), var _ => SX },
-                        RY = Rotation switch { TextureRotation.None => SY__, TextureRotation.Rotate90 => (int)(CY - DX__), TextureRotation.Rotate180 => (int)(CY - DY__), TextureRotation.Rotate270 => (int)(CY + DX__), var _ => SY__ };
-                    
+                for(int x__ = 0; x__ < DW; x__++){
+                    int SX = SrcX + ((x__ + OffsetX) % SW);
+                    int SY = SrcY + ((y__ + OffsetY) % SH);
+
+                    if(FlipX){ SX = SrcX + SW - 1 - ((x__ + OffsetX) % SW); }
+                    if(FlipY){ SY = SrcY + SH - 1 - ((y__ + OffsetY) % SH); }
+
+                    float DX = SX - CX;
+                    float DY = SY - CY;
+
+                    int RX = Rotation switch {
+                        TextureRotation.None   => SX,
+                        TextureRotation.Rotate90  => (int)WL.Math.Round(CX + DY),
+                        TextureRotation.Rotate180 => (int)WL.Math.Round(CX - DX),
+                        TextureRotation.Rotate270 => (int)WL.Math.Round(CX - DY),
+                        var _ => SX
+                    };
+
+                    int RY = Rotation switch {
+                        TextureRotation.None   => SY,
+                        TextureRotation.Rotate90  => (int)WL.Math.Round(CY - DX),
+                        TextureRotation.Rotate180 => (int)WL.Math.Round(CY - DY),
+                        TextureRotation.Rotate270 => (int)WL.Math.Round(CY + DX),
+                        var _ => SY
+                    };
+
                     if(RX < 0 || RX >= Width || RY < 0 || RY >= Height){ continue; }
+
                     ColorB color = Palette[Pixels[RY * (int)Width + RX]];
                     if(color.A == 0){ continue; }
-                    uint DX = (uint)(X + x__), DY = (uint)(Y + y__);
-                    if(DX < C.Width && DY < C.Height){ C.SetPixel(DX, DY, color * MultiplyColor.Value, ImageBlend.Alpha); }
+
+                    uint DXDst = (uint)(X + x__);
+                    uint DYDst = (uint)(Y + y__);
+                    if(DXDst < C.Width && DYDst < C.Height){
+                        C.SetPixel(DXDst, DYDst, color * MultiplyColor.Value, ImageBlend.Alpha);
+                    }
                 }
             }
         }catch (Exception e) { throw new Exception($"Произошла ошибка при рендере текстуры [{this}]!", e); }

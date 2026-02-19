@@ -39,7 +39,8 @@ internal static class GOLUWorld_Objects{
         HighGrass  = 14,
         Cattail    = 15,
         Grave      = 16,
-        Door       = 17
+        Door       = 17,
+        Cardboard  = 18
     }
     
     internal enum T_Ceiling : byte{
@@ -60,7 +61,8 @@ internal static class GOLUWorld_Objects{
         Rock        = 6,
         Destroyer   = 7,
         Clock       = 8,
-        Mushroom    = 9
+        Mushroom    = 9,
+        Battery     = 10
     }
 
     internal enum T_Decal : byte{

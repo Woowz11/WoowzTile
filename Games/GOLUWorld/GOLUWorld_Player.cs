@@ -7,6 +7,7 @@ using static GOLUWorld.GOLUWorld_Objects;
 using static GOLUWorld.GOLUWorld_World;
 using static GOLUWorld.GOLUWorld_Resources;
 using static GOLUWorld.GOLUWorld_Info;
+using static GOLUWorld.GOLUWorld_Utility;
 
 namespace GOLUWorld;
 
@@ -19,7 +20,7 @@ internal static class GOLUWorld_Player{
     /// <summary>
     /// Скорость игрока
     /// </summary>
-    internal static uint Player_Speed(TickData TD) => (uint)(WL.Math.Max(1, (float)TD.DeltaTimeS * 100 * (Game.KeyPressed(Key.Shift) ? 1.5f : (Game.KeyPressed(Key.Control) ? 0.3f : 1))));
+    internal static uint Player_Speed(TickData TD) => (uint)(WL.Math.Max(1, (float)TD.DeltaTimeS * 100 * (Player_Running ? 1.5f : (Game.KeyPressed(Key.Control) ? 0.3f : 1))));
     
     /// <summary>
     /// Очищает инвентарь
@@ -74,7 +75,7 @@ internal static class GOLUWorld_Player{
     /// <summary>
     /// Нанести урон игроку
     /// </summary>
-    internal static void Player_Damage(uint Damage, int Range = 0){
+    internal static void Player_Damage(uint Damage, int Range = 0, bool Comment = true){
         if(Damage == 0 || Cheat_Immortality || Player_Dead){ return; }
         
         Player_Health = WL.Math.SubU(Player_Health, Damage);
@@ -83,7 +84,7 @@ internal static class GOLUWorld_Player{
 
         EmotionChange(T_Emotion.Happiness, -(int)Damage * 2);
 
-        SayThoughts(T_Thoughts.Damage);
+        if(Comment){ SayThoughts(T_Thoughts.Damage); }
     }
     
     /// <summary>
@@ -181,9 +182,10 @@ internal static class GOLUWorld_Player{
         Direction4 Direction__ = Direction ?? Player_LastDirection;
         
         T_Item Item = Player_ItemInHands;
-
+        
         if(Item != T_Item.Empty){
             bool RemoveItem = false;
+            bool Used = true;
             
             switch(Item){
                 case T_Item.FirstAidKit: {
@@ -216,7 +218,7 @@ internal static class GOLUWorld_Player{
 
                     Block Block = World_GetBlock(Coordinates_PlayerWorld_Center.X + OffsetX * 16, Coordinates_PlayerWorld_Center.Y + OffsetY * 16, Relative: true);
                     if(Info_Block_Pit(Block.ID)){
-                        World_SetBlock(new Block{ X = Block.X, Y = Block.Y, ID = T_Block.Ground_Cobblestone }, SnapToGrid: false);
+                        World_SetBlock(new Block{ X = Block.X, Y = Block.Y, ID = T_Block.Ground_Cobblestone, Info = (byte)(Block.ID == T_Block.Water ? 1 : 0) }, SnapToGrid: false);
                         RemoveItem = true;
                     }
                     
@@ -229,7 +231,17 @@ internal static class GOLUWorld_Player{
                     
                     RemoveItem = true;
                     break;
+                
+                case T_Item.Battery:
+                    Player_PowerUp(100);
+                    
+                    RemoveItem = true;
+                    break;
+                
+                default: Used = false; break;
             }
+            
+            if(Used){ Player_PowerDown(1); }
 
             if(RemoveItem){
                 Player_Inventory[Player_InventorySelectedSlot] = 0;
@@ -282,7 +294,12 @@ internal static class GOLUWorld_Player{
                 }
             }else if(Player_ClosestEntity.Value.ID == T_Entity.Door){
                 Entity Entity = Player_ClosestEntity.Value;
-                Entity.Info = (byte)(Entity.Info == 0 ? 1 : 0);
+                Entity.Info = Entity.Info switch{
+                    0 => 1,
+                    1 => 0,
+                    2 => 3,
+                    3 => 2
+                };
                 World_Entities[Entity.Key] = Entity;
             }
         }
@@ -293,18 +310,11 @@ internal static class GOLUWorld_Player{
             TD.StopTime = TD.StartTime + (TD.DeltaTime * Cheat_FastTime_Value);
         }
     }
-
-    /// <summary>
-    /// Мировые координаты превращает в координаты камеры
-    /// </summary>
-    internal static Vector2F Player_Coordinates_PlayerToWorld(Vector2I PlayerCoordinates){
-        return Vector2F.Zero;
-    }
     
     /// <summary>
     /// Телепортирует игрока на координаты
     /// </summary>
     internal static void Player_Teleport(int X, int Y){
-        Coordinates_Camera = Player_Coordinates_PlayerToWorld(new Vector2I(X, Y));
+        Coordinates_Camera = Coordinates_PlayerWorldToCamera(new Vector2I(X, Y));
     }
 }

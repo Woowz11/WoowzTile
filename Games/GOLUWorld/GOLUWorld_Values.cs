@@ -3,6 +3,7 @@ using WoowzTile;
 using WoowzTile.Objects;
 using static GOLUWorld.GOLUWorld_Objects;
 using static GOLUWorld.GOLUWorld_Resources;
+using static GOLUWorld.GOLUWorld_Utility;
 
 namespace GOLUWorld;
 
@@ -26,9 +27,9 @@ internal static class GOLUWorld_Values{
                 
                 Coordinates_Player = new Vector2I((int)(Game.SceneSize.X / 2F - Texture_Player_Body.Width  / 2F), (int)(Game.SceneSize.Y / 2F - Texture_Player_Body.Height / 2F));
         
-                Coordinates_World = new Vector2I((int)(Coordinates_Camera.X + Game.SceneSize.X / 2F), (int)(Coordinates_Camera.Y + Game.SceneSize.Y / 2F));
+                Coordinates_World = Coordinates_CameraToWorld(Coordinates_Camera);
 
-                Coordinates_PlayerWorld = new Vector2I(Coordinates_Player.X - Coordinates_World.X, Coordinates_Player.Y - Coordinates_World.Y);
+                Coordinates_PlayerWorld = Coordinates_ScreenToWorld(Coordinates_Player);
 
                 Coordinates_PlayerWorld_Center = Coordinates_PlayerWorld + new Vector2I(8, 8);
                 
@@ -80,6 +81,11 @@ internal static class GOLUWorld_Values{
         /// </summary>
         internal static Vector2I Player_MovingDirection = Vector2I.Zero;
 
+        /// <summary>
+        /// Игрок бежит?
+        /// </summary>
+        internal static bool Player_Running = false;
+        
         /// <summary>
         /// В последний раз куда двигался игрок?
         /// </summary>
@@ -134,6 +140,11 @@ internal static class GOLUWorld_Values{
         /// Дистанция взаимодействия
         /// </summary>
         internal const float Player_Interact_Distance = 1500;
+
+        /// <summary>
+        /// Кол-во денег
+        /// </summary>
+        internal static uint Player_Money = 0;
         
         /// <summary>
         /// Максимальное здоровье
@@ -246,7 +257,7 @@ internal static class GOLUWorld_Values{
         /// <summary>
         /// Игрок не может разговаривать?
         /// </summary>
-        internal static bool Player_Mute;
+        internal static bool Player_Character_Mute;
         
         /// <summary>
         /// Рендерить коллизии?

@@ -18,9 +18,9 @@ internal static class GOLUWorld_Render{
     /// </summary>
     internal static void UI_EasyButton(Image.ImageContext C, byte ButtonID, string ButtonText, int X, int Y, bool Always = false){
         if(UI_MenuSelectedButton == ButtonID || Always){
-            Render_TextOutlineColor(C, ButtonText, X, Y, ColorB.White, ColorB.Red);
+            Render_TextColorOutline(C, ButtonText, X, Y, ColorB.White, ColorB.Red);
         }else{
-            Render_TextOutlineColor(C, ButtonText, X, Y, ColorB.Black, ColorB.White);   
+            Render_TextColorOutline(C, ButtonText, X, Y, ColorB.Black, ColorB.White);   
         }
     }
     
@@ -180,7 +180,7 @@ internal static class GOLUWorld_Render{
     /// <summary>
     /// Рендерит цветной текст с обводкой
     /// </summary>
-    internal static void Render_TextOutlineColor(Image.ImageContext C, string Text, int X, int Y, ColorB Color, ColorB OutlineColor){
+    internal static void Render_TextColorOutline(Image.ImageContext C, string Text, int X, int Y, ColorB Color, ColorB OutlineColor){
         Render_TextColor(C, Text, X - 1, Y, OutlineColor);
         Render_TextColor(C, Text, X + 1, Y, OutlineColor);
         Render_TextColor(C, Text, X, Y - 1, OutlineColor);
@@ -261,8 +261,10 @@ internal static class GOLUWorld_Render{
             if(HasCeiling){
                 Render_RenderQueue_Add(C, new Renderable{Texture = Texture_Black, X = Coordinates_World.X + Ceiling.X, Y = Coordinates_World.Y + Ceiling.Y, Z = Render_Layer_VeryTop, MultiplyColor = new ColorB(0, 0, 0, 64)});   
             }else{
-                bool FlipY = Ceiling.ID is T_Ceiling.RoofTiles && Ceiling.Info == 1;
-                Render_RenderQueue_Add(C, new Renderable{Texture = Info_Ceiling_Texture(Ceiling), X = Coordinates_World.X + Ceiling.X, Y = Coordinates_World.Y + Ceiling.Y, Z = Render_Layer_VeryTop, FlipY = FlipY});
+                bool FlipX = Ceiling.ID is T_Ceiling.RoofTiles && Ceiling.Info is 3;
+                bool FlipY = Ceiling.ID is T_Ceiling.RoofTiles && Ceiling.Info is 1;
+                TextureRotation Rotation = Ceiling.ID is T_Ceiling.RoofTiles && Ceiling.Info is 2 or 3 ? TextureRotation.Rotate90 : TextureRotation.None;
+                Render_RenderQueue_Add(C, new Renderable{Texture = Info_Ceiling_Texture(Ceiling), X = Coordinates_World.X + Ceiling.X, Y = Coordinates_World.Y + Ceiling.Y, Z = Render_Layer_VeryTop, FlipX = FlipX, FlipY = FlipY, Rotation = Rotation});
             }
         }
     }
@@ -292,7 +294,7 @@ internal static class GOLUWorld_Render{
                     if(Entity.Info != 0){
                         uint __Seed = Entity.Info;
                         OffsetX += WL.Math.Random.Fast_Int(-8, 8, ref __Seed);
-                        __Seed += 256;
+                        __Seed += 2567821;
                         OffsetY += WL.Math.Random.Fast_Int(-8, 8, ref __Seed);
                     }
                         
@@ -300,6 +302,7 @@ internal static class GOLUWorld_Render{
                 }
                 
                 int Z = Render_Layer_Object(Entity.Y + OffsetY);
+                TextureRotation Rotation = Entity.Rotation;
                 
                 switch(Entity.ID){
                     case T_Entity.Tree:
@@ -318,7 +321,7 @@ internal static class GOLUWorld_Render{
                     
                     case T_Entity.Mob_Spider: {
                         OffsetX = -8;
-                        OffsetY = -8;
+                        OffsetY = -16;
 
                         if(!Entity.Dead){ Z = Render_Layer_VeryTop + 100; }
                         break;
@@ -328,6 +331,7 @@ internal static class GOLUWorld_Render{
                         break;
                     case T_Entity.Door:
                         Z = Render_Layer_Object(Entity.Y + 16 + OffsetY);
+                        Rotation = Entity.Info is 2 or 3 ? TextureRotation.Rotate90 : TextureRotation.None;
                         break;
                     case T_Entity.Tire:
                         Z = Render_Layer_Object(Entity.Y - 16 + OffsetY);
@@ -336,7 +340,7 @@ internal static class GOLUWorld_Render{
 
                 if(Entity.ID is T_Entity.Crate or T_Entity.Item){ Z++; }
 
-                Render_RenderQueue_Add(C, new Renderable{ Texture = Info_Entity_Texture(Entity), Palette = Palette_Default, X = Coordinates_World.X + Entity.X + OffsetX, Y = Coordinates_World.Y + Entity.Y + OffsetY, Rotation = Entity.Rotation, Z = Z, Reflect = __ReflectOffsetY.HasValue, MultiplyColor = Player_ClosestEntity.HasValue && Player_ClosestEntity_Distance < Player_Interact_Distance && Player_ClosestEntity.Value.Key == Entity.Key ? ColorB.Red : null}, __ReflectOffsetY ?? 0);
+                Render_RenderQueue_Add(C, new Renderable{ Texture = Info_Entity_Texture(Entity), Palette = Palette_Default, X = Coordinates_World.X + Entity.X + OffsetX, Y = Coordinates_World.Y + Entity.Y + OffsetY, Rotation = Rotation, Z = Z, Reflect = __ReflectOffsetY.HasValue, MultiplyColor = Player_ClosestEntity.HasValue && Player_ClosestEntity_Distance < Player_Interact_Distance && Player_ClosestEntity.Value.Key == Entity.Key ? ColorB.Red : null}, __ReflectOffsetY ?? 0);
 
                 if(Entity.ID == T_Entity.Tree){
                     void __RenderLeaves(int X__, int Y__){
@@ -366,7 +370,7 @@ internal static class GOLUWorld_Render{
         Texture PlayerEyes  = Texture_Player_Eyes;
         Texture PlayerNose  = Texture_Player_Nose;
         Texture PlayerMouth = (Player_Dead ? Texture_Player_Mouth : Emotion_Happiness < 25 ? Texture_Player_Mouth_Sad : (Emotion_Happiness > 75 ? Texture_Player_Mouth_Happy : Texture_Player_Mouth));
-        if(Player_Mute){ PlayerMouth = Texture_Player_Mouth_Mute; }
+        if(Player_Character_Mute){ PlayerMouth = Texture_Player_Mouth_Mute; }
         
         if(Player_BlinkTimer > 3 || Player_Dead){
             PlayerEyes = Texture_Player_Eyes_Blink;
@@ -576,7 +580,7 @@ internal static class GOLUWorld_Render{
     /// Рендерит мысли игрока
     /// </summary>
     internal static void Render_Thoughts(Image.ImageContext C){
-        if(Player_Mute){ return; }
+        if(Player_Character_Mute){ return; }
         
         int X = Coordinates_Player.X;
         int Y = Coordinates_Player.Y - 8 - (int)(WL.Math.Sin(World_DeltaTick, 1) * 3);
@@ -587,6 +591,6 @@ internal static class GOLUWorld_Render{
         uint Height__ = ThoughtsSize.Y + 14;
         Texture_Cloud.Render9Slice(C, Palette_Default, 10, X__, Y - (int)Height__, ThoughtsSize.X + 16, Height__);
         
-        Render_TextOutlineColor(C, Player_Thought, X__ + 9, Y + 8 - (int)Height__, ColorB.Black, ColorB.White);
+        Render_TextColorOutline(C, Player_Thought, X__ + 9, Y + 8 - (int)Height__, ColorB.Black, ColorB.White);
     }
 }

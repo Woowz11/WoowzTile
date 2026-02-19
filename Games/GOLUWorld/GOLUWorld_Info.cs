@@ -1,9 +1,8 @@
-﻿using WLO;
-using WoowzTile.Objects;
+﻿using WoowzTile.Objects;
 using static GOLUWorld.GOLUWorld_Objects;
 using static GOLUWorld.GOLUWorld_Resources;
 using static GOLUWorld.GOLUWorld_Values;
-using static GOLUWorld.GOLUWorld_Generator;
+using static GOLUWorld.GOLUWorld_Utility;
 using static GOLUWorld.GOLUWorld_World;
 
 namespace GOLUWorld;
@@ -24,6 +23,7 @@ internal static class GOLUWorld_Info{
             T_Item.Destroyer   => Texture_Destroyer,
             T_Item.Clock       => Texture_Clock,
             T_Item.Mushroom    => Texture_Mushroom,
+            T_Item.Battery     => Texture_Battery,
             
             var _ => Texture_Error
         };
@@ -44,6 +44,7 @@ internal static class GOLUWorld_Info{
             T_Item.Destroyer   => Texture_Destroyer_Icon,
             T_Item.Clock       => Texture_Clock_Icon,
             T_Item.Mushroom    => Texture_Mushroom_Icon,
+            T_Item.Battery     => Texture_Battery_Icon,
                     
             var _ => Texture_Error_Icon
         };
@@ -65,6 +66,7 @@ internal static class GOLUWorld_Info{
             T_Item.Destroyer   => "РАЗРУШИТЕЛЬ",
             T_Item.Clock       => "ЧАСЫ",
             T_Item.Mushroom    => "ГРИБ",
+            T_Item.Battery     => "БАТАРЕЙКА",
             
             var _ => "ПРЕДМЕТ [" + (byte)I + "]"
         };
@@ -84,7 +86,8 @@ internal static class GOLUWorld_Info{
             T_Item.Rock => "МОЖНО ЗАВАЛИВАТЬ ЯМЫ",
             T_Item.Destroyer => "БЕССКОНЕЧНЫЙ УРОН (уi)",
             T_Item.Clock => "ЭЛЕКТРОННЫЕ? Я УМЕЮ ОПРЕДЕЛЯТЬ\nТОЛЬКО ПО МЕХАНИЧЕСКИМ",
-            T_Item.Mushroom => "НЕЧТО СОЧЕТАЮЩЕЕ ПРИЗНАКИ\nРАСТЕНИЙ И ЖИВОТНЫХ (+с10, +э10)",
+            T_Item.Mushroom => "НЕЧТО (+с10, +э10)",
+            T_Item.Battery => "ЗАРЯЖАЕТ (+э100)",
             
             var _ => "О БОЖЕ ЧТО ЭТО ТАКОЕ?"
         };
@@ -154,8 +157,8 @@ internal static class GOLUWorld_Info{
             T_Block.Black              => Texture_Black,
             T_Block.Error              => Texture_Error,
             T_Block.Concrete           => Texture_Concrete_Beam,
-            T_Block.Ground_Cobblestone => Texture_Cobblestone,
-            T_Block.Pit                => World_GetBlock(B.X, B.Y - 16, SnapToGrid: false).ID == B.ID ? Texture_Black : Texture_Pit,
+            T_Block.Ground_Cobblestone => B.Info == 1 ? Texture_Cobblestone_Water : Texture_Cobblestone,
+            T_Block.Pit                => World_GetBlock(B.X, B.Y - 16, SnapToGrid: false).ID == B.ID ? (World_GetBlock(B.X, B.Y - 32, SnapToGrid: false).ID == B.ID ? Texture_Black : Texture_Pit) : Texture_Pit_Top,
             
             var _ => Texture_Error
         };
@@ -189,7 +192,7 @@ internal static class GOLUWorld_Info{
     /// <summary>
     /// Поддерживает декали?
     /// </summary>
-    internal static bool Info_Block_SupportDecals(T_Block B) => !Info_Block_Water(B);
+    internal static bool Info_Block_SupportDecals(T_Block B) => !Info_Block_Pit(B);
 
     /// <summary>
     /// На блоке может расти трава?
@@ -199,12 +202,14 @@ internal static class GOLUWorld_Info{
     /// <summary>
     /// Превращает символ в блок
     /// </summary>
-    internal static (T_Block, byte)? Info_Block_Symbol(char C, int X, int Y, ref uint __Seed){
+    internal static (T_Block, byte)? Info_Block_Symbol(char C, int X, int Y, uint Seed, TextureRotation Rotation = TextureRotation.None){
         T_Block ID = T_Block.Empty;
         byte Info = 0;
 
-        uint __Seed1 = __Seed + 888542135;
-        uint __Seed2 = __Seed1 - 12516;
+        uint Unique = Generator_SeedXY(X, Y);
+        
+        uint Seed1 = Seed + 888542135;
+        uint Seed2 = Seed1 - 12516;
         
         switch (C){
             case '#':
@@ -240,26 +245,29 @@ internal static class GOLUWorld_Info{
             case 'C':
                 ID = T_Block.Concrete;
                 break;
+            case 'p':
+                ID = T_Block.Pit;
+                break;
             case 'Д':
-                __Seed += 121;
+                Seed += Unique + 121;
                 return Generator_SelectWeightedObject(
-                    WL.Math.Random.Fast_0_1(ref __Seed),
+                    WL.Math.Random.Fast_0_1(ref Seed),
                     [(T_Block.Ground_Grass, 0, 1), (T_Block.Empty, 0, 1)]
                 );
             case 'П': {
                 T_Block B = World_GetBlock(X, Y).ID;
                 if(Info_Block_Water(B)){ return null; }
-                __Seed += 774743;
+                Seed += Unique + 774743;
                 return Generator_SelectWeightedObject(
-                    WL.Math.Random.Fast_0_1(ref __Seed),
+                    WL.Math.Random.Fast_0_1(ref Seed),
                     [(T_Block.Ground_Sand, 0, 1), (T_Block.Empty, 0, 1)]
                 );
             }
             case 'Ũ':
-                ID = WL.Math.Random.Fast_Bool(ref __Seed1) ? T_Block.Ground_Planks : T_Block.Bricks;
+                ID = WL.Math.Random.Fast_Bool(ref Seed1) ? T_Block.Ground_Planks : T_Block.Bricks;
                 break;
             case 'ũ':
-                ID = WL.Math.Random.Fast_Bool(ref __Seed2) ? T_Block.Ground_Planks : T_Block.Bricks;
+                ID = WL.Math.Random.Fast_Bool(ref Seed2) ? T_Block.Ground_Planks : T_Block.Bricks;
                 break;
             
             case '\r':
@@ -295,7 +303,8 @@ internal static class GOLUWorld_Info{
             T_Entity.HighGrass  => Texture_TallGrass_High,
             T_Entity.Cattail    => Texture_Cattail,
             T_Entity.Grave      => Texture_Grave,
-            T_Entity.Door       => E.Info == 1 ? Texture_Door_Open : Texture_Door,
+            T_Entity.Door       => E.Info is 1 or 3 ? Texture_Door_Open : Texture_Door,
+            T_Entity.Cardboard  => Texture_Cardboard,
             
             var _ => Texture_Error
         };
@@ -327,7 +336,7 @@ internal static class GOLUWorld_Info{
     /// <summary>
     /// Случайная позиция для спавна сущности?
     /// </summary>
-    internal static bool Info_Entity_RandomSpawnPosition(T_Entity E, byte Info) => E == T_Entity.Item && Info is (byte)T_Item.Stick or (byte)T_Item.Rock;
+    internal static bool Info_Entity_RandomSpawnPosition(T_Entity E, byte Info) => E == T_Entity.Item && Info is (byte)T_Item.Stick or (byte)T_Item.Rock or (byte)T_Item.Mushroom;
 
     /// <summary>
     /// Сущности которые может толкать вода
@@ -352,9 +361,11 @@ internal static class GOLUWorld_Info{
     /// <summary>
     /// Превращает символ в сущность
     /// </summary>
-    internal static (T_Entity, byte)? Info_Entity_Symbol(char C, int X, int Y, ref uint __Seed){
+    internal static (T_Entity, byte)? Info_Entity_Symbol(char C, int X, int Y, uint Seed, TextureRotation Rotation = TextureRotation.None){
         T_Entity ID = T_Entity.Empty;
         byte Info = 0;
+
+        uint Unique = Generator_SeedXY(X, Y);
         
         switch (C){
            case 'C':
@@ -385,40 +396,41 @@ internal static class GOLUWorld_Info{
                 ID = T_Entity.Grave;
                 break;
             case 'D':
-                ID = T_Entity.Door;
-                break;
+                Seed += Unique + 88329;
+                bool Open = WL.Math.Random.Fast_Bool(0.1f, ref Seed);
+                return (T_Entity.Door, (byte)(Generator_Vertical(Rotation) ? (Open ? 1 : 0) : (Open ? 3 : 2)));
             case 'w':
-                __Seed += 88555;
-                return (T_Entity.Window, (byte)WL.Math.Random.Fast_Int(0, 1, ref __Seed));
+                Seed += Unique + 88555;
+                return (T_Entity.Window, (byte)WL.Math.Random.Fast_Int(0, 1, ref Seed));
             case 'Д': {
-                __Seed += 1667;
+                Seed += Unique + 1667;
                 T_Block B = World_GetBlock(X, Y).ID;
                 if(!Info_Block_SupportGrass(B)){ return null; }
                 return B == T_Block.Ground_Sand
-                    ? Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Item, (byte)T_Item.Rock, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Empty, 0, 99)])
-                    : Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed),
+                    ? Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Item, (byte)T_Item.Rock, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Empty, 0, 99)])
+                    : Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed),
                         [(T_Entity.Tree, 0, 20), (T_Entity.Item, (byte)T_Item.Rock, 10), (T_Entity.Item, (byte)T_Item.Mushroom, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Bush, 0, 5), (T_Entity.Grass, 0, 43), (T_Entity.Empty, 0, 32)]);
             }
             case 'д': {
-                __Seed += 1532;
+                Seed += Unique + 1532;
                 T_Block B = World_GetBlock(X, Y).ID;
                 if(!Info_Block_SupportGrass(B)){ return null; }
                 return B == T_Block.Ground_Sand
-                    ? Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Cattail, 0, 10), (T_Entity.Empty, 0, 99)])
-                    : Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Bush, 0, 1), (T_Entity.HighGrass, 0, 1), (T_Entity.Grass, 0, 43), (T_Entity.Empty, 0, 32)]);
+                    ? Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Cattail, 0, 10), (T_Entity.Empty, 0, 99)])
+                    : Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Bush, 0, 10), (T_Entity.Item, (byte)T_Item.Rock, 1), (T_Entity.HighGrass, 0, 10), (T_Entity.Grass, 0, 430), (T_Entity.Empty, 0, 320)]);
             }
             case 'т': {
-                __Seed += 8543;
+                Seed += Unique + 8543;
                 T_Block B = World_GetBlock(X, Y).ID;
                 if(!Info_Block_SupportGrass(B) || B is T_Block.Ground_Sand){ return null; }
-                return Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Grass, 0, 1), (T_Entity.HighGrass, 0, 5), (T_Entity.Empty, 0, 1)]);
+                return Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Grass, 0, 1), (T_Entity.HighGrass, 0, 5), (T_Entity.Empty, 0, 1)]);
             }
             case 'М':
-                __Seed += 99533221;
-                return Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Empty, 0, 1), (T_Entity.Chair, 0, 1), (T_Entity.Table, 0, 1), (T_Entity.Crate, 0, 1)]);
+                Seed += Unique + 99533221;
+                return Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Empty, 0, 1), (T_Entity.Chair, 0, 1), (T_Entity.Table, 0, 1), (T_Entity.Crate, 0, 1)]);
             case 'м':
-                __Seed += 995321154;
-                return Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref __Seed), [(T_Entity.Empty, 0, 2), (T_Entity.TrashBag, 0, 2), (T_Entity.Tire, 0, 1)]);
+                Seed += Unique + 995321154;
+                return Generator_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Empty, 0, 2), (T_Entity.TrashBag, 0, 2), (T_Entity.Cardboard, 0, 2), (T_Entity.Tire, 0, 1)]);
 
             case '\r':
             case '\n':
@@ -447,12 +459,14 @@ internal static class GOLUWorld_Info{
     /// <summary>
     /// Превращает символ в потолок
     /// </summary>
-    internal static (T_Ceiling, byte)? Info_Ceiling_Symbol(char C, int X, int Y, ref uint __Seed){
+    internal static (T_Ceiling, byte)? Info_Ceiling_Symbol(char C, int X, int Y, uint Seed, TextureRotation Rotation = TextureRotation.None){
         T_Ceiling ID = T_Ceiling.Empty;
         byte Info = 0;
 
-        uint __Seed1 = __Seed + 88348835;
-        uint __Seed2 = __Seed1 - 1241256;
+        uint Unique = Generator_SeedXY(X, Y);
+        
+        uint Seed1 = Seed    + 88348835;
+        uint Seed2 = Seed1 - 1241256;
         
         switch (C){
             case '_':
@@ -462,19 +476,18 @@ internal static class GOLUWorld_Info{
                 ID = T_Ceiling.Concrete;
                 break;
             case 'R':
-                ID = T_Ceiling.RoofTiles;
-                break;
+                return (T_Ceiling.RoofTiles, (byte)(Generator_Vertical(Rotation) ? 0 : 2));
             case 'r':
-                return (T_Ceiling.RoofTiles, 1);
+                return (T_Ceiling.RoofTiles, (byte)(Generator_Vertical(Rotation) ? 1 : 3));
             case 'Ũ':
-                if(WL.Math.Random.Fast_Bool(ref __Seed1)){
-                    return (T_Ceiling.RoofTiles, 0);
+                if(WL.Math.Random.Fast_Bool(ref Seed1)){
+                    return (T_Ceiling.RoofTiles, (byte)(Generator_Vertical(Rotation) ? 0 : 2));
                 }
                 ID = T_Ceiling.Invisible;
                 break;
             case 'ũ':
-                if(WL.Math.Random.Fast_Bool(ref __Seed2)){
-                    return (T_Ceiling.RoofTiles, 1);
+                if(WL.Math.Random.Fast_Bool(ref Seed2)){
+                    return (T_Ceiling.RoofTiles, (byte)(Generator_Vertical(Rotation) ? 1 : 3));
                 }
                 ID = T_Ceiling.Invisible;
                 break;

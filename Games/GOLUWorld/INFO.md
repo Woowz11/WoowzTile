@@ -9,6 +9,7 @@
 * 'b' - Чёрный блок (блок)
 * '^' - Трава (пол)
 * 'C' - Бетонная балка (блок)
+* 'p' - Яма (блок)
 * 'Д' - [ГЕНЕРАТОР] Случайно, трава или пустота
 * 'П' - [ГЕНЕРАТОР] Случайно, песок или пустота
 * 'Ũ' - [ГЕНЕРАТОР] Генерирует стену или пол (уникально для структуры), доски или кирпичи
@@ -30,6 +31,7 @@
 ['P'] = 11,
 ['Ũ'] = 12,
 ['ũ'] = 13,
+['p'] = 14,
 
 new KeyValuePair<byte, ColorB>(1 , new ColorB(0, 0, 0, 0)),
 new KeyValuePair<byte, ColorB>(2 , new ColorB(0, 0, 0, 255)),
@@ -44,6 +46,7 @@ new KeyValuePair<byte, ColorB>(10, new ColorB(198, 151, 151, 255)),
 new KeyValuePair<byte, ColorB>(11, new ColorB(196, 149, 100, 255)),
 new KeyValuePair<byte, ColorB>(12, new ColorB(161, 137, 113, 255)),
 new KeyValuePair<byte, ColorB>(13, new ColorB(148, 133, 118, 255)),
+new KeyValuePair<byte, ColorB>(14, new ColorB(19, 44, 51, 255)),
 ```
 
 ## Сущности
@@ -75,6 +78,8 @@ new KeyValuePair<byte, ColorB>(13, new ColorB(148, 133, 118, 255)),
 ['т'] = 5,
 ['д'] = 6,
 ['Д'] = 7,
+['D'] = 8,
+['s'] = 9,
 
 new KeyValuePair<byte, ColorB>(1 , new ColorB(0, 0, 0, 0)),
 new KeyValuePair<byte, ColorB>(2 , new ColorB(109, 196, 255, 255)),
@@ -83,6 +88,8 @@ new KeyValuePair<byte, ColorB>(4 , new ColorB(239, 135, 119, 255)),
 new KeyValuePair<byte, ColorB>(5 , new ColorB(0, 255, 0, 255)),
 new KeyValuePair<byte, ColorB>(6 , new ColorB(89, 255, 0, 255)),
 new KeyValuePair<byte, ColorB>(7 , new ColorB(182, 255, 0, 255)),
+new KeyValuePair<byte, ColorB>(8 , new ColorB(255, 144, 0, 255)),
+new KeyValuePair<byte, ColorB>(9 , new ColorB(255, 0, 0, 182)),
 ```
 
 ## Потолки

@@ -156,7 +156,7 @@ internal static class GOLUWorld_UI{
         
         T_Item Item = Player_ItemInHands;
         string __Text = (Item == T_Item.Empty ? "" : Info_Item_Name(Item)) + " [" + (Player_InventorySelectedSlot + 1) + "]";
-        Render_TextOutlineColor(C, __Text, (int)C.Width - (int)Font_Default.TextSize(__Text).X - 7, (int)C.Height - 8 - 7, ColorB.Black, ColorB.White);
+        Render_TextColorOutline(C, __Text, (int)C.Width - (int)Font_Default.TextSize(__Text).X - 7, (int)C.Height - 8 - 7, ColorB.Black, ColorB.White);
         
         if(UI_Interface != T_Interface.None){ C.Fill(ColorB.Black.SetA(128), ImageBlend.Alpha); }
         
@@ -224,6 +224,11 @@ internal static class GOLUWorld_UI{
                     
             Font_Default.Render(C, Palette_Default, Info_Item_Description(Item), 20 + 2, 110 + 2 + 11);
         }
+
+        string Money = Player_Money.ToString();
+        int MoneyX = (int)(C.Width - Font_Default.TextSize(Money).X) - 10;
+        Render_TextColorOutline(C, Money, MoneyX, 5, ColorB.Red, ColorB.White);
+        Texture_Money.Render(C, Palette_Default, MoneyX - 17, 2);
     }
 
     /// <summary>
@@ -309,7 +314,7 @@ internal static class GOLUWorld_UI{
             byte __PaletteIndex = MapCeilingsColor.GetValueOrDefault(Ceiling.ID, (byte)0);
             if(__PaletteIndex == 0){ continue; }
             ColorB CeilingColor = Palette_World[__PaletteIndex];
-            if(Ceiling is{ ID: T_Ceiling.RoofTiles, Info: 1 }){ CeilingColor = Palette_World[3]; }
+            if(Ceiling.ID is T_Ceiling.RoofTiles && Ceiling.Info is 1 or 3){ CeilingColor = Palette_World[3]; }
             __GPSPixel(Ceiling.X, Ceiling.Y, CeilingColor);
         }
         
@@ -348,23 +353,23 @@ internal static class GOLUWorld_UI{
             __GPSPixelPlayer(__X, __Y,-2,  0);
         }
         
-        __GPSPixelCross((int)Coordinates_Spawn.X, (int)Coordinates_Spawn.Y, ColorB.Green);
+        __GPSPixelCross(Coordinates_Spawn.X, Coordinates_Spawn.Y, ColorB.Green);
         __GPSPixelCross(0, 0, ColorB.Yellow);
         __GPSPixelCross(Coordinates_PlayerWorld.X, Coordinates_PlayerWorld.Y, ColorB.Blue);
         
         string Coordinates = Coordinates_Beautiful.X + " : " + Coordinates_Beautiful.Y;
         Vector2U __CoordinatesSize = Font_Default.TextSize(Coordinates);
-        Render_TextOutlineColor(C, Coordinates, (int)(GPSOffset.X + GPSSize) - (int)__CoordinatesSize.X - 2, (int)(GPSOffset.Y + GPSSize) - (int)__CoordinatesSize.Y - 2, ColorB.Red, ColorB.Black);
+        Render_TextColorOutline(C, Coordinates, (int)(GPSOffset.X + GPSSize) - (int)__CoordinatesSize.X - 2, (int)(GPSOffset.Y + GPSSize) - (int)__CoordinatesSize.Y - 2, ColorB.Red, ColorB.Black);
 
         for(int __Y__ = -(int)GPSSize/2; __Y__ < GPSSize/2; __Y__++){
             for(int __X__ = -(int)GPSSize/2; __X__ < GPSSize/2; __X__++){
-                byte Color = WL.Math.Random.Fast_Byte();
+                byte Color = (byte)(Player_Energy > 0 ? WL.Math.Random.Fast_Byte() : 0);
                 __GPSPixel(__X__, __Y__, new ColorB(Color, Color, Color, (byte)(255 * (1 - Energy))), true);
             }
         }
 
         Texture_GPS_Overlay.Render(C, Palette_Default);
-        if(World_AnimationTimer > 0.5f){
+        if(World_AnimationTimer > 0.5f && Player_Energy > 0){
             Texture_GPS_Overlay_Button.Render(C, Palette_Default, 122, 221);
         }
     }
@@ -377,10 +382,6 @@ internal static class GOLUWorld_UI{
         
         Texture_Clock_Overlay.Render(C, Palette_Default);
 
-        void __RenderDigital(int X, int Y, int N){
-            Font_Digital.Render(C, Palette_Default, N.ToString(), X, Y);
-        }
-
         float Time = World_Time % 24;
         if(Time < 0){ Time += 24; }
 
@@ -391,13 +392,16 @@ internal static class GOLUWorld_UI{
             Minutes = 0;
             Hours = (Hours + 1) % 24;
         }
-        
+
+        void __RenderDigital(int X, int Y, int N){
+            Font_Digital.Render(C, Palette_Default, Player_Energy > 0 ? N.ToString() : "!", X, Y);
+        }
         __RenderDigital(69 , 92, Hours   / 10);
         __RenderDigital(97 , 92, Hours   % 10);
         __RenderDigital(132, 92, Minutes / 10);
         __RenderDigital(160, 92, Minutes % 10);
-
-        if(World_AnimationTimer > 0.5f){ Texture_Clock_Overlay_Colon.Render(C, Palette_Default, 123, 97); }
+        
+        if(World_AnimationTimer > 0.5f && Player_Energy > 0){ Texture_Clock_Overlay_Colon.Render(C, Palette_Default, 123, 97); }
     }
     
     /// <summary>
