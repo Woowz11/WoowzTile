@@ -144,9 +144,7 @@ internal static class GOLUWorld_Render{
         UI_RenderGPS(C);
         UI_RenderClock(C);
         
-        UI_Render(C);
-        
-        Render_PostPostProcessing(C, TD);
+        UI_Render(C, TD);
     }
     private static readonly List<Renderable> __RenderQueue       = [];
     private static readonly List<Renderable> __RenderQueue_Water = [];

@@ -58,6 +58,7 @@ internal static class GOLUWorld_Resources{
     internal static Texture Texture_Grass;
     internal static Texture Texture_Water;
     internal static Texture Texture_Water_Top;
+    internal static Texture Texture_Pit;
     internal static Texture Texture_Tree;
     internal static Texture Texture_Tree_Leaves;
     internal static Texture Texture_FirstAidKit;
@@ -3863,6 +3864,26 @@ Texture_Water_Top = new Texture(
 ВВВВВВВВВВВВВВВВ
 ВВВВВВВВВВВВВВВВ
 ВВВВВВВВВВВВВВВВ",
+    Mapping
+);
+
+Texture_Pit = new Texture(
+    @"________________
+░░_░░░░░░░____░░
+░░░░░░░░░▒░░░░▒░
+▒░░░░░▒░▒▒▒░░▒▒░
+▒▒▒░▒░▒░▒▒░░▒▒▒▒
+▒░▒▒▒░▒▒▒▒▒▒▒▒░▒
+▒▒▒▒▒▒▒▒▒▓▒▒▒▒▒▒
+▒▓▓▒▒▓▒▒▒▒▒▒▓▒▓▓
+▒▓▒▓▒▒▒▓▓▓▒▒▓▒▓▓
+▓▓▓▒▓▓▓▒▓▒▓▓▓▒▒▓
+█▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+▓▓█▓▓▓▓▓█▓▓▓▓▓▓▓
+▓██▓█▓█▓█▓▓▓██▓█
+█▓▓▓██▓▓██▓██▓██
+████▓████████▓██
+████████████████",
     Mapping
 );
 

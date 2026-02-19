@@ -59,6 +59,8 @@ internal static class GOLUWorld_UI{
                 UI_RenderMainMenu_Help(C);
                 break;
         }
+        
+        UI_RenderFinal(C, TD);
     }
     
     /// <summary>
@@ -66,8 +68,6 @@ internal static class GOLUWorld_UI{
     /// </summary>
     internal static void UI_RenderMainMenu_Background(Image.ImageContext C, TickData TD){
         Texture_GOLU.RenderTiles(C, Palette_Default, -(int)(WL.Math.DCos((float)TD.DeltaTick / 2) * 128), -(int)(WL.Math.DSin((float)TD.DeltaTick / 2) * 128), 3, 3, MultiplyColor: ColorB.White.SetA(64));
-        
-        C.Border(0, 0, C.Width, C.Height, 1, ColorB.Black);
     }
 
     /// <summary>
@@ -75,28 +75,28 @@ internal static class GOLUWorld_UI{
     /// </summary>
     internal static void UI_RenderMainMenu_Menu(Image.ImageContext C, TickData TD){
         Texture_Author.Render(C, Palette_Default, (int)(C.Width - Texture_Author.Width) - 3, (int)(C.Height - Texture_Author.Height) - 3);
-            Font_Default.Render(C, Palette_Default, Game_Version, 3, (int)(C.Height - 8 - 3));
+        Font_Default.Render(C, Palette_Default, Game_Version, 3, (int)(C.Height - 8 - 3));
 
-            void RenderGOLU(float SinOffset, ColorB MultiplyColor){
-                Texture_G.Render(C, Palette_Default, (int)(C.Width / 2f - Texture_G.Width / 2f - Texture_G.Width * 1.5f), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2     + SinOffset) * 10), MultiplyColor: MultiplyColor);
-                Texture_O.Render(C, Palette_Default, (int)(C.Width / 2f - Texture_G.Width / 2f - Texture_G.Width /   2f), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 1 + SinOffset) * 10), MultiplyColor: MultiplyColor);
-                Texture_L.Render(C, Palette_Default, (int)(C.Width / 2f - Texture_G.Width / 2f + Texture_G.Width /   2f), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 2 + SinOffset) * 10), MultiplyColor: MultiplyColor);
-                Texture_U.Render(C, Palette_Default, (int)(C.Width / 2f - Texture_G.Width / 2f + Texture_G.Width * 1.5f), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 3 + SinOffset) * 10), MultiplyColor: MultiplyColor);
-            }
-            RenderGOLU(-0.2f, ColorB.Black.SetA((byte)(255 * 0.2f)));
-            RenderGOLU(-0.4f, ColorB.Black.SetA((byte)(255 * 0.2f)));
-            RenderGOLU(-0.6f, ColorB.Black.SetA((byte)(255 * 0.2f)));
-            RenderGOLU(-0.8f, ColorB.Black.SetA((byte)(255 * 0.2f)));
-            RenderGOLU(0, ColorB.White);
+        void RenderGOLU(float SinOffset, ColorB MultiplyColor){
+            Texture_G.Render(C, Palette_Default, (int)(C.Width / 2f - Texture_G.Width / 2f - Texture_G.Width * 1.5f), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2     + SinOffset) * 10), MultiplyColor: MultiplyColor);
+            Texture_O.Render(C, Palette_Default, (int)(C.Width / 2f - Texture_G.Width / 2f - Texture_G.Width /   2f), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 1 + SinOffset) * 10), MultiplyColor: MultiplyColor);
+            Texture_L.Render(C, Palette_Default, (int)(C.Width / 2f - Texture_G.Width / 2f + Texture_G.Width /   2f), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 2 + SinOffset) * 10), MultiplyColor: MultiplyColor);
+            Texture_U.Render(C, Palette_Default, (int)(C.Width / 2f - Texture_G.Width / 2f + Texture_G.Width * 1.5f), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 3 + SinOffset) * 10), MultiplyColor: MultiplyColor);
+        }
+        RenderGOLU(-0.2f, ColorB.Black.SetA((byte)(255 * 0.2f)));
+        RenderGOLU(-0.4f, ColorB.Black.SetA((byte)(255 * 0.2f)));
+        RenderGOLU(-0.6f, ColorB.Black.SetA((byte)(255 * 0.2f)));
+        RenderGOLU(-0.8f, ColorB.Black.SetA((byte)(255 * 0.2f)));
+        RenderGOLU(0, ColorB.White);
 
-            C.Fill((int)(C.Width / 2f - Texture_G.Width / 2f - Texture_G.Width * 1.5F), 75, 127, 2, ColorB.Black);
-            
-            Texture_Title.Render(C, Palette_Default, (int)(C.Width/2 - Texture_Title.Width/2), 80);
-            
-            UI_EasyButton(C, 0, "ЗАГРУЗИТЬ", (int)(C.Width / 2 - Font_Default.TextSize("ЗАГРУЗИТЬ").X / 2), 150 + (0 * 13));
-            UI_EasyButton(C, 1, "НОВАЯ", (int)(C.Width / 2 - Font_Default.TextSize("НОВАЯ").X / 2), 150 + (1 * 13));
-            UI_EasyButton(C, 2, "ПОМОЩЬ", (int)(C.Width / 2 - Font_Default.TextSize("ПОМОЩЬ").X / 2), 150 + (2 * 13));
-            UI_EasyButton(C, 3, "ВЫЙТИ", (int)(C.Width / 2 - Font_Default.TextSize("ВЫЙТИ").X / 2), 150 + (3 * 13));
+        C.Fill((int)(C.Width / 2f - Texture_G.Width / 2f - Texture_G.Width * 1.5F), 75, 127, 2, ColorB.Black);
+        
+        Texture_Title.Render(C, Palette_Default, (int)(C.Width/2 - Texture_Title.Width/2), 80);
+        
+        UI_EasyButton(C, 0, "ЗАГРУЗИТЬ", (int)(C.Width / 2 - Font_Default.TextSize("ЗАГРУЗИТЬ").X / 2), 150 + (0 * 13));
+        UI_EasyButton(C, 1, "НОВАЯ", (int)(C.Width / 2 - Font_Default.TextSize("НОВАЯ").X / 2), 150 + (1 * 13));
+        UI_EasyButton(C, 2, "ПОМОЩЬ", (int)(C.Width / 2 - Font_Default.TextSize("ПОМОЩЬ").X / 2), 150 + (2 * 13));
+        UI_EasyButton(C, 3, "ВЫЙТИ", (int)(C.Width / 2 - Font_Default.TextSize("ВЫЙТИ").X / 2), 150 + (3 * 13));
     }
 
     /// <summary>
@@ -137,7 +137,7 @@ internal static class GOLUWorld_UI{
     /// <summary>
     /// Рендерит UI
     /// </summary>
-    internal static void UI_Render(Image.ImageContext C){
+    internal static void UI_Render(Image.ImageContext C, TickData TD){
         Texture_Frame.Render(C, Palette_Default);
 
         void RenderSlideBar(int X, int Y, ColorB Color, uint Value, uint MaxValue, string Text, Texture Icon){
@@ -158,6 +158,21 @@ internal static class GOLUWorld_UI{
         string __Text = (Item == T_Item.Empty ? "" : Info_Item_Name(Item)) + " [" + (Player_InventorySelectedSlot + 1) + "]";
         Render_TextOutlineColor(C, __Text, (int)C.Width - (int)Font_Default.TextSize(__Text).X - 7, (int)C.Height - 8 - 7, ColorB.Black, ColorB.White);
         
+        if(UI_Interface != T_Interface.None){ C.Fill(ColorB.Black.SetA(128), ImageBlend.Alpha); }
+        
+        switch(UI_Interface){
+            case T_Interface.Inventory: UI_RenderInventory(C, Item); break;
+            case T_Interface.Menu     : UI_RenderMenu(C); break;
+            case T_Interface.Console  : UI_RenderConsole(C); break;
+        }
+        
+        UI_RenderFinal(C, TD);
+    }
+
+    /// <summary>
+    /// Рендерит инвентарь
+    /// </summary>
+    internal static void UI_RenderInventory(Image.ImageContext C, T_Item Item){
         void RenderSlot(Image.ImageContext C, byte ID, int X, int Y){
             int X__ = 20 + X * 36;
             int Y__ = 30 + Y * 36;
@@ -178,49 +193,55 @@ internal static class GOLUWorld_UI{
             }
         }
         
-        if(UI_Interface != T_Interface.None){ C.Fill(ColorB.Black.SetA(128), ImageBlend.Alpha); }
-        
-        switch(UI_Interface){
-            case T_Interface.Inventory: {
-                C.Fill(10, 20, C.Width - 20, C.Height - 40);
-                C.Border(10, 20, C.Width - 20, C.Height - 40, 1, ColorB.Black);
+        C.Fill(10, 20, C.Width - 20, C.Height - 40);
+        C.Border(10, 20, C.Width - 20, C.Height - 40, 1, ColorB.Black);
                 
-                RenderSlot(C, 0, 0, 0);
-                RenderSlot(C, 1, 1, 0);
-                RenderSlot(C, 2, 2, 0);
-                RenderSlot(C, 3, 3, 0);
-                RenderSlot(C, 4, 4, 0);
-                RenderSlot(C, 5, 5, 0);
+        RenderSlot(C, 0, 0, 0);
+        RenderSlot(C, 1, 1, 0);
+        RenderSlot(C, 2, 2, 0);
+        RenderSlot(C, 3, 3, 0);
+        RenderSlot(C, 4, 4, 0);
+        RenderSlot(C, 5, 5, 0);
                 
-                RenderSlot(C, 6, 0, 1);
-                RenderSlot(C, 7, 1, 1);
-                RenderSlot(C, 8, 2, 1);
-                RenderSlot(C, 9, 3, 1);
-                RenderSlot(C, 10, 4, 1);
-                RenderSlot(C, 11, 5, 1);
+        RenderSlot(C, 6, 0, 1);
+        RenderSlot(C, 7, 1, 1);
+        RenderSlot(C, 8, 2, 1);
+        RenderSlot(C, 9, 3, 1);
+        RenderSlot(C, 10, 4, 1);
+        RenderSlot(C, 11, 5, 1);
 
-                C.Fill(20, 110, C.Width - 40, C.Height - 140, ColorB.Gray);
-                C.Border(20, 110, C.Width - 40, C.Height - 140, 1, ColorB.Black);
+        C.Fill(20, 110, C.Width - 40, C.Height - 140, ColorB.Gray);
+        C.Border(20, 110, C.Width - 40, C.Height - 140, 1, ColorB.Black);
                 
-                if(Item != T_Item.Empty){
-                    string Name = Info_Item_Name(Item);
+        if(Item != T_Item.Empty){
+            string Name = Info_Item_Name(Item);
                     
-                    Font_Default.Render(C, Palette_Default, Name, 20 + 2, 110 + 2);
-                    string ItemID = "[" + (byte)Item + "]";
-                    Font_Default.Render(C, Palette_Default, ItemID, (int)C.Width - 22 - (int)Font_Default.TextSize(ItemID).X, 110 + 2);
+            Font_Default.Render(C, Palette_Default, Name, 20 + 2, 110 + 2);
+            string ItemID = "[" + (byte)Item + "]";
+            Font_Default.Render(C, Palette_Default, ItemID, (int)C.Width - 22 - (int)Font_Default.TextSize(ItemID).X, 110 + 2);
                     
-                    C.Fill(20, 110 + 11, C.Width - 40, 1, ColorB.Black);
+            C.Fill(20, 110 + 11, C.Width - 40, 1, ColorB.Black);
                     
-                    Font_Default.Render(C, Palette_Default, Info_Item_Description(Item), 20 + 2, 110 + 2 + 11);
-                }
-                break;
-            }
-            case T_Interface.Menu:{
-                UI_EasyButton(C, 0, "ПРОДОЛЖИТЬ",15, 120 + (0 * 13));
-                UI_EasyButton(C, 1, "ВЫЙТИ",15, 120 + (1 * 13));
-                
-                break;
-            }
+            Font_Default.Render(C, Palette_Default, Info_Item_Description(Item), 20 + 2, 110 + 2 + 11);
+        }
+    }
+
+    /// <summary>
+    /// Рендерит меню
+    /// </summary>
+    internal static void UI_RenderMenu(Image.ImageContext C){
+        UI_EasyButton(C, 0, "ПРОДОЛЖИТЬ",15, 120 + (0 * 13));
+        UI_EasyButton(C, 1, "ВЫЙТИ",15, 120 + (1 * 13));
+    }
+
+    /// <summary>
+    /// Рендерит консоль
+    /// </summary>
+    internal static void UI_RenderConsole(Image.ImageContext C){
+        for(int i = 0; i < 28; i++){
+            int Y = (int)C.Height - (i + 1) * 9 - 2;
+            C.Fill(0, Y, C.Width, 8, ColorB.Black.SetA(64), ImageBlend.Alpha);
+            Font_Default.Render(C, Palette_White, "TEXT", 2, Y);
         }
     }
     
@@ -327,6 +348,7 @@ internal static class GOLUWorld_UI{
             __GPSPixelPlayer(__X, __Y,-2,  0);
         }
         
+        __GPSPixelCross((int)Coordinates_Spawn.X, (int)Coordinates_Spawn.Y, ColorB.Green);
         __GPSPixelCross(0, 0, ColorB.Yellow);
         __GPSPixelCross(Coordinates_PlayerWorld.X, Coordinates_PlayerWorld.Y, ColorB.Blue);
         
@@ -382,4 +404,13 @@ internal static class GOLUWorld_UI{
     /// Название окна
     /// </summary>
     internal static string UI_WindowTitle => Player_ClosestEntity?.ID + " | " + Player_ClosestEntity_Distance;
+
+    /// <summary>
+    /// Финальный UI рендер
+    /// </summary>
+    internal static void UI_RenderFinal(Image.ImageContext C, TickData TD){
+        Render_PostPostProcessing(C, TD);
+        
+        C.Border(0, 0, C.Width, C.Height, 1, ColorB.Black);
+    }
 }

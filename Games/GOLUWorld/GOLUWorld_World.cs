@@ -75,11 +75,12 @@ internal static class GOLUWorld_World{
         while(!__FindSpawnLocation){
             uint __Seed2 = __Seed1 + 2269909;
             Coordinates_Camera = new Vector2F(WL.Math.Random.Fast_Int(-(int)World_SizeWorld.X, (int)World_SizeWorld.X, ref __Seed1), WL.Math.Random.Fast_Int(-(int)World_SizeWorld.Y, (int)World_SizeWorld.Y, ref __Seed2));
-            if(!Info_Block_Solid(World_GetBlock(Coordinates_PlayerWorld.X, Coordinates_PlayerWorld.Y, Relative: true).ID)){
+            if(!Info_Block_Collide(World_GetBlock(Coordinates_PlayerWorld.X, Coordinates_PlayerWorld.Y, Relative: true).ID)){
                 __FindSpawnLocation = true;
             }
             __Seed1++;
         }
+        Coordinates_Spawn = Coordinates_PlayerWorld;
     }
 
     /// <summary>
@@ -131,7 +132,7 @@ internal static class GOLUWorld_World{
     /// </summary>
     internal static void World_UpdateBlocks(){
         foreach(Block Block in World_Blocks.Values){
-            if(Info_Block_Solid(Block.ID)){
+            if(Info_Block_Collide(Block.ID)){
                 Game.AddCollider(new Collider(Coordinates_World.X + Block.X, Coordinates_World.Y + Block.Y, 16, 16, Block.Info, new Vector2I(Block.X, Block.Y)));
             }
         }
@@ -538,7 +539,7 @@ internal static class GOLUWorld_World{
             }
         }
 
-        if(!IgnoreEntities && Info_Block_Solid(Block__.ID)){
+        if(!IgnoreEntities && Info_Block_Collide(Block__.ID)){
             if(World_Entities.ContainsKey(new EntityKey(Key))){ World_SetEntity(new Entity{ X = Block__.X, Y = Block__.Y }, false, true); }
         }
     }
@@ -582,7 +583,7 @@ internal static class GOLUWorld_World{
         __Seed *= (uint)Entity.Y;
         
         if(!IgnoreBlocks){
-            if(World_Blocks.TryGetValue(Key.Position, out Block __Found) && Info_Block_Solid(__Found.ID)){ return; }
+            if(World_Blocks.TryGetValue(Key.Position, out Block __Found) && Info_Block_Collide(__Found.ID)){ return; }
         }
 
         if(Entity is{ ID: T_Entity.Item, Info: (byte)T_Item.Empty }){

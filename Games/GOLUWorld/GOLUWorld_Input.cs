@@ -32,13 +32,6 @@ internal static class GOLUWorld_Input{
                     }
                 }
             }else{
-                if(Key == Key.C){ Cheat_RenderColliders = !Cheat_RenderColliders; }
-                if(Key == Key.I){ Cheat_Immortality = !Cheat_Immortality; }
-                if(Key == Key.X){ Cheat_IgnoreColliders = !Cheat_IgnoreColliders; }
-                if(Key == Key.F){ Cheat_FastTime = !Cheat_FastTime; }
-                if(Key == Key.B){ Cheat_DisableWorldLimit = !Cheat_DisableWorldLimit; }
-                if(Key == Key.Home){ Coordinates_Camera = Vector2F.Zero; }
-
                 void UpdSeed(){
                     if(Game.KeyPressed(Key.Alt)){
                         if(Game.KeyPressed(Key.Shift)){ World_Seed -= 1; }else{ World_Seed += 1; }
@@ -55,16 +48,30 @@ internal static class GOLUWorld_Input{
                 }
                 if(Key == Key.F4){ World_Start(); }
 
+                if(Key == Key.Tilde){
+                    if(UI_Interface == T_Interface.None){ UI_Interface = T_Interface.Console; }else{
+                        UI_Interface = UI_Interface == T_Interface.Console ? T_Interface.None : T_Interface.Console;
+                    }
+                }
+                
                 if(Key == Key.Escape || (UI_Interface == T_Interface.Menu && UI_MenuSelectedButton == 0 && __Enter)){
                     if(UI_Interface == T_Interface.None){ UI_Interface = T_Interface.Menu; }else{ UI_Interface = T_Interface.None; UI_MenuSelectedButton = 0; }
                 }
+                
+                if(Key == Key.Tab && Player_Attack_Timer <= 0 && !Player_Dead){ UI_Interface = UI_Interface == T_Interface.None ? T_Interface.Inventory : T_Interface.None; }
 
-                if(!Player_Dead){
-                    if(Key == Key.Tab && Player_Attack_Timer <= 0){ UI_Interface = UI_Interface == T_Interface.None ? T_Interface.Inventory : T_Interface.None; }
+                if(UI_Interface == T_Interface.None){
+                    if(Key == Key.C){ Cheat_RenderColliders = !Cheat_RenderColliders; }
+                    if(Key == Key.I){ Cheat_Immortality = !Cheat_Immortality; }
+                    if(Key == Key.X){ Cheat_IgnoreColliders = !Cheat_IgnoreColliders; }
+                    if(Key == Key.F){ Cheat_FastTime = !Cheat_FastTime; }
+                    if(Key == Key.B){ Cheat_DisableWorldLimit = !Cheat_DisableWorldLimit; }
+
+                    if(!Player_Dead){
+                        if(Key == Key.Home){ Player_Teleport(Coordinates_Spawn.X, Coordinates_Spawn.Y); }
+                        
+                        if(__Enter){ Player_ItemUse(); }
                     
-                    if(__Enter){ Player_ItemUse(); }
-
-                    if(UI_Interface == T_Interface.None){
                         if(Key is Key.Right or Key.Left or Key.Up or Key.Down){
                             Player_ItemUse(Key switch{
                                 Key.Right => Direction4.Right,
@@ -73,49 +80,49 @@ internal static class GOLUWorld_Input{
                                 Key.Down  => Direction4.Down
                             });
                         }
-                    }
-                    
-                    if(Key == Key.E){ Player_Interact(); }
+                        
+                        if(Key == Key.E){ Player_Interact(); }
 
-                    if(Key == Key.Backspace){ Player_ItemDrop(); }
-                    
-                    switch(Key){
-                        case Key.D1:
-                            Player_ItemSwitch(0);
-                            break;
-                        case Key.D2:
-                            Player_ItemSwitch(1);
-                            break;
-                        case Key.D3:
-                            Player_ItemSwitch(2);
-                            break;
-                        case Key.D4:
-                            Player_ItemSwitch(3);
-                            break;
-                        case Key.D5:
-                            Player_ItemSwitch(4);
-                            break;
-                        case Key.D6:
-                            Player_ItemSwitch(5);
-                            break;
-                        case Key.D7:
-                            Player_ItemSwitch(6);
-                            break;
-                        case Key.D8:
-                            Player_ItemSwitch(7);
-                            break;
-                        case Key.D9:
-                            Player_ItemSwitch(8);
-                            break;
-                        case Key.D0:
-                            Player_ItemSwitch(9);
-                            break;
-                        case Key.Minus:
-                            Player_ItemSwitch(10);
-                            break;
-                        case Key.Plus:
-                            Player_ItemSwitch(11);
-                            break;
+                        if(Key == Key.Backspace){ Player_ItemDrop(); }
+                        
+                        switch(Key){
+                            case Key.D1:
+                                Player_ItemSwitch(0);
+                                break;
+                            case Key.D2:
+                                Player_ItemSwitch(1);
+                                break;
+                            case Key.D3:
+                                Player_ItemSwitch(2);
+                                break;
+                            case Key.D4:
+                                Player_ItemSwitch(3);
+                                break;
+                            case Key.D5:
+                                Player_ItemSwitch(4);
+                                break;
+                            case Key.D6:
+                                Player_ItemSwitch(5);
+                                break;
+                            case Key.D7:
+                                Player_ItemSwitch(6);
+                                break;
+                            case Key.D8:
+                                Player_ItemSwitch(7);
+                                break;
+                            case Key.D9:
+                                Player_ItemSwitch(8);
+                                break;
+                            case Key.D0:
+                                Player_ItemSwitch(9);
+                                break;
+                            case Key.Minus:
+                                Player_ItemSwitch(10);
+                                break;
+                            case Key.Plus:
+                                Player_ItemSwitch(11);
+                                break;
+                        }
                     }
                 }
 

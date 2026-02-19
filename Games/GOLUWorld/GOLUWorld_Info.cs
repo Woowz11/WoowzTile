@@ -147,7 +147,7 @@ internal static class GOLUWorld_Info{
             T_Block.Ground_Planks      => Texture_Planks,
             T_Block.Ground_Asphalt     => Texture_Asphalt,
             T_Block.Ground_Sand        => Texture_Sand,
-            T_Block.Water              => (World_Blocks.TryGetValue(new Vector2I(B.X, B.Y - 16), out Block __Found) && __Found.ID == B.ID ? Texture_Water : Texture_Water_Top),
+            T_Block.Water              => World_GetBlock(B.X, B.Y - 16, SnapToGrid: false).ID == B.ID ? Texture_Water : Texture_Water_Top,
             T_Block.Ground_Grass       => Texture_Grass,
             T_Block.Metal              => Texture_Metal,
             T_Block.Bricks             => Texture_Bricks,
@@ -155,25 +155,26 @@ internal static class GOLUWorld_Info{
             T_Block.Error              => Texture_Error,
             T_Block.Concrete           => Texture_Concrete_Beam,
             T_Block.Ground_Cobblestone => Texture_Cobblestone,
+            T_Block.Pit                => World_GetBlock(B.X, B.Y - 16, SnapToGrid: false).ID == B.ID ? Texture_Black : Texture_Pit,
             
             var _ => Texture_Error
         };
     }
     
     /// <summary>
-    /// Блок твёрдый?
+    /// Блок с коллайдером?
     /// </summary>
-    internal static bool Info_Block_Solid(T_Block B) => B is T_Block.Black or T_Block.Bricks or T_Block.Metal or T_Block.Water or T_Block.Error or T_Block.Concrete;
+    internal static bool Info_Block_Collide(T_Block B) => B is T_Block.Black or T_Block.Bricks or T_Block.Metal or T_Block.Water or T_Block.Error or T_Block.Concrete or T_Block.Pit;
 
     /// <summary>
-    /// Блок является полом?
+    /// Блок рендерится как пол?
     /// </summary>
-    internal static bool Info_Block_Ground(T_Block B) => B is T_Block.Ground_Planks or T_Block.Ground_Asphalt or T_Block.Ground_Sand or T_Block.Water or T_Block.Ground_Grass or T_Block.Ground_Cobblestone;
+    internal static bool Info_Block_Ground(T_Block B) => B is T_Block.Ground_Planks or T_Block.Ground_Asphalt or T_Block.Ground_Sand or T_Block.Water or T_Block.Ground_Grass or T_Block.Ground_Cobblestone or T_Block.Pit;
 
     /// <summary>
     /// Отзеркаливать блок?
     /// </summary>
-    internal static bool Info_Block_Reflect(T_Block B) => Info_Block_Solid(B) && !Info_Block_Water(B);
+    internal static bool Info_Block_Reflect(T_Block B) => Info_Block_Collide(B) && !Info_Block_Water(B);
 
     /// <summary>
     /// Блок вода?
@@ -183,7 +184,7 @@ internal static class GOLUWorld_Info{
     /// <summary>
     /// Блок яма?
     /// </summary>
-    internal static bool Info_Block_Pit(T_Block B) => Info_Block_Water(B);
+    internal static bool Info_Block_Pit(T_Block B) => Info_Block_Water(B) || B is T_Block.Pit;
     
     /// <summary>
     /// Поддерживает декали?

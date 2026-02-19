@@ -293,4 +293,18 @@ internal static class GOLUWorld_Player{
             TD.StopTime = TD.StartTime + (TD.DeltaTime * Cheat_FastTime_Value);
         }
     }
+
+    /// <summary>
+    /// Мировые координаты превращает в координаты камеры
+    /// </summary>
+    internal static Vector2F Player_Coordinates_PlayerToWorld(Vector2I PlayerCoordinates){
+        return Vector2F.Zero;
+    }
+    
+    /// <summary>
+    /// Телепортирует игрока на координаты
+    /// </summary>
+    internal static void Player_Teleport(int X, int Y){
+        Coordinates_Camera = Player_Coordinates_PlayerToWorld(new Vector2I(X, Y));
+    }
 }

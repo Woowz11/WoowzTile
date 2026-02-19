@@ -9,7 +9,7 @@ namespace GOLUWorld;
 internal static class GOLUWorld_Values{
     #region Константы игры
 
-        internal const string Game_Version = "0.8";
+        internal const string Game_Version = "0.9";
         internal const string Game_Name    = "GOLUWorld";
 
     #endregion
@@ -36,6 +36,11 @@ internal static class GOLUWorld_Values{
             }
         }
         private static Vector2F __Coordinates_Camera;
+
+        /// <summary>
+        /// Координаты спавна игрока
+        /// </summary>
+        internal static Vector2I Coordinates_Spawn;
         
         /// <summary>
         /// Координаты игрока на ЭКРАНЕ
@@ -61,7 +66,6 @@ internal static class GOLUWorld_Values{
         /// Красивые координаты, центр 0:0
         /// </summary>
         internal static Vector2I Coordinates_Beautiful{ get; private set; }
-
     #endregion
 
     #region Игрок
