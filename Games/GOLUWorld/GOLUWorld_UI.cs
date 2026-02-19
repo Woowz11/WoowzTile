@@ -358,11 +358,24 @@ internal static class GOLUWorld_UI{
         void __RenderDigital(int X, int Y, int N){
             Font_Digital.Render(C, Palette_Default, N.ToString(), X, Y);
         }
+
+        float Time = World_Time % 24;
+        if(Time < 0){ Time += 24; }
+
+        int Hours = (int)Time;
+        int Minutes = (int)((Time - Hours) * 60);
+
+        if(Minutes >= 60){
+            Minutes = 0;
+            Hours = (Hours + 1) % 24;
+        }
         
-        __RenderDigital(69 , 92, 0);
-        __RenderDigital(97 , 92, 1);
-        __RenderDigital(132, 92, 2);
-        __RenderDigital(160, 92, 3);
+        __RenderDigital(69 , 92, Hours   / 10);
+        __RenderDigital(97 , 92, Hours   % 10);
+        __RenderDigital(132, 92, Minutes / 10);
+        __RenderDigital(160, 92, Minutes % 10);
+
+        if(World_AnimationTimer > 0.5f){ Texture_Clock_Overlay_Colon.Render(C, Palette_Default, 123, 97); }
     }
     
     /// <summary>
