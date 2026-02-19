@@ -582,10 +582,8 @@ internal static class GOLUWorld_World{
             Entity.X *= 16;
             Entity.Y *= 16;
         }
-
-        bool HasUniqueID = Entity.ID is T_Entity.Crate or T_Entity.Item or T_Entity.Mob_Spider;
         
-        EntityKey Key = new EntityKey(new Vector2I(Entity.X, Entity.Y), HasUniqueID);
+        EntityKey Key = new EntityKey(new Vector2I(Entity.X, Entity.Y), Info_Entity_Unique(Entity.ID));
         Entity.UniqueID = Key.UniqueID;
         
         uint __Seed = World_Seed + (uint)Entity.X - (uint)Entity.Y;

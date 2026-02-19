@@ -40,7 +40,8 @@ internal static class GOLUWorld_Objects{
         Cattail    = 15,
         Grave      = 16,
         Door       = 17,
-        Cardboard  = 18
+        Cardboard  = 18,
+        Money      = 19
     }
     
     internal enum T_Ceiling : byte{
@@ -63,6 +64,21 @@ internal static class GOLUWorld_Objects{
         Clock       = 8,
         Mushroom    = 9,
         Battery     = 10
+    }
+    
+    internal enum T_Money : byte{
+        M1     = 0,
+        M5     = 1,
+        M10    = 2,
+        M25    = 3,
+        M50    = 4,
+        M100   = 5,
+        M250   = 6,
+        M500   = 7,
+        M1000  = 8,
+        M2500  = 9,
+        M5000  = 10,
+        M10000 = 11
     }
 
     internal enum T_Decal : byte{

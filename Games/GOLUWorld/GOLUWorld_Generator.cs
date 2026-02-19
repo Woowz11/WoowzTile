@@ -23,8 +23,9 @@ internal static class GOLUWorld_Generator{
         T_Entity [] Entities = Enum.GetValues<T_Entity >();
         T_Item   [] Items    = Enum.GetValues<T_Item   >();
         T_Ceiling[] Ceilings = Enum.GetValues<T_Ceiling>();
+        T_Money  [] Moneys   = Enum.GetValues<T_Money  >();
 
-        int TotalCount = Blocks.Length + (Entities.Count(E => E != T_Entity.Item)) + Items.Length + Ceilings.Length;
+        int TotalCount = Blocks.Length + (Entities.Count(E => E != T_Entity.Item && E != T_Entity.Money)) + Items.Length + Ceilings.Length + Moneys.Length;
         int SquareSize = (int)WL.Math.Ceil(WL.Math.Sqrt(TotalCount));
         int Index = 0;
         for(int Y__ = 0; Y__ < SquareSize; Y__++){
@@ -40,7 +41,7 @@ internal static class GOLUWorld_Generator{
                 }
 
                 int EntityIndex = Index - Blocks.Length;
-                T_Entity[] NonItemEntities = Entities.Where(E => E != T_Entity.Item).ToArray();
+                T_Entity[] NonItemEntities = Entities.Where(E => E != T_Entity.Item && E != T_Entity.Money).ToArray();
                 if(EntityIndex < NonItemEntities.Length){
                     World_SetEntity(new Entity{ ID = NonItemEntities[EntityIndex], X = WorldX, Y = WorldY });
 
@@ -56,8 +57,15 @@ internal static class GOLUWorld_Generator{
                     continue;
                 }
                 
-                int CeilingIndex = ItemIndex - Items.Length;
+                int MoneyIndex = ItemIndex - Items.Length;
+                if(MoneyIndex < Moneys.Length){
+                    World_SetEntity(new Entity{ ID = T_Entity.Money, X = WorldX, Y = WorldY, Info = (byte)Moneys[MoneyIndex] });
 
+                    Index++;
+                    continue;
+                }
+                
+                int CeilingIndex = ItemIndex - Items.Length;
                 if(CeilingIndex < Ceilings.Length){
                     World_SetCeiling(new Ceiling{ ID = Ceilings[CeilingIndex], X = WorldX, Y = WorldY });
 

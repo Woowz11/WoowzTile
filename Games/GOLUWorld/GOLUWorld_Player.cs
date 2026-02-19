@@ -287,20 +287,31 @@ internal static class GOLUWorld_Player{
     /// </summary>
     internal static void Player_Interact(){
         if(Player_ClosestEntity != null && Player_ClosestEntity_Distance < Player_Interact_Distance){
-            if(Player_ClosestEntity.Value.ID == T_Entity.Item){
-                T_Item Item = (T_Item)Player_ClosestEntity.Value.Info;
-                if(Item != T_Item.Empty){
-                    if(AddToInventory(Item)){ World_RemoveEntity(Player_ClosestEntity.Value); }
+            Entity Entity = Player_ClosestEntity.Value;
+            switch(Entity.ID){
+                case T_Entity.Item:{
+                    T_Item Item = (T_Item)Entity.Info;
+                    if(Item != T_Item.Empty){
+                        if(AddToInventory(Item)){ World_RemoveEntity(Entity); }
+                    }
+
+                    break;
                 }
-            }else if(Player_ClosestEntity.Value.ID == T_Entity.Door){
-                Entity Entity = Player_ClosestEntity.Value;
-                Entity.Info = Entity.Info switch{
-                    0 => 1,
-                    1 => 0,
-                    2 => 3,
-                    3 => 2
-                };
-                World_Entities[Entity.Key] = Entity;
+                
+                case T_Entity.Door:
+                    Entity.Info = Entity.Info switch{
+                        0 => 1,
+                        1 => 0,
+                        2 => 3,
+                        3 => 2
+                    };
+                    World_Entities[Entity.Key] = Entity;
+                    break;
+                
+                case T_Entity.Money:
+                    Player_Money += Info_Money_Cost((T_Money)Entity.Info);
+                    World_Entities.Remove(Entity.Key);
+                    break;
             }
         }
     }

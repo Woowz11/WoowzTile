@@ -137,7 +137,7 @@ internal static class GOLUWorld_Render{
         
         if(Cheat_RenderColliders){ Game.RenderColliders(C); }
 
-        Render_DroppedItemName(C);
+        Render_InteractInfo(C);
 
         Render_Thoughts(C);
 
@@ -326,13 +326,12 @@ internal static class GOLUWorld_Render{
                         if(!Entity.Dead){ Z = Render_Layer_VeryTop + 100; }
                         break;
                     }
-                    case T_Entity.Spikes:
-                        Z = Render_Layer_VeryBottom + 3000;
-                        break;
                     case T_Entity.Door:
                         Z = Render_Layer_Object(Entity.Y + 16 + OffsetY);
                         Rotation = Entity.Info is 2 or 3 ? TextureRotation.Rotate90 : TextureRotation.None;
                         break;
+                    case T_Entity.Spikes:
+                    case T_Entity.Money:
                     case T_Entity.Tire:
                         Z = Render_Layer_Object(Entity.Y - 16 + OffsetY);
                         break;
@@ -559,19 +558,23 @@ internal static class GOLUWorld_Render{
     }
 
     /// <summary>
-    /// Рендерит название лежащего предмета
+    /// Рендерит информацию об взаимодействующем объекте
     /// </summary>
-    internal static void Render_DroppedItemName(Image.ImageContext C){
-        if(Player_ClosestEntity != null && Player_ClosestEntity_Distance < Player_Interact_Distance && Player_ClosestEntity.Value.ID == T_Entity.Item){
-            T_Item ItemOnGround = (T_Item)Player_ClosestEntity.Value.Info;
-            if(ItemOnGround != T_Item.Empty){
-                string ItemName__ = Info_Item_Name(ItemOnGround);
-                Vector2U ItemNameSize__ = Font_Default.TextSize(ItemName__);
-                int X__ = Player_ClosestEntity.Value.X + Coordinates_World.X - (int)(ItemNameSize__.X / 2) + (16 / 2);
+    internal static void Render_InteractInfo(Image.ImageContext C){
+        if(Player_ClosestEntity != null && Player_ClosestEntity_Distance < Player_Interact_Distance && Player_ClosestEntity.Value.ID is T_Entity.Item or T_Entity.Money){
+            string? Text = Player_ClosestEntity.Value.ID switch{
+                T_Entity.Item when Player_ClosestEntity.Value.Info != (byte)T_Item.Empty => Info_Item_Name((T_Item)Player_ClosestEntity.Value.Info),
+                T_Entity.Money => Info_Money_Cost((T_Money)Player_ClosestEntity.Value.Info) + "g",
+                var _ => null
+            };
+
+            if(Text != null){
+                Vector2U TextSize = Font_Default.TextSize(Text);
+                int X__ = Player_ClosestEntity.Value.X + Coordinates_World.X - (int)(TextSize.X / 2) + (16 / 2);
                 int Y__ = Player_ClosestEntity.Value.Y + Coordinates_World.Y;
-                C.Fill(X__ - 1, Y__ - 1, ItemNameSize__.X + 2, ItemNameSize__.Y + 2, ColorB.White.SetA(192), ImageBlend.Alpha);
-                C.Border(X__ - 2, Y__ - 2, ItemNameSize__.X + 4, ItemNameSize__.Y + 4, 1, ColorB.White);
-                Font_Default.Render(C, Palette_Default, ItemName__, X__, Y__);
+                C.Fill(X__ - 1, Y__ - 1, TextSize.X + 2, TextSize.Y + 2, ColorB.White.SetA(192), ImageBlend.Alpha);
+                C.Border(X__ - 2, Y__ - 2, TextSize.X + 4, TextSize.Y + 4, 1, ColorB.White);
+                Font_Default.Render(C, Palette_Default, Text, X__, Y__);
             }
         }
     }
