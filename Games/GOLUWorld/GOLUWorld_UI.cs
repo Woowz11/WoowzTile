@@ -121,7 +121,7 @@ internal static class GOLUWorld_UI{
             "[B] - ОТКЛЮЧАЕТ ГРАНИЦЫ",
             "[M] - УСКОР. ЦИКЛ ДНЯ И НОЧИ",
             "[HOME] - ТЕЛЕПОРТ В ЦЕНТР",
-            "[F1,F2,F3,F4,F5] - ТЕСТОВОЕ",
+            "[F1-F6] - ТЕСТОВОЕ",
             "",
             "[ДВИЖЕНИЕ + SHIFT] - ДВИГАТЬ ПРЕДМЕТЫ\nВ ИНВЕНТОРЕ"
         ];
@@ -169,7 +169,7 @@ internal static class GOLUWorld_UI{
         switch(UI_Interface){
             case T_Interface.Inventory: UI_RenderInventory(C, Item); break;
             case T_Interface.Menu     : UI_RenderMenu(C); break;
-            case T_Interface.Console  : UI_RenderConsole(C); break;
+            case T_Interface.Console  : UI_RenderConsole(C, TD); break;
         }
         
         UI_RenderFinal(C, TD);
@@ -248,11 +248,46 @@ internal static class GOLUWorld_UI{
     /// <summary>
     /// Рендерит консоль
     /// </summary>
-    internal static void UI_RenderConsole(Image.ImageContext C){
-        for(int i = 0; i < 28; i++){
-            int Y = (int)C.Height - (i + 1) * 9 - 2;
-            C.Fill(0, Y, C.Width, 8, ColorB.Black.SetA(64), ImageBlend.Alpha);
-            Font_Default.Render(C, Palette_White, "TEXT", 2, Y);
+    internal static void UI_RenderConsole(Image.ImageContext C, TickData TD){
+        const int MaxLines = 23;
+
+        int Total = GOLUWorld.__Messages.Count;
+
+        if (Total > 0 && Player_ConsoleOffset > Total - 1){ Player_ConsoleOffset = Total - 1; }
+
+        int StartIndex = Total - 1 - Player_ConsoleOffset;
+        for(int i = 0; i < MaxLines; i++){
+            string Text;
+            ColorB Color;
+            
+            if(i == 0){
+                Text = Player_ConsoleCommand;
+                Color = ColorB.Aqua;
+            }else{
+                if(Total == 0){ break; }
+                
+                int MessageIndex = StartIndex - (i - 1);
+                if(MessageIndex < 0 || MessageIndex >= Total){ break; }
+                
+                (Logger.MessageType Type, string Content) Message = GOLUWorld.__Messages[MessageIndex];
+                Text = Message.Content;
+                Color = Message.Type switch{
+                    Logger.MessageType.Info => ColorB.White,
+                    Logger.MessageType.Warn => ColorB.Yellow,
+                    Logger.MessageType.Error => ColorB.Red,
+                    Logger.MessageType.Fatal => ColorB.Magenta,
+                    Logger.MessageType.Debug => ColorB.Green
+                };
+            }
+            
+            int Y = (int)C.Height - (i + 1) * 11;
+            C.Fill(0, Y, C.Width, 10, ColorB.Black.SetA(128), ImageBlend.Alpha);
+            Render_TextColor(C, Text.ToUpper(), 2, Y + 1, Color);
+
+            if(i == 0 && World_AnimationNonStopTimer >= 0.5f){
+                Vector2U TextSize = Font_Default.TextSize(Player_ConsoleCommand);
+                C.Fill((int)TextSize.X + 3, Y + 8, 5, 1, ColorB.Aqua);
+            }
         }
     }
     
@@ -310,7 +345,7 @@ internal static class GOLUWorld_UI{
             ColorB EntityColor = Palette_World[__PaletteIndex];
             __GPSPixel(Entity.X, Entity.Y, EntityColor);
 
-            if(Entity.ID == T_Entity.Tree){
+            if(Entity.ID == T_Entity.Tree && Entity.Info != 2){
                 __GPSPixel(Entity.X, Entity.Y + 16, EntityColor);
                 __GPSPixel(Entity.X, Entity.Y + 16 * 2, EntityColor);
             }

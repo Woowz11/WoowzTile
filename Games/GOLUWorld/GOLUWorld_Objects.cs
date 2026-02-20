@@ -28,7 +28,7 @@ internal static class GOLUWorld_Objects{
         Spikes     = 3,
         /* Моб паук, если Health < 0 то мёртвый */
         Mob_Spider = 4,
-        /* Info == 1 значит это ель */
+        /* Info == 1 значит это ель, Info == 2 значит это пень */
         Tree       = 5,
         /* Info отвечает за то какой это предмет (T_Item) */
         Item       = 6,
@@ -36,7 +36,7 @@ internal static class GOLUWorld_Objects{
         Grass      = 8,
         Bush       = 9,
         Error      = 10,
-        /* Info == 1 значит окно забаррикадированное, если Heatlh < 0 то разбивается */
+        /* Info == 1 значит окно забаррикадированное, если Health < 0 то разбивается */
         Window     = 11,
         TrashBag   = 12,
         Tire       = 13,
@@ -47,7 +47,11 @@ internal static class GOLUWorld_Objects{
         Cardboard  = 18,
         /* Info отвечает за номинал (T_Money) */
         Money      = 19,
-        Trapdoor   = 20
+        Trapdoor   = 20,
+        /* Info == 1 значит использованное */
+        Trap       = 21,
+        Mob_Drone  = 22,
+        Debris     = 23
     }
     
     internal enum T_Ceiling : byte{
@@ -69,7 +73,8 @@ internal static class GOLUWorld_Objects{
         Destroyer   = 7,
         Clock       = 8,
         Mushroom    = 9,
-        Battery     = 10
+        Battery     = 10,
+        Pipe        = 11
     }
     
     internal enum T_Money : byte{

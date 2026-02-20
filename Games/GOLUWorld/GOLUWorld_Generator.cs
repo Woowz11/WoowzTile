@@ -146,7 +146,7 @@ internal static class GOLUWorld_Generator{
             Generator_Structure(WL.Math.Random.Fast_Int(Generator_Border_L, Generator_Border_R, ref Seed1), WL.Math.Random.Fast_Int(Generator_Border_U, Generator_Border_D, ref Seed2), Road, Seed + (uint)i, Replace: true);
         }
         
-        Total = WL.Math.Random.Fast_Int(0, 10, ref Seed);
+        Total = WL.Math.Random.Fast_Int(5, 30, ref Seed);
         Seed += 123;
         
         for(int i = 0; i < Total; i++){

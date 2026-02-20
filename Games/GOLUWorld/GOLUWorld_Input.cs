@@ -41,20 +41,21 @@ internal static class GOLUWorld_Input{
                     if(Game.KeyPressed(Key.Control)){ World_Seed = World_GenerateNewSeed(); }
                 }
                 
-                if(Key == Key.F1){ UpdSeed(); World_GoToWorld(T_World.Calm); }
-                if(Key == Key.F2){ UpdSeed(); World_GoToWorld(T_World.Industrial); }
-                if(Key == Key.F3){
-                    Generator_DebugStructure(Coordinates_PlayerWorld.X / 16, Coordinates_PlayerWorld.Y / 16);
+                switch(Key){
+                    case Key.F1: UpdSeed(); World_GoToWorld(T_World.Calm); break;
+                    case Key.F2: UpdSeed(); World_GoToWorld(T_World.Industrial); break;
+                    case Key.F3: Generator_DebugStructure(Coordinates_PlayerWorld.X / 16, Coordinates_PlayerWorld.Y / 16); break;
+                    case Key.F4: World_Start(); break;
+                    case Key.F5: Player_Inventory[2] = T_Item.GPS; break;
+                    case Key.F6: World_SetBlock(new Block{ ID = T_Block.Bricks, X = Coordinates_PlayerWorld.X/16, Y = (Coordinates_PlayerWorld.Y)/16 + 1}); break;
                 }
-                if(Key == Key.F4){ World_Start(); }
-                if(Key == Key.F5){ Player_Inventory[2] = T_Item.GPS; }
 
                 if(Key == Key.Tilde){
                     if(UI_Interface == T_Interface.None){ UI_Interface = T_Interface.Console; }else{
                         UI_Interface = UI_Interface == T_Interface.Console ? T_Interface.None : T_Interface.Console;
                     }
                 }
-                
+
                 if(Key == Key.Escape || (UI_Interface == T_Interface.Menu && UI_MenuSelectedButton == 0 && __Enter)){
                     if(UI_Interface == T_Interface.None){ UI_Interface = T_Interface.Menu; }else{ UI_Interface = T_Interface.None; UI_MenuSelectedButton = 0; }
                 }
@@ -129,23 +130,33 @@ internal static class GOLUWorld_Input{
                             break;
                     }
                 }
-
+                
                 if(UI_Interface == T_Interface.Inventory && Player_Attack_Timer <= 0){
                     byte OldSelectedItem = Player_InventorySelectedSlot;
                     
                     if(__Right){
-                        if(Player_InventorySelectedSlot > 5){
-                            if(Player_InventorySelectedSlot < 11){ Player_InventorySelectedSlot++; }
-                        }else{
-                            if(Player_InventorySelectedSlot < 5){ Player_InventorySelectedSlot++; }
+                        switch(Player_InventorySelectedSlot){
+                            case > 5:{
+                                if(Player_InventorySelectedSlot < 11){ Player_InventorySelectedSlot++; }
+                                break;
+                            }
+                            
+                            case < 5:
+                                Player_InventorySelectedSlot++;
+                                break;
                         }
                     }
 
                     if(__Left){
-                        if(Player_InventorySelectedSlot > 5){
-                            if(Player_InventorySelectedSlot > 6){ Player_InventorySelectedSlot--; }
-                        }else{
-                            if(Player_InventorySelectedSlot > 0){ Player_InventorySelectedSlot--; }
+                        switch(Player_InventorySelectedSlot){
+                            case > 5:{
+                                if(Player_InventorySelectedSlot > 6){ Player_InventorySelectedSlot--; }
+                                break;
+                            }
+                            
+                            case > 0:
+                                Player_InventorySelectedSlot--;
+                                break;
                         }
                     }
 
@@ -174,6 +185,8 @@ internal static class GOLUWorld_Input{
                             UI_GoToMainMenu();
                         }
                     }
+                }else if(UI_Interface == T_Interface.Console){
+                    Player_Console(Key);
                 }
             }
         }

@@ -260,6 +260,16 @@ internal static class GOLUWorld_Values{
         internal static Direction4 Player_AttackDirection;
 
         /// <summary>
+        /// Текущая команда в консоли
+        /// </summary>
+        internal static string Player_ConsoleCommand = "HELP";
+        
+        /// <summary>
+        /// Номер истории лога
+        /// </summary>
+        internal static int Player_ConsoleOffset = 0;
+        
+        /// <summary>
         /// Игрок не может разговаривать?
         /// </summary>
         internal static bool Player_Character_Mute;
@@ -368,6 +378,11 @@ internal static class GOLUWorld_Values{
         /// Таймер анимаций
         /// </summary>
         internal static float World_AnimationTimer = 0;
+        
+        /// <summary>
+        /// Таймер анимаций (не останавливаемый временем)
+        /// </summary>
+        internal static float World_AnimationNonStopTimer = 0;
         
         /// <summary>
         /// Течение

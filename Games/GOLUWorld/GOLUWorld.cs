@@ -12,9 +12,20 @@ namespace GOLUWorld;
 
 internal class GOLUWorld : Game{
     public override string Name(){ return Game_Name + " " + Game_Version; }
-    
-    public override void Start(){ Game_LoadResources(); }
-    public override void Stop (){}
+
+    public override void Start(){
+        WL.WoowzLib.OnMessage += __OnMessage;
+        
+        Game_LoadResources();
+    }
+    public override void Stop(){
+        WL.WoowzLib.OnMessage -= __OnMessage;
+    }
+    private static void __OnMessage(Logger.MessageType MessageType, object[]? Message){
+        __Messages.Add((MessageType, WL.String.Join(Message)));
+        Player_ConsoleOffset = 0;
+    }
+    internal static readonly List<(Logger.MessageType, string Content)> __Messages = [];
 
     public override void Update(TickData TD                      ) => Game_Update(   TD);
     public override void Render(TickData TD, Image.ImageContext C) => Game_Render(C, TD);

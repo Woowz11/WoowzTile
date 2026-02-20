@@ -17,6 +17,8 @@ internal static class GOLUWorld_World{
     /// Запуск игрока в мир
     /// </summary>
     internal static void World_Start(){
+        Logger.Info("Запуск игры!");
+        
         UI_InMainMenu = false;
         
         World_Seed = World_GenerateNewSeed();
@@ -37,6 +39,9 @@ internal static class GOLUWorld_World{
         Player_LastTimeWereTreated_Timer = 0;
         Player_Rotting = 0;
 
+        Player_ConsoleCommand = "HELP";
+        Player_ConsoleOffset = 0;
+        
         Player_Thought = "";
         Player_Thought_Timer = 0;
         
@@ -56,6 +61,8 @@ internal static class GOLUWorld_World{
     /// Запускает указанный уровень
     /// </summary>
     internal static void World_GoToWorld(T_World World){
+        Logger.Info("Добро пожаловать в " + World.ToString() + "!");
+        
         Game.SpecialRender((C) => {
             Texture_Loading.Render(C, Palette_Default);
         });
@@ -186,7 +193,7 @@ internal static class GOLUWorld_World{
     /// </summary>
     internal static void World_UpdateEntities(){
         void AddCollider(Entity Entity, uint SizeOffset, CollisionLayer Layer){
-            Game.AddCollider(new Collider(Entity.X + Coordinates_World.X, Entity.Y + Coordinates_World.Y, 16 - SizeOffset, 16 - SizeOffset, 0, new Vector2I(Entity.X, Entity.Y), (int)Entity.UniqueID, Layer));
+            Game.AddCollider(new Collider(Entity.X + Coordinates_World.X + (int)(SizeOffset/2), Entity.Y + Coordinates_World.Y + (int)(SizeOffset/2), 16 - SizeOffset, 16 - SizeOffset, 0, new Vector2I(Entity.X, Entity.Y), (int)Entity.UniqueID, Layer));
         }
 
         Dictionary<EntityKey, Entity> __UpdatedEntities = [];
@@ -205,17 +212,26 @@ internal static class GOLUWorld_World{
             }
 
             if(Entity is{ ID: T_Entity.Mob_Spider, Health: > 0 }){
-                World_AI_Spider(ref Entity);
+                Entity = World_AI_Spider(Entity);
+                UpdateEntity = true;
+            }
+            
+            if(Entity is{ ID: T_Entity.Mob_Drone, Health: > 0 }){
+                Entity = World_AI_Drone(Entity);
                 UpdateEntity = true;
             }
 
             switch(Entity.ID){
+                case T_Entity.Debris:
                 case T_Entity.Table:
-                case T_Entity.Tree: AddCollider(Entity, 12, CollisionLayer.L1); break;
+                case T_Entity.Tree: AddCollider(Entity, 14, CollisionLayer.L1); break;
                 
                 case T_Entity.Spikes: AddCollider(Entity, 0, CollisionLayer.L2); break;
                 
+                case T_Entity.Mob_Drone:
                 case T_Entity.Mob_Spider: AddCollider(Entity, 0, CollisionLayer.L3 | CollisionLayer.L6); break;
+                
+                case T_Entity.Trap: AddCollider(Entity, 8, CollisionLayer.L3); break;
                 
                 case T_Entity.Crate: AddCollider(Entity, 4, CollisionLayer.L5); break;
                 
@@ -233,10 +249,102 @@ internal static class GOLUWorld_World{
         }
 
         foreach((EntityKey Key, Entity Entity__) in __UpdatedEntities){
-            World_Entities[Key] = Entity__;
+            World_Entities.Remove(Key);
+            World_Entities[Entity__.Key] = Entity__;
         }
     }
 
+     /// <summary>
+    /// Интеллект паука
+    /// </summary>
+    internal static Entity World_AI_Spider(Entity Entity){
+        if(Entity.Health <= 0){ return Entity; }
+        
+        int SpiderSpeed = WL.Math.Random.Fast_Bool(0.8f) ? 1 : 0;
+                    
+        byte Info = Entity.Info;
+        if(WL.Math.Random.Fast_Bool(Info == 1 ? 0.5f : 0.05f)){
+            if(WL.Math.Random.Fast_Bool(0.05f)){
+                Info = 2;
+            }else{
+                Info = (byte)(Info == 1 ? 0 : 1);
+            }
+        }
+        
+        float Distance = Vector2I.Distance(new Vector2I(Entity.X, Entity.Y), new Vector2I(Coordinates_PlayerWorld.X, Coordinates_PlayerWorld.Y));
+
+        Vector2I Target = Entity.InfoVector;
+        
+        if(Distance < 1000 && Player_Rotting < 10){
+            Target.X = Info is 1 or 2 ? -Coordinates_PlayerWorld.X : Coordinates_PlayerWorld.X;
+            Target.Y = Info is 1 or 2 ? -Coordinates_PlayerWorld.Y : Coordinates_PlayerWorld.Y;
+        }else{
+            if(WL.Math.Random.Fast_Bool(0.005f) || Target == Vector2I.Zero || Target == new Vector2I(Entity.X, Entity.Y)){
+                Target = new Vector2I(WL.Math.Random.Fast_Int(-(int)World_SizeWorld.X, (int)World_SizeWorld.X), WL.Math.Random.Fast_Int(-(int)World_SizeWorld.Y, (int)World_SizeWorld.Y));
+            }
+        }
+        
+        float DX = Target.X - Entity.X;
+        float DY = Target.Y - Entity.Y;
+        float DistanceToTarget = WL.Math.Sqrt(DX * DX + DY * DY);
+
+        if(DistanceToTarget > 0f){
+            float Step = WL.Math.Min(SpiderSpeed, DistanceToTarget);
+
+            float MoveX = DX / DistanceToTarget * Step;
+            float MoveY = DY / DistanceToTarget * Step;
+
+            Entity.X += (int)WL.Math.Round(MoveX);
+            Entity.Y += (int)WL.Math.Round(MoveY);
+        }
+
+        Entity.Info = Info;
+        Entity.InfoVector = Target;
+
+        Entity.Rotation = Utility_RotationFromTwoPoints(new Vector2I(Entity.X, Entity.Y), Target);
+
+        return Entity;
+    }
+     
+    /// <summary>
+    /// Интеллект дрона
+    /// </summary>
+    internal static Entity World_AI_Drone(Entity Entity){
+        if(Entity.Health <= 0) return Entity;
+
+        // Настройки
+        float DroneSpeed = 10f;          // скорость дрона
+        float FollowDistance = 100f;    // дистанция, которую дрон держит от игрока
+        float SightDistance = 1000f;     // дистанция, на которой дрон замечает игрока
+        float SmoothFactor = 0.2f;       // коэффициент плавности (0..1)
+
+        Vector2I PlayerPos = new Vector2I(Coordinates_PlayerWorld.X, Coordinates_PlayerWorld.Y);
+
+        // Вектор к игроку
+        float DX = PlayerPos.X - Entity.X;
+        float DY = PlayerPos.Y - Entity.Y;
+        float Distance = WL.Math.Sqrt(DX * DX + DY * DY);
+
+        // дрон реагирует только если игрок в зоне видимости
+        if(Distance > 0f && Distance <= SightDistance){
+            // вычисляем желаемый вектор движения, чтобы держать FollowDistance
+            float TargetDistance = Distance - FollowDistance;
+            float MoveFactor = WL.Math.Min(DroneSpeed, WL.Math.Abs(TargetDistance));
+
+            // направление движения: приближаемся или отходим
+            float Dir = TargetDistance > 0 ? 1f : -1f;
+
+            // плавное смещение
+            Entity.X += (int)WL.Math.Round(DX / Distance * MoveFactor * Dir * SmoothFactor);
+            Entity.Y += (int)WL.Math.Round(DY / Distance * MoveFactor * Dir * SmoothFactor);
+
+            // Поворот дрона
+            Entity.Rotation = Utility_RotationFromTwoPoints(new Vector2I(Entity.X, Entity.Y), PlayerPos);
+        }
+
+        return Entity;
+    }
+    
     /// <summary>
     /// Обновляет игрока
     /// </summary>
@@ -247,8 +355,6 @@ internal static class GOLUWorld_World{
         Player_Ceiling = World_GetCeiling(Coordinates_PlayerWorld_Center.X, Coordinates_PlayerWorld_Center.Y, Relative: true);
 
         Player_Running = false;
-        
-        if(Game.KeyPressed(Key.F4)){ World_SetBlock(new Block{ ID = T_Block.Bricks, X = Coordinates_PlayerWorld_Center.X/16, Y = (Coordinates_PlayerWorld_Center.Y)/16 + 1}); }
         
         if(Player_Dead){
             UI_Interface = 0;
@@ -263,6 +369,8 @@ internal static class GOLUWorld_World{
             
             Player_ClosestEntity = null;
             Player_ClosestEntity_Distance = WL.Math.MaxValue;
+            
+            Player_PowerDown(1);
         }else{
             if(Player_OutBounds){
                 Player_Damage(WL.Math.Random.Fast_Bool(0.05f) ? (uint)WL.Math.Random.Fast_Int(1, 10) : 0);
@@ -368,8 +476,7 @@ internal static class GOLUWorld_World{
                 for(uint i = 1; i < __Player_Speed + 1; i++){
                     if(!Game.Collision(new Collider((int)(Coordinates_Player.X - (Player_MovingDirection.X * i) + PlayerOffset), Coordinates_Player.Y + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, __Player_Collider), out Collider? _)){
                         DesiredMove.X = Player_MovingDirection.X * i;
-                    }
-                    else{
+                    }else{
                         break;
                     }
                 }
@@ -377,8 +484,7 @@ internal static class GOLUWorld_World{
                 for(uint i = 1; i < __Player_Speed + 1; i++){
                     if(!Game.Collision(new Collider(Coordinates_Player.X + PlayerOffset, (int)(Coordinates_Player.Y - (Player_MovingDirection.Y * i) + PlayerOffset), PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, __Player_Collider), out Collider? _)){
                         DesiredMove.Y = Player_MovingDirection.Y * i;
-                    }
-                    else{
+                    }else{
                         break;
                     }
                 }
@@ -410,7 +516,8 @@ internal static class GOLUWorld_World{
                     if(!Game.Collision(new Collider(Coordinates_World.X + NewX - __X * 2 + 2, Coordinates_World.Y + NewY - __Y * 2 + 2, 12, 12, 0, PushedEntityIndex1, 0, CollisionLayer.L5, __Player_Collider), out Collider? _, true)){
                         PushedEntity.X = NewX;
                         PushedEntity.Y = NewY;
-                        World_Entities[Key] = PushedEntity;
+                        World_Entities.Remove(Key);
+                        World_Entities[PushedEntity.Key] = PushedEntity;
                     }
                 }
             }
@@ -423,6 +530,10 @@ internal static class GOLUWorld_World{
                     if(Entity.Health > 0 && WL.Math.Random.Fast_Bool(0.8f)){
                         Player_Damage((uint)(WL.Math.Random.Fast_0_1() * 20), Player_Dead ? 16 : 0);
                     }
+                }else if(Entity is{ ID: T_Entity.Trap, Info: 0 }){
+                    Player_BrokeLeg();
+                    Entity.Info = 1;
+                    World_Entities[__Key] = Entity;
                 }
             }
         }
@@ -432,11 +543,7 @@ internal static class GOLUWorld_World{
             if(World_Blocks.TryGetValue(__Key, out Block Block)){
                 if(Block.ID == T_Block.Pit){
                     World_GoToWorld(T_World.Industrial);
-                    Player_Damage((uint)WL.Math.Random.Fast_Int(25,50), 10);
-                    for(int i = 0; i < 10; i++){
-                        World_SpatterBlood(Coordinates_PlayerWorld.X + WL.Math.Random.Fast_Int(-20, 20), Coordinates_PlayerWorld.Y + WL.Math.Random.Fast_Int(-20, 20));
-                    }
-                    Player_BrokenLeg = true;
+                    Player_BrokeLeg();
                 }
             }
         }
@@ -451,61 +558,6 @@ internal static class GOLUWorld_World{
             Player_CollisionInfo1  = 0;
             Player_CollisionInfo2  = Vector2I.Zero;
             Player_CollisionInfo3  = 0;
-        }
-    }
-
-    /// <summary>
-    /// Интеллект паука
-    /// </summary>
-    internal static void World_AI_Spider(ref Entity Entity){
-        if(Entity.Health <= 0){ return; }
-        
-        int SpiderSpeed = WL.Math.Random.Fast_Bool(0.8f) ? 1 : 0;
-                    
-        byte Info = Entity.Info;
-        if(WL.Math.Random.Fast_Bool(Info == 1 ? 0.5f : 0.05f)){
-            if(WL.Math.Random.Fast_Bool(0.05f)){
-                Info = 2;
-            }else{
-                Info = (byte)(Info == 1 ? 0 : 1);
-            }
-        }
-        
-        float Distance = Vector2I.Distance(new Vector2I(Entity.X, Entity.Y), new Vector2I(Coordinates_PlayerWorld.X, Coordinates_PlayerWorld.Y));
-
-        Vector2I Target = Entity.InfoVector;
-        
-        if(Distance < 1000 && Player_Rotting < 10){
-            Target.X = Info is 1 or 2 ? -Coordinates_PlayerWorld.X : Coordinates_PlayerWorld.X;
-            Target.Y = Info is 1 or 2 ? -Coordinates_PlayerWorld.Y : Coordinates_PlayerWorld.Y;
-        }else{
-            if(WL.Math.Random.Fast_Bool(0.005f) || Target == Vector2I.Zero || Target == new Vector2I(Entity.X, Entity.Y)){
-                Target = new Vector2I(WL.Math.Random.Fast_Int(-(int)World_SizeWorld.X, (int)World_SizeWorld.X), WL.Math.Random.Fast_Int(-(int)World_SizeWorld.Y, (int)World_SizeWorld.Y));
-            }
-        }
-        
-        float DX = Target.X - Entity.X;
-        float DY = Target.Y - Entity.Y;
-        float DistanceToTarget = WL.Math.Sqrt(DX * DX + DY * DY);
-
-        if(DistanceToTarget > 0f){
-            float Step = WL.Math.Min(SpiderSpeed, DistanceToTarget);
-
-            float MoveX = DX / DistanceToTarget * Step;
-            float MoveY = DY / DistanceToTarget * Step;
-
-            Entity.X += (int)WL.Math.Round(MoveX);
-            Entity.Y += (int)WL.Math.Round(MoveY);
-        }
-
-        Entity.Info = Info;
-        Entity.InfoVector = Target;
-
-        if(DX != 0 || DY != 0){
-            Entity.Rotation = DX > 0 ? TextureRotation.Rotate270 :
-                DX < 0 ? TextureRotation.Rotate90 :
-                DY < 0 ? TextureRotation.Rotate180 :
-                TextureRotation.None;
         }
     }
     

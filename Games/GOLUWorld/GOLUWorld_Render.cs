@@ -76,6 +76,9 @@ internal static class GOLUWorld_Render{
     internal static void Game_Render(Image.ImageContext C, TickData TD){
         Player_Cheat_MakeFasterTime(ref TD);
         
+        World_AnimationNonStopTimer += (float)TD.DeltaTimeS;
+        if(World_AnimationNonStopTimer > 1){ World_AnimationNonStopTimer = 0; }
+        
         float DTS = World_StopGameTime ? 0 : (float)TD.DeltaTimeS;
         
         if(!Player_Dead){ Player_LastTimeWereTreated_Timer -= DTS; }
@@ -329,7 +332,7 @@ internal static class GOLUWorld_Render{
 
             switch(Entity.ID){
                 case T_Entity.Tree:
-                    OffsetY = -48;
+                    if(Entity.Info != 2){ OffsetY = -48; }
                     break;
                 
                 case T_Entity.Cattail:
@@ -349,6 +352,15 @@ internal static class GOLUWorld_Render{
                     if(!Entity.Dead){ Z = Render_Layer_VeryTop + 100; }
                     break;
                 }
+                
+                case T_Entity.Mob_Drone: {
+                    OffsetX = -8;
+                    OffsetY = -8;
+
+                    if(!Entity.Dead){ Z = Render_Layer_VeryTop + 100; }
+                    break;
+                }
+                
                 case T_Entity.Door:
                     Z = Render_Layer_Object(Entity.Y + 16 + OffsetY);
                     Rotation = Entity.Info is 2 or 3 ? TextureRotation.Rotate90 : TextureRotation.None;
@@ -383,7 +395,7 @@ internal static class GOLUWorld_Render{
                     __RenderLeaves(0, 0);
                     __RenderLeaves(2, 0);
                     __RenderLeaves(1, 2);
-                }else{
+                }else if(Entity.Info == 1){
                     int __X__ = -16;
                     int __Y__ = -60;
                     
@@ -473,7 +485,7 @@ internal static class GOLUWorld_Render{
             __RenderPlayerPart(PlayerBlood, RottenBlood);
         }
         
-        if(Player_BrokenLeg){ __RenderPlayerPart(Texture_Player_BrokenLeg, RottenBlood); }
+        if(Player_BrokenLeg){ __RenderPlayerPart(Texture_Player_BrokenLeg, RottenBlood, -8, -8); }
     
         if(Player_LastTimeWereTreated_Timer > 0){
             __RenderPlayerPart(Texture_Player_Healed, null);

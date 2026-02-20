@@ -100,12 +100,23 @@ internal static class GOLUWorld_Player{
         
         EmotionChange(T_Emotion.Happiness, (int)(Heal / 2));
     }
+
+    /// <summary>
+    /// Сломать ногу игроку
+    /// </summary>
+    internal static void Player_BrokeLeg(){
+        Player_Damage((uint)WL.Math.Random.Fast_Int(25,50), 10);
+        for(int i = 0; i < 10; i++){
+            World_SpatterBlood(Coordinates_PlayerWorld.X + WL.Math.Random.Fast_Int(-20, 20), Coordinates_PlayerWorld.Y + WL.Math.Random.Fast_Int(-20, 20));
+        }
+        Player_BrokenLeg = true;
+    }
     
     /// <summary>
     /// Убавляет энергии
     /// </summary>
     internal static void Player_PowerDown(uint Value){
-        if(Value == 0 || Cheat_Immortality || Player_Dead){ return; }
+        if(Value == 0){ return; }
         
         Player_Energy = WL.Math.SubU(Player_Energy, Value);
     }
@@ -197,6 +208,7 @@ internal static class GOLUWorld_Player{
                     break;
                 }
 
+                case T_Item.Pipe:
                 case T_Item.Destroyer:
                 case T_Item.Crowbar:
                 case T_Item.Stick: {
@@ -331,5 +343,57 @@ internal static class GOLUWorld_Player{
     /// </summary>
     internal static void Player_Teleport(int X, int Y){
         Coordinates_Camera = Utility_PlayerWorldToCamera(new Vector2I(X, Y));
+    }
+
+    /// <summary>
+    /// Работа консоли
+    /// </summary>
+    internal static void Player_Console(Key Key){
+        if(Key is >= Key.A and <= Key.Z){
+            Player_ConsoleCommand += Key.ToString();
+        }else if(Key is >= Key.D0 and <= WL.Key.D9){
+            Player_ConsoleCommand += (char)((int)'0' + (Key - Key.D0));
+        }else if(Key == Key.Space){
+            Player_ConsoleCommand += " ";
+        }else if(Key == Key.Backspace && Player_ConsoleCommand.Length > 0){
+            Player_ConsoleCommand = Player_ConsoleCommand[..^1];
+        }else if(Key == Key.Up){
+            if(GOLUWorld.__Messages.Count > 23 && Player_ConsoleOffset - 1 < GOLUWorld.__Messages.Count - 23){ Player_ConsoleOffset++; }
+        }else if(Key == Key.Down){
+            if(Player_ConsoleOffset > 0){ Player_ConsoleOffset--; }
+        }else if(Key == Key.Enter){
+            string[] Parts = Player_ConsoleCommand.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if(Parts.Length == 0){ return; }
+
+            string Command = Parts[0];
+            string[] Args = Parts.Length > 1 ? Parts[1..] : [];
+
+            switch(Command){
+                case "HELP": {
+                    Logger.Info("--- HELP ---");
+                    
+                    Logger.Info("HELP - ПОКАЗАТЬ ЭТОТ СПИСОК");
+                    Logger.Info("CLEAR - ОЧИСТИТЬ КОНСОЛЬ");
+                    Logger.Info("SEED - СИД МИРА");
+                    Logger.Info("SUICIDE - САМОУБИЙСТВО");
+                    
+                    Logger.Info("------------");
+                    break;
+                }
+
+                case "CLEAR": GOLUWorld.__Messages.Clear(); break;
+
+                case "SEED": Logger.Info("СИД: " + World_Seed); break;
+                
+                case "SUICIDE": Player_Damage(uint.MaxValue, Comment: false); break;
+                
+                default:
+                    Logger.Error("Команды [\"" + Command + "\"] не существует!");
+                    Logger.Error("Используйте [\"HELP\"]");
+                    break;
+            }
+
+            Player_ConsoleCommand = "";
+        }
     }
 }
