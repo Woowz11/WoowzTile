@@ -58,6 +58,12 @@ internal static class GOLUWorld_World{
     /// Запускает указанный уровень
     /// </summary>
     internal static void World_GoToWorld(T_World World){
+        Game.SpecialRender((C) => {
+            Texture_Loading.Render(C, Palette_Default);
+        });
+
+        World_Type = World;
+        
         World_Decals  .Clear();
         World_Entities.Clear();
         World_Blocks  .Clear();
@@ -69,23 +75,54 @@ internal static class GOLUWorld_World{
 
         Player_Attack_Timer = 0;
 
-        World_Size = new Vector2U(150, 150);
+        World_Size = new Vector2U(200, 200);
         
-        Generator_World(World);
+        World_UpdatePalette(World);
+        
+        uint UniqueSeed = World_Seed - 1612216 + (uint)((byte)World * 23612);
+        
+        Generator_World(World, UniqueSeed);
         
         bool __FindSpawnLocation = false;
-        uint __Seed1 = World_Seed - 1612216 + (uint)((byte)World * 23612);
         while(!__FindSpawnLocation){
-            uint __Seed2 = __Seed1 + 2269909;
-            Coordinates_Camera = new Vector2F(WL.Math.Random.Fast_Int(-(int)World_SizeWorld.X, (int)World_SizeWorld.X, ref __Seed1), WL.Math.Random.Fast_Int(-(int)World_SizeWorld.Y, (int)World_SizeWorld.Y, ref __Seed2));
+            uint __Seed2 = UniqueSeed + 2269909;
+            Coordinates_Camera = new Vector2F(WL.Math.Random.Fast_Int(-(int)World_SizeWorld.X, (int)World_SizeWorld.X, ref UniqueSeed), WL.Math.Random.Fast_Int(-(int)World_SizeWorld.Y, (int)World_SizeWorld.Y, ref __Seed2));
             if(!Info_Block_Collide(World_GetBlock(Coordinates_PlayerWorld.X, Coordinates_PlayerWorld.Y, Relative: true).ID)){
                 __FindSpawnLocation = true;
             }
-            __Seed1++;
+            UniqueSeed++;
         }
         Coordinates_Spawn = Coordinates_PlayerWorld;
     }
 
+    internal static void World_UpdatePalette(T_World World){
+        switch(World){
+            case T_World.Calm:{
+                Palette_World[1 ] = ColorB.Black;
+                Palette_World[2 ] = ColorB.DarkGray;
+                Palette_World[3 ] = ColorB.Gray;
+                Palette_World[4 ] = ColorB.LightGray;
+                Palette_World[5 ] = ColorB.White;
+                Palette_World[11] = ColorB.LightRed;
+                Palette_World[8 ] = ColorB.Red;
+                Palette_World[9 ] = ColorB.DarkRed;
+                break;
+            }
+            
+            case T_World.Industrial: {
+                Palette_World[1 ] = ColorB.Black;
+                Palette_World[2 ] = new ColorB(43, 36, 36);
+                Palette_World[3 ] = new ColorB(87, 72, 72);
+                Palette_World[4 ] = new ColorB(132, 109, 109);
+                Palette_World[5 ] = new ColorB(171, 152, 152);
+                Palette_World[11] = ColorB.LightRed;
+                Palette_World[8 ] = ColorB.Red;
+                Palette_World[9 ] = ColorB.DarkRed;
+                break;
+            }
+        }
+    }
+    
     /// <summary>
     /// Генерирует случайный сид
     /// </summary>
@@ -118,8 +155,8 @@ internal static class GOLUWorld_World{
 
         Player_OutBounds = (Coordinates_Player.X - Coordinates_World.X < -World_SizeWorld.X || Coordinates_Player.X - Coordinates_World.X > World_SizeWorld.X || Coordinates_Player.Y - Coordinates_World.Y < -World_SizeWorld.Y || Coordinates_Player.Y - Coordinates_World.Y > World_SizeWorld.Y) && !Cheat_DisableWorldLimit;
 
-        World_Time += (float)TD.DeltaTimeS * World_TimeSpeed;
-        if(World_Time > World_TimeMax){ World_Time = 0; }
+        World_Time += (float)TD.DeltaTimeS * World_TimeSpeed * (Cheat_FastCycleTime ? 50 : 1);
+        if(World_Time > World_TimeMax){ World_Time = 0; World_Day++; }
 
         World_UpdateFlow();
         
@@ -181,7 +218,7 @@ internal static class GOLUWorld_World{
                 Game.AddCollider(new Collider(Coordinates_World.X + Entity.X + 2, Coordinates_World.Y + Entity.Y + 2, 12, 12, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L5));
             }
             
-            if(Entity.ID is T_Entity.TrashBag){
+            if(Entity.ID is T_Entity.TrashBag or T_Entity.Cardboard){
                 Game.AddCollider(new Collider(Coordinates_World.X + Entity.X + 2, Coordinates_World.Y + Entity.Y + 2, 12, 12, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L6));
             }
             
@@ -513,7 +550,7 @@ internal static class GOLUWorld_World{
         }
 
         if(RandomRotation){
-            Decal.Rotation = Generator_RandomRotation();
+            Decal.Rotation = Utility_RandomRotation();
         }
         
         if(Info_Block_SupportDecals(World_GetBlock(Decal.X, Decal.Y, Relative: true).ID)){
@@ -880,6 +917,7 @@ internal static class GOLUWorld_World{
         Entity.Health = WL.Math.SubU(Entity.Health, Damage);
 
         bool DoRemove = false;
+        Entity? NewEntity = null;
         
         switch(Entity.ID){
             case T_Entity.Mob_Spider when !Entity.Dead:
@@ -900,20 +938,33 @@ internal static class GOLUWorld_World{
                 break;
             }
             
-            case T_Entity.TrashBag when Entity.Dead:{
+            case T_Entity.TrashBag or T_Entity.Cardboard when Entity.Dead:{
                 DoRemove = true;
                 for(int i = 0; i < 6; i++){
                     World_AddDecal(new Decal{ ID = Info_Decal_RandomTrash(), X = Entity.X, Y = Entity.Y}, 16, true);
                 }
 
+                (T_Entity ID, byte Info) Loot = Info_Entity_Loot_TrashBag(World_Seed + Utility_SeedXY(Entity.X, Entity.Y));
+                if(Loot.ID != T_Entity.Empty){ NewEntity = new Entity{ ID = Loot.ID, Info = Loot.Info }; }
+
                 break;
             }
         }
-
+        
+        Entity NewEntity__ = NewEntity ?? new Entity();
+        
+        if(NewEntity.HasValue){
+            NewEntity__.X = Entity.X;
+            NewEntity__.Y = Entity.Y;
+        }
+        
         if(DoRemove){
             World_Entities.Remove(Key);
+            if(NewEntity != null){
+                World_SetEntity(NewEntity__, SnapToGrid: false);
+            }
         }else{
-            World_Entities[Key] = Entity;   
+            World_Entities[Key] = NewEntity.HasValue ? NewEntity__ : Entity;   
         }
     }
 

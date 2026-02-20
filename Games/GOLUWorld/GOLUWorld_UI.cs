@@ -119,6 +119,7 @@ internal static class GOLUWorld_UI{
             "[X] - ИГНОРИРОВАТЬ КОЛЛАЙДЕРЫ",
             "[F] - БЫСТРОЕ ВРЕМЯ",
             "[B] - ОТКЛЮЧАЕТ ГРАНИЦЫ",
+            "[M] - УСКОР. ЦИКЛ ДНЯ И НОЧИ",
             "[HOME] - ТЕЛЕПОРТ В ЦЕНТР",
             "[F1,F2,F3,F4] - ТЕСТОВОЕ",
             "",
@@ -138,25 +139,30 @@ internal static class GOLUWorld_UI{
     /// Рендерит UI
     /// </summary>
     internal static void UI_Render(Image.ImageContext C, TickData TD){
-        Texture_Frame.Render(C, Palette_Default);
+        Texture FrameTexture = World_Type is T_World.Calm ? Texture_Frame : Texture_Frame_Industrial;
+        
+        FrameTexture.Render(C, Palette_World, 1, 1);
 
-        void RenderSlideBar(int X, int Y, ColorB Color, uint Value, uint MaxValue, string Text, Texture Icon){
-            C.Fill(X + 17 - 1, (int)C.Height + Y - 1, MaxValue + 2, 8 + 2, Color - new ColorB(64, 64, 64));
-            C.Fill(X + 17, (int)C.Height + Y, MaxValue, 8, ColorB.Black);
-            C.Fill(X + 17, (int)C.Height + Y, Value, 8, Color);
-            C.Fill(X + 17, (int)C.Height + Y + 3, Value, 8 - 6, Color + new ColorB(64, 64, 64));
-
-            Font_Default.Render(C, Palette_Default, Text, X + 17, (int)C.Height + Y);
-        
-            Icon.Render(C, Palette_Default, X - 1, (int)C.Height + (Y - 4));
-        }
-        
-        RenderSlideBar(6, -19, ColorB.Red, Player_Health, Player_Health_Max, Cheat_Immortality ? "i" : Player_Health.ToString(), Texture_Health);
-        RenderSlideBar(6, -19 - 16, Palette_Default[19], Player_Energy, Player_Energy_Max, Cheat_Immortality ? "i" : Player_Energy.ToString(), Texture_Energy);
-        
         T_Item Item = Player_ItemInHands;
-        string __Text = (Item == T_Item.Empty ? "" : Info_Item_Name(Item)) + " [" + (Player_InventorySelectedSlot + 1) + "]";
-        Render_TextColorOutline(C, __Text, (int)C.Width - (int)Font_Default.TextSize(__Text).X - 7, (int)C.Height - 8 - 7, ColorB.Black, ColorB.White);
+        
+        if(UI_Interface is T_Interface.None or T_Interface.Menu){
+            void RenderSlideBar(int X, int Y, ColorB Color, uint Value, uint MaxValue, string Text, Texture Icon){
+                C.Fill(X + 17 - 1, (int)C.Height + Y - 1, MaxValue + 2, 8 + 2, Color - new ColorB(64, 64, 64));
+                C.Fill(X + 17, (int)C.Height + Y, MaxValue, 8, ColorB.Black);
+                C.Fill(X + 17, (int)C.Height + Y, Value, 8, Color);
+                C.Fill(X + 17, (int)C.Height + Y + 3, Value, 8 - 6, Color + new ColorB(64, 64, 64));
+
+                Font_Default.Render(C, Palette_Default, Text, X + 17, (int)C.Height + Y);
+        
+                Icon.Render(C, Palette_Default, X - 1, (int)C.Height + (Y - 4));
+            }
+        
+            RenderSlideBar(6, -19, ColorB.Red, Player_Health, Player_Health_Max, Cheat_Immortality ? "i" : Player_Health.ToString(), Texture_Health);
+            RenderSlideBar(6, -19 - 16, Palette_Default[19], Player_Energy, Player_Energy_Max, Cheat_Immortality ? "i" : Player_Energy.ToString(), Texture_Energy);
+                
+            string __Text = (Item == T_Item.Empty ? "" : Info_Item_Name(Item)) + " [" + (Player_InventorySelectedSlot + 1) + "]";
+            Render_TextColorOutline(C, __Text, (int)C.Width - (int)Font_Default.TextSize(__Text).X - 7, (int)C.Height - 8 - 7, ColorB.Black, ColorB.White);
+        }
         
         if(UI_Interface != T_Interface.None){ C.Fill(ColorB.Black.SetA(128), ImageBlend.Alpha); }
         
@@ -264,7 +270,7 @@ internal static class GOLUWorld_UI{
         }
         const uint GPSSize = 180;
         
-        Vector2I GPSOffset = __RenderCenterPanel(GPSSize, World_BackgroundColor);
+        Vector2I GPSOffset = __RenderCenterPanel(GPSSize, Palette_World[5]);
         
         float Energy = (float)Player_Energy / Player_Energy_Max;
         Energy /= (Energy + 0.05f * (1 - Energy));
@@ -402,6 +408,10 @@ internal static class GOLUWorld_UI{
         __RenderDigital(160, 92, Minutes % 10);
         
         if(World_AnimationTimer > 0.5f && Player_Energy > 0){ Texture_Clock_Overlay_Colon.Render(C, Palette_Default, 123, 97); }
+
+        if(Player_Energy > 0){
+            Render_TextColor(C, "DAY: " + World_Day, 69, 141, ColorB.Red);
+        }
     }
     
     /// <summary>

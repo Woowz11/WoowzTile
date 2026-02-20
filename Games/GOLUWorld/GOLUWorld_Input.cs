@@ -65,6 +65,7 @@ internal static class GOLUWorld_Input{
                     if(Key == Key.I){ Cheat_Immortality = !Cheat_Immortality; }
                     if(Key == Key.X){ Cheat_IgnoreColliders = !Cheat_IgnoreColliders; }
                     if(Key == Key.F){ Cheat_FastTime = !Cheat_FastTime; }
+                    if(Key == Key.M){ Cheat_FastCycleTime = !Cheat_FastCycleTime; }
                     if(Key == Key.B){ Cheat_DisableWorldLimit = !Cheat_DisableWorldLimit; }
 
                     if(!Player_Dead){

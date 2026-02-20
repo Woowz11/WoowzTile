@@ -81,7 +81,7 @@ internal static class GOLUWorld_Generator{
     /// <summary>
     /// Генерирует уровень
     /// </summary>
-    internal static void Generator_World(T_World World){
+    internal static void Generator_World(T_World World, uint Seed){
         void GenerateCalm(uint Seed){
             Generator_Water(Seed);
 
@@ -97,9 +97,16 @@ internal static class GOLUWorld_Generator{
             
             Generator_Trash(Seed);
         }
+
+        void GenerateIndustrial(uint Seed){
+            Generator_Water(Seed);
+
+            Generator_Village(Seed);
+        }
         
         switch(World){
-            case T_World.Calm: GenerateCalm(World_Seed); break;
+            case T_World.Calm      : GenerateCalm(Seed); break;
+            case T_World.Industrial: GenerateIndustrial(Seed); break;
         }
     }
     
@@ -107,7 +114,7 @@ internal static class GOLUWorld_Generator{
     /// Генерирует структуру
     /// </summary>
     internal static void Generator_Structure(int X, int Y, Structure S, uint Seed = 0, bool ToCenter = true, bool Replace = false, TextureRotation? Rotation = null){
-        TextureRotation Rotation__ = Rotation ??= Generator_RandomRotation(Seed + 993215123 + (uint)(X * Y * Y));
+        TextureRotation Rotation__ = Rotation ??= Utility_RandomRotation(Seed + 993215123 + (uint)(X * Y * Y));
         
         int OffsetX = X;
         int OffsetY = Y;
@@ -231,7 +238,7 @@ internal static class GOLUWorld_Generator{
             uint __Seed2 = Seed + SeedOffset * 21964724;
             uint __Seed3 = Seed + SeedOffset * 1223512125;
 
-            Generator_Structure(WL.Math.Random.Fast_Int(Generator_Border_L, Generator_Border_R, ref __Seed1), WL.Math.Random.Fast_Int(Generator_Border_U, Generator_Border_D, ref __Seed2), Generator_SelectWeightedObject<Structure>(WL.Math.Random.Fast_0_1(ref __Seed3), Structure_Trash).Item1, Seed + SeedOffset);
+            Generator_Structure(WL.Math.Random.Fast_Int(Generator_Border_L, Generator_Border_R, ref __Seed1), WL.Math.Random.Fast_Int(Generator_Border_U, Generator_Border_D, ref __Seed2), Utility_SelectWeightedObject<Structure>(WL.Math.Random.Fast_0_1(ref __Seed3), Structure_Trash).Item1, Seed + SeedOffset);
         }
         
         for(int i = 0; i < 1000; i++){

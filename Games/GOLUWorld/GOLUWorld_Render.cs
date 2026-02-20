@@ -197,6 +197,8 @@ internal static class GOLUWorld_Render{
     /// Рендерит землю (бесконечные блоки)
     /// </summary>
     internal static void Render_Ground(Image.ImageContext C){
+        Texture GroundTexture = World_Type == T_World.Calm ? Texture_Ground : Texture_Ground_Industrial;
+        
         int OffsetX = Coordinates_World.X % 16;
         int OffsetY = Coordinates_World.Y % 16;
         if(OffsetX < 0){ OffsetX += 16; }
@@ -205,7 +207,7 @@ internal static class GOLUWorld_Render{
             for(int X__ = -1; X__ < 16; X__++){
                 int X = X__ * 16 + OffsetX;
                 int Y = Y__ * 16 + OffsetY;
-                Render_RenderQueue_Add(C, new Renderable{ Texture = Texture_Ground, X = X, Y = Y, Z = Render_Layer_VeryBottom });
+                Render_RenderQueue_Add(C, new Renderable{ Texture = GroundTexture, X = X, Y = Y, Z = Render_Layer_VeryBottom });
             }
         }
     }
@@ -275,7 +277,7 @@ internal static class GOLUWorld_Render{
     internal static void Render_Decals(Image.ImageContext C){
         foreach(Decal Decal in World_Decals){
             uint __Seed = (uint)((Decal.X + Decal.Y) * Decal.Y);
-            Render_RenderQueue_Add(C, new Renderable{ Texture = Info_Decal_Texture(Decal.ID), Palette = Palette_Default, X = Coordinates_World.X + Decal.X, Y = Coordinates_World.Y + Decal.Y, Rotation = Decal.Rotation, Z = Render_Layer_VeryBottom + WL.Math.Random.Fast_Int(2, 1000, ref __Seed)});
+            Render_RenderQueue_Add(C, new Renderable{ Texture = Info_Decal_Texture(Decal.ID), Palette = Palette_World, X = Coordinates_World.X + Decal.X, Y = Coordinates_World.Y + Decal.Y, Rotation = Decal.Rotation, Z = Render_Layer_VeryBottom + WL.Math.Random.Fast_Int(2, 1000, ref __Seed)});
         }
     }
 
@@ -330,6 +332,7 @@ internal static class GOLUWorld_Render{
                         Z = Render_Layer_Object(Entity.Y + 16 + OffsetY);
                         Rotation = Entity.Info is 2 or 3 ? TextureRotation.Rotate90 : TextureRotation.None;
                         break;
+                    case T_Entity.Trapdoor:
                     case T_Entity.Spikes:
                     case T_Entity.Money:
                     case T_Entity.Tire:
@@ -339,7 +342,7 @@ internal static class GOLUWorld_Render{
 
                 if(Entity.ID is T_Entity.Crate or T_Entity.Item){ Z++; }
 
-                Render_RenderQueue_Add(C, new Renderable{ Texture = Info_Entity_Texture(Entity), Palette = Palette_Default, X = Coordinates_World.X + Entity.X + OffsetX, Y = Coordinates_World.Y + Entity.Y + OffsetY, Rotation = Rotation, Z = Z, Reflect = __ReflectOffsetY.HasValue, MultiplyColor = Player_ClosestEntity.HasValue && Player_ClosestEntity_Distance < Player_Interact_Distance && Player_ClosestEntity.Value.Key == Entity.Key ? ColorB.Red : null}, __ReflectOffsetY ?? 0);
+                Render_RenderQueue_Add(C, new Renderable{ Texture = Info_Entity_Texture(Entity), Palette = Entity.ID is T_Entity.Item or T_Entity.Money ? Palette_Default : Palette_World, X = Coordinates_World.X + Entity.X + OffsetX, Y = Coordinates_World.Y + Entity.Y + OffsetY, Rotation = Rotation, Z = Z, Reflect = __ReflectOffsetY.HasValue, MultiplyColor = Player_ClosestEntity.HasValue && Player_ClosestEntity_Distance < Player_Interact_Distance && Player_ClosestEntity.Value.Key == Entity.Key ? ColorB.Red : null}, __ReflectOffsetY ?? 0);
 
                 if(Entity.ID == T_Entity.Tree){
                     void __RenderLeaves(int X__, int Y__){
@@ -351,7 +354,7 @@ internal static class GOLUWorld_Render{
 
                         __X__ += (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.X + __X__) * 432, 1) * 2);
                         __Y__ += (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.Y + __Y__) * 12 , 1) * 2);
-                        Render_RenderQueue_Add(C, new Renderable{ Texture = Texture_Tree_Leaves, Palette = Palette_Default, X = Coordinates_World.X + Entity.X + __X__, Y = Coordinates_World.Y + Entity.Y + __Y__, Rotation = Entity.Rotation, Z = Render_Layer_VeryTop + 1 + (X__ + Y__)});
+                        Render_RenderQueue_Add(C, new Renderable{ Texture = Texture_Tree_Leaves, Palette = Palette_World, X = Coordinates_World.X + Entity.X + __X__, Y = Coordinates_World.Y + Entity.Y + __Y__, Rotation = Entity.Rotation, Z = Render_Layer_VeryTop + 1 + (X__ + Y__)});
                     }
                     __RenderLeaves(0, 0);
                     __RenderLeaves(2, 0);
@@ -561,10 +564,11 @@ internal static class GOLUWorld_Render{
     /// Рендерит информацию об взаимодействующем объекте
     /// </summary>
     internal static void Render_InteractInfo(Image.ImageContext C){
-        if(Player_ClosestEntity != null && Player_ClosestEntity_Distance < Player_Interact_Distance && Player_ClosestEntity.Value.ID is T_Entity.Item or T_Entity.Money){
+        if(Player_ClosestEntity != null && Player_ClosestEntity_Distance < Player_Interact_Distance && Player_ClosestEntity.Value.ID is T_Entity.Item or T_Entity.Money or T_Entity.Trapdoor){
             string? Text = Player_ClosestEntity.Value.ID switch{
                 T_Entity.Item when Player_ClosestEntity.Value.Info != (byte)T_Item.Empty => Info_Item_Name((T_Item)Player_ClosestEntity.Value.Info),
                 T_Entity.Money => Info_Money_Cost((T_Money)Player_ClosestEntity.Value.Info) + "g",
+                T_Entity.Trapdoor => "СПУСТИТСЯ? (БЕЗВОЗВРАТНО)",
                 var _ => null
             };
 

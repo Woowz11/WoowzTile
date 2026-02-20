@@ -312,6 +312,10 @@ internal static class GOLUWorld_Player{
                     Player_Money += Info_Money_Cost((T_Money)Entity.Info);
                     World_Entities.Remove(Entity.Key);
                     break;
+                
+                case T_Entity.Trapdoor:
+                    World_GoToWorld(T_World.Industrial);
+                    break;
             }
         }
     }
@@ -326,6 +330,6 @@ internal static class GOLUWorld_Player{
     /// Телепортирует игрока на координаты
     /// </summary>
     internal static void Player_Teleport(int X, int Y){
-        Coordinates_Camera = Coordinates_PlayerWorldToCamera(new Vector2I(X, Y));
+        Coordinates_Camera = Utility_PlayerWorldToCamera(new Vector2I(X, Y));
     }
 }

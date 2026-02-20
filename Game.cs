@@ -131,9 +131,17 @@ public abstract class Game{
     public static Vector2U SceneSize = Program.__Scene.Size;
 
     /// <summary>
-    /// Выйти из запущеной игры
+    /// Выйти из запущенной игры
     /// </summary>
     public static void Quit(){
         Program.LoadGame(null);
+    }
+
+    /// <summary>
+    /// Специальный рендер
+    /// </summary>
+    public static void SpecialRender(Action<Image.ImageContext> Action){
+        Program.__Scene.Change(Action);
+        Program.__Window.Render();
     }
 }

@@ -27,9 +27,9 @@ internal static class GOLUWorld_Values{
                 
                 Coordinates_Player = new Vector2I((int)(Game.SceneSize.X / 2F - Texture_Player_Body.Width  / 2F), (int)(Game.SceneSize.Y / 2F - Texture_Player_Body.Height / 2F));
         
-                Coordinates_World = Coordinates_CameraToWorld(Coordinates_Camera);
+                Coordinates_World = Utility_CameraToWorld(Coordinates_Camera);
 
-                Coordinates_PlayerWorld = Coordinates_ScreenToWorld(Coordinates_Player);
+                Coordinates_PlayerWorld = Utility_ScreenToWorld(Coordinates_Player);
 
                 Coordinates_PlayerWorld_Center = Coordinates_PlayerWorld + new Vector2I(8, 8);
                 
@@ -288,6 +288,11 @@ internal static class GOLUWorld_Values{
         /// Отключает лимит мира
         /// </summary>
         internal static bool Cheat_DisableWorldLimit = false;
+        
+        /// <summary>
+        /// Ускоряет время цикла дня и ночи
+        /// </summary>
+        internal static bool Cheat_FastCycleTime = false;
         
         
     #endregion

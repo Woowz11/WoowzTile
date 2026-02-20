@@ -41,7 +41,8 @@ internal static class GOLUWorld_Objects{
         Grave      = 16,
         Door       = 17,
         Cardboard  = 18,
-        Money      = 19
+        Money      = 19,
+        Trapdoor   = 20
     }
     
     internal enum T_Ceiling : byte{
@@ -118,13 +119,13 @@ internal static class GOLUWorld_Objects{
         Industrial = 2,
         /* Лабиринт, из стекла и зеркал */
         Labyrinth = 3,
-        /* Пустыня залитая машинным маслом */
-        OilDesert = 4,
+        /* Пустыня залитая машинным маслом (очень темно) */
+        Abyss = 4,
         /* Электрический уровень, микросхемы, всё бьёт током */
         Electric = 5,
         /* Всё расплавленное, горячее */
         DangerHot = 6,
-        /* Мир состоящий из глитчей */
+        /* Мир состоящий из глитчей и ошибок */
         Glitch = 7,
         /* Закулисье))) */
         BackRooms = 8,
