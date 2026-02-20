@@ -381,6 +381,8 @@ internal static class GOLUWorld_Info{
 
         uint Unique = Utility_SeedXY(X, Y);
         
+        uint Seed1 = Seed + 9493235;
+        
         switch (C){
            case 'C':
                 ID = T_Entity.Chair;
@@ -423,7 +425,7 @@ internal static class GOLUWorld_Info{
                 return B == T_Block.Ground_Sand
                     ? Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Item, (byte)T_Item.Rock, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Empty, 0, 99)])
                     : Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed),
-                        [(T_Entity.Tree, 0, 20), (T_Entity.Item, (byte)T_Item.Rock, 10), (T_Entity.Item, (byte)T_Item.Mushroom, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Bush, 0, 5), (T_Entity.Grass, 0, 43), (T_Entity.Empty, 0, 32)]);
+                        [(T_Entity.Tree, (byte)(WL.Math.Random.Fast_Bool(ref Seed1) ? 1 : 0), 20), (T_Entity.Item, (byte)T_Item.Rock, 10), (T_Entity.Item, (byte)T_Item.Mushroom, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Bush, 0, 5), (T_Entity.Grass, 0, 43), (T_Entity.Empty, 0, 32)]);
             }
             case 'д': {
                 Seed += Unique + 1532;
@@ -477,7 +479,7 @@ internal static class GOLUWorld_Info{
 
         uint Unique = Utility_SeedXY(X, Y);
         
-        uint Seed1 = Seed    + 88348835;
+        uint Seed1 = Seed  + 88348835;
         uint Seed2 = Seed1 - 1241256;
         
         switch (C){

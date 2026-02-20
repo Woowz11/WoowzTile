@@ -1,4 +1,6 @@
-﻿using WL;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using WL;
 using WLO;
 using WoowzTile;
 using WoowzTile.Objects;
@@ -24,6 +26,11 @@ internal static class GOLUWorld_Render{
             Render_TextColorOutline(C, ButtonText, X, Y, ColorB.Black, ColorB.White);   
         }
     }
+
+    internal static int Render_CameraClip_L(Image.ImageContext C, int Offset) => -Offset;
+    internal static int Render_CameraClip_R(Image.ImageContext C, int Offset) => (int)C.Width + Offset;
+    internal static int Render_CameraClip_U(Image.ImageContext C, int Offset) => -Offset;
+    internal static int Render_CameraClip_D(Image.ImageContext C, int Offset) => (int)C.Height + Offset;
     
     internal const int Render_Layer_VeryBottom = -10000000;
     internal static int Render_Layer_Object(int Y) => -100000 + Y * 100;
@@ -36,13 +43,8 @@ internal static class GOLUWorld_Render{
     internal static void Render_RenderQueue_Add(Image.ImageContext C, Renderable R, int OffsetY = 0, int? ReflectOffsetY = null){
         R.Y += OffsetY;
             
-        const int BorderOffset = 5 * 16;
-        int Border_L = -BorderOffset;
-        int Border_R = (int)C.Width + BorderOffset;
-        int Border_U = -BorderOffset;
-        int Border_D = (int)C.Height + BorderOffset;
-            
-        if(R.RenderAnyway || !(R.X < Border_L || R.X > Border_R || R.Y < Border_U || R.Y > Border_D)){
+        const int Offset = 5 * 16;
+        if(R.RenderAnyway || !(R.X < Render_CameraClip_L(C, Offset) || R.X > Render_CameraClip_R(C, Offset) || R.Y < Render_CameraClip_U(C, Offset) || R.Y > Render_CameraClip_D(C, Offset))){
             __RenderQueue.Add(R);
 
             if(R.Reflect){
@@ -222,8 +224,14 @@ internal static class GOLUWorld_Render{
     /// Рендерит блоки
     /// </summary>
     internal static void Render_Blocks(Image.ImageContext C){
-        foreach(Block Block in World_Blocks.Values){
-            Render_RenderQueue_Add(C, new Renderable{Texture = Info_Block_Texture(Block), X = Coordinates_World.X + Block.X, Y = Coordinates_World.Y + Block.Y, Z = Info_Block_Ground(Block.ID) ? Render_Layer_VeryBottom + 1 : Render_Layer_Object(Block.Y), Reflect = Info_Block_Reflect(Block.ID)});
+        foreach((Vector2I Key, Block Block) in World_Blocks){
+            int WorldX = Block.X + Coordinates_World.X;
+            int WorldY = Block.Y + Coordinates_World.Y;
+            
+            const int Offset = 3 * 16;
+            if(WorldX < Render_CameraClip_L(C, Offset) || WorldX > Render_CameraClip_R(C, Offset) || WorldY < Render_CameraClip_U(C, Offset) || WorldY > Render_CameraClip_D(C, Offset)){ continue; }
+            
+            Render_RenderQueue_Add(C, new Renderable{Texture = Info_Block_Texture(Block), X = WorldX, Y = WorldY, Z = Info_Block_Ground(Block.ID) ? Render_Layer_VeryBottom + 1 : Render_Layer_Object(Block.Y), Reflect = Info_Block_Reflect(Block.ID)});
         }
     }
     
@@ -264,7 +272,7 @@ internal static class GOLUWorld_Render{
             }
         }
 
-        foreach(Ceiling Ceiling in World_Ceilings.Values){
+        foreach((Vector2I Key, Ceiling Ceiling) in World_Ceilings){
             if(Ceiling.ID is T_Ceiling.Invisible){ continue; }
             if(HasCeiling){
                 Render_RenderQueue_Add(C, new Renderable{Texture = Texture_Black, X = Coordinates_World.X + Ceiling.X, Y = Coordinates_World.Y + Ceiling.Y, Z = Render_Layer_VeryTop, MultiplyColor = new ColorB(0, 0, 0, 64)});   
@@ -291,66 +299,74 @@ internal static class GOLUWorld_Render{
     /// Рендерит сущностей
     /// </summary>
     internal static void Render_Entities(Image.ImageContext C){
-         foreach(Entity Entity in World_Entities.Values){
-            int? __ReflectOffsetY = Info_Entity_Reflect(Entity.ID);
+         foreach((EntityKey Key, Entity Entity) in World_Entities){
+            if(!Info_Entity_DoRender(Entity.ID)){ continue; }
+
+            int WorldX = Entity.X + Coordinates_World.X;
+            int WorldY = Entity.Y + Coordinates_World.Y;
             
-            if(Info_Entity_DoRender(Entity.ID)){
-                int OffsetX = 0;
-                int OffsetY = 0;
-                
-                if(Info_Entity_Plant(Entity.ID)){
-                    if(Entity.Info != 0){
-                        uint __Seed = Entity.Info;
-                        OffsetX += WL.Math.Random.Fast_Int(-8, 8, ref __Seed);
-                        __Seed += 2567821;
-                        OffsetY += WL.Math.Random.Fast_Int(-8, 8, ref __Seed);
-                    }
-                        
-                    OffsetX += (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.X * 2 + Entity.Y), 1) * 2);
+            const int Offset = 5 * 16;
+            if(WorldX < Render_CameraClip_L(C, Offset) || WorldX > Render_CameraClip_R(C, Offset) || WorldY < Render_CameraClip_U(C, Offset) || WorldY > Render_CameraClip_D(C, Offset)){ continue; }
+            
+            int? __ReflectOffsetY = Info_Entity_Reflect(Entity.ID);
+
+            int OffsetX = 0;
+            int OffsetY = 0;
+
+            if(Info_Entity_Plant(Entity.ID)){
+                if(Entity.Info != 0){
+                    uint __Seed = Entity.Info;
+                    OffsetX += WL.Math.Random.Fast_Int(-8, 8, ref __Seed);
+                    __Seed += 2567821;
+                    OffsetY += WL.Math.Random.Fast_Int(-8, 8, ref __Seed);
                 }
-                
-                int Z = Render_Layer_Object(Entity.Y + OffsetY);
-                TextureRotation Rotation = Entity.Rotation;
-                
-                switch(Entity.ID){
-                    case T_Entity.Tree:
-                        OffsetY = -48;
-                        break;
                     
-                    case T_Entity.Cattail:
-                    case T_Entity.HighGrass:
-                        OffsetY = -16;
-                        break;
-                    
-                    case T_Entity.Grave:
-                        OffsetX = -8;
-                        OffsetY = -16;
-                        break;
-                    
-                    case T_Entity.Mob_Spider: {
-                        OffsetX = -8;
-                        OffsetY = -16;
+                OffsetX += (int)(WL.Math.SinVeryFast(World_DeltaTick * 2 + (Entity.X * 2 + Entity.Y)) * 2);
+            }
 
-                        if(!Entity.Dead){ Z = Render_Layer_VeryTop + 100; }
-                        break;
-                    }
-                    case T_Entity.Door:
-                        Z = Render_Layer_Object(Entity.Y + 16 + OffsetY);
-                        Rotation = Entity.Info is 2 or 3 ? TextureRotation.Rotate90 : TextureRotation.None;
-                        break;
-                    case T_Entity.Trapdoor:
-                    case T_Entity.Spikes:
-                    case T_Entity.Money:
-                    case T_Entity.Tire:
-                        Z = Render_Layer_Object(Entity.Y - 16 + OffsetY);
-                        break;
+            int Z = Render_Layer_Object(Entity.Y + OffsetY);
+            TextureRotation Rotation = Entity.Rotation;
+
+            switch(Entity.ID){
+                case T_Entity.Tree:
+                    OffsetY = -48;
+                    break;
+                
+                case T_Entity.Cattail:
+                case T_Entity.HighGrass:
+                    OffsetY = -16;
+                    break;
+                
+                case T_Entity.Grave:
+                    OffsetX = -8;
+                    OffsetY = -16;
+                    break;
+                
+                case T_Entity.Mob_Spider: {
+                    OffsetX = -8;
+                    OffsetY = -16;
+
+                    if(!Entity.Dead){ Z = Render_Layer_VeryTop + 100; }
+                    break;
                 }
+                case T_Entity.Door:
+                    Z = Render_Layer_Object(Entity.Y + 16 + OffsetY);
+                    Rotation = Entity.Info is 2 or 3 ? TextureRotation.Rotate90 : TextureRotation.None;
+                    break;
+                case T_Entity.Trapdoor:
+                case T_Entity.Spikes:
+                case T_Entity.Money:
+                case T_Entity.Tire:
+                    Z = Render_Layer_Object(Entity.Y - 16 + OffsetY);
+                    break;
+            }
 
-                if(Entity.ID is T_Entity.Crate or T_Entity.Item){ Z++; }
+            if(Entity.ID is T_Entity.Crate or T_Entity.Item){ Z++; }
 
-                Render_RenderQueue_Add(C, new Renderable{ Texture = Info_Entity_Texture(Entity), Palette = Entity.ID is T_Entity.Item or T_Entity.Money ? Palette_Default : Palette_World, X = Coordinates_World.X + Entity.X + OffsetX, Y = Coordinates_World.Y + Entity.Y + OffsetY, Rotation = Rotation, Z = Z, Reflect = __ReflectOffsetY.HasValue, MultiplyColor = Player_ClosestEntity.HasValue && Player_ClosestEntity_Distance < Player_Interact_Distance && Player_ClosestEntity.Value.Key == Entity.Key ? ColorB.Red : null}, __ReflectOffsetY ?? 0);
+            Render_RenderQueue_Add(C, new Renderable{ Texture = Info_Entity_Texture(Entity), Palette = Entity.ID is T_Entity.Item or T_Entity.Money ? Palette_Default : Palette_World, X = WorldX + OffsetX, Y = WorldY + OffsetY, Rotation = Rotation, Z = Z, Reflect = __ReflectOffsetY.HasValue, MultiplyColor = Player_ClosestEntity.HasValue && Player_ClosestEntity_Distance < Player_Interact_Distance && Player_ClosestEntity.Value.Key == Entity.Key ? ColorB.Red : null}, __ReflectOffsetY ?? 0);
 
-                if(Entity.ID == T_Entity.Tree){
+            if(Entity.ID == T_Entity.Tree){
+                if(Entity.Info == 0){
                     void __RenderLeaves(int X__, int Y__){
                         int __X__ = -16;
                         int __Y__ = -64;
@@ -358,13 +374,22 @@ internal static class GOLUWorld_Render{
                         __X__ += (X__ - 1) * (X__ == 0 ? 16 : 8);
                         __Y__ += (Y__ - 1) * (Y__ == 0 ? 8 : 16);
 
-                        __X__ += (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.X + __X__) * 432, 1) * 2);
-                        __Y__ += (int)(WL.Math.Sin(World_DeltaTick * 2 + (Entity.Y + __Y__) * 12 , 1) * 2);
-                        Render_RenderQueue_Add(C, new Renderable{ Texture = Texture_Tree_Leaves, Palette = Palette_World, X = Coordinates_World.X + Entity.X + __X__, Y = Coordinates_World.Y + Entity.Y + __Y__, Rotation = Entity.Rotation, Z = Render_Layer_VeryTop + 1 + (X__ + Y__)});
+                        __X__ += (int)(WL.Math.SinVeryFast(World_DeltaTick * 2 + (Entity.X + __X__) * 432) * 2);
+                        __Y__ += (int)(WL.Math.SinVeryFast(World_DeltaTick * 2 + (Entity.Y + __Y__) * 12 ) * 2);
+                        Render_RenderQueue_Add(C,
+                        new Renderable{ Texture = Texture_Tree_Leaves, Palette = Palette_World, X = WorldX + __X__, Y = WorldY + __Y__, Z = Render_Layer_VeryTop + 1 + WorldY + __Y__ + (X__ + Y__) });
                     }
+
                     __RenderLeaves(0, 0);
                     __RenderLeaves(2, 0);
                     __RenderLeaves(1, 2);
+                }else{
+                    int __X__ = -16;
+                    int __Y__ = -60;
+                    
+                    __X__ += (int)(WL.Math.SinVeryFast(World_DeltaTick * 2 + (Entity.X + __X__) * 432) * 2);
+                    __Y__ += (int)(WL.Math.SinVeryFast(World_DeltaTick * 2 + (Entity.Y + __Y__) * 12 ) * 2);
+                    Render_RenderQueue_Add(C, new Renderable{ Texture = Texture_Tree_Spruce, Palette = Palette_World, X = WorldX + __X__, Y = WorldY + __Y__, Z = Render_Layer_VeryTop + 1 + WorldY + __Y__ });
                 }
             }
         }
@@ -482,8 +507,8 @@ internal static class GOLUWorld_Render{
                     
                     Result = WaterSolid;
                     
-                    float RippleX = WL.Math.Sin((Coordinates_PlayerWorld.X + FX + World_DeltaTick * 10) * 0.1f, 1) * 4f;
-                    float RippleY = WL.Math.Cos((Coordinates_PlayerWorld.Y + FY + World_DeltaTick * 10) * 0.3f, 1) * 2f;
+                    float RippleX = WL.Math.SinVeryFast((Coordinates_PlayerWorld.X + FX + World_DeltaTick * 10) * 0.1f) * 4f;
+                    float RippleY = WL.Math.CosVeryFast((Coordinates_PlayerWorld.Y + FY + World_DeltaTick * 10) * 0.3f) * 2f;
                     RippleY += RippleX;
                     foreach(Renderable R in __RenderQueue_Water){
                         int LocalX = (int)FX - R.X + (int)R.Texture.Width  / 2;
@@ -602,7 +627,7 @@ internal static class GOLUWorld_Render{
         if(Player_Character_Mute){ return; }
         
         int X = Coordinates_Player.X;
-        int Y = Coordinates_Player.Y - 8 - (int)(WL.Math.Sin(World_DeltaTick, 1) * 3);
+        int Y = Coordinates_Player.Y - 8 - (int)(WL.Math.SinVeryFast(World_DeltaTick) * 3);
         
         if(string.IsNullOrWhiteSpace(Player_Thought)){ return; }
         Vector2U ThoughtsSize = Font_Default.TextSize(Player_Thought);

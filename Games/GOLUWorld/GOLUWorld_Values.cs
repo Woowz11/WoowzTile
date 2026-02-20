@@ -10,7 +10,7 @@ namespace GOLUWorld;
 internal static class GOLUWorld_Values{
     #region Константы игры
 
-        internal const string Game_Version = "0.9";
+        internal const string Game_Version = "1.0";
         internal const string Game_Name    = "GOLUWorld";
 
     #endregion
@@ -387,17 +387,17 @@ internal static class GOLUWorld_Values{
         /// <summary>
         /// Все блоки в мире
         /// </summary>
-        internal static readonly Dictionary<Vector2I, Block> World_Blocks = [];
+        internal static Dictionary<Vector2I, Block> World_Blocks = [];
         
         /// <summary>
         /// Все потолки в мире
         /// </summary>
-        internal static readonly Dictionary<Vector2I, Ceiling> World_Ceilings = [];
+        internal static Dictionary<Vector2I, Ceiling> World_Ceilings = [];
         
         /// <summary>
         /// Все сущности в мире
         /// </summary>
-        internal static readonly Dictionary<EntityKey, Entity> World_Entities = [];
+        internal static Dictionary<EntityKey, Entity> World_Entities = [];
         
     #endregion
 

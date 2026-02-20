@@ -33,6 +33,7 @@ internal static class GOLUWorld_World{
 
         Player_InventorySelectedSlot = 0;
 
+        Player_BrokenLeg = false;
         Player_LastTimeWereTreated_Timer = 0;
         Player_Rotting = 0;
 
@@ -61,18 +62,19 @@ internal static class GOLUWorld_World{
 
         World_Type = World;
         
+        World_Size = new Vector2U(200, 200);
+        
         World_Decals  .Clear();
-        World_Entities.Clear();
-        World_Blocks  .Clear();
-        World_Ceilings.Clear();
+
+        World_Blocks   = new Dictionary<Vector2I , Block  >((int)(World_Size.X * World_Size.Y * 2));
+        World_Ceilings = new Dictionary<Vector2I , Ceiling>((int)(World_Size.X * World_Size.Y * 2));
+        World_Entities = new Dictionary<EntityKey, Entity >((int)(World_Size.X * World_Size.Y * 2) + 1000);
 
         UI_Interface = T_Interface.None;
         
         World_DeltaTick = 0;
 
         Player_Attack_Timer = 0;
-
-        World_Size = new Vector2U(500, 500);
         
         World_UpdatePalette(World);
         
@@ -168,7 +170,7 @@ internal static class GOLUWorld_World{
     /// Обновляет блоки
     /// </summary>
     internal static void World_UpdateBlocks(){
-        foreach(Block Block in World_Blocks.Values){
+        foreach((Vector2I Key, Block Block) in World_Blocks){
             if(Block.ID == T_Block.Pit){
                 Game.AddCollider(new Collider(Coordinates_World.X + Block.X + 4, Coordinates_World.Y + Block.Y + 4, 16 - 4, 16 - 4, Block.Info, new Vector2I(Block.X, Block.Y), Layer: CollisionLayer.L4));
             }else{
@@ -183,53 +185,55 @@ internal static class GOLUWorld_World{
     /// Обновляет сущностей
     /// </summary>
     internal static void World_UpdateEntities(){
-        foreach(KeyValuePair<EntityKey, Entity> KVP in World_Entities){
-            Entity Entity = KVP.Value;
+        void AddCollider(Entity Entity, uint SizeOffset, CollisionLayer Layer){
+            Game.AddCollider(new Collider(Entity.X + Coordinates_World.X, Entity.Y + Coordinates_World.Y, 16 - SizeOffset, 16 - SizeOffset, 0, new Vector2I(Entity.X, Entity.Y), (int)Entity.UniqueID, Layer));
+        }
 
+        Dictionary<EntityKey, Entity> __UpdatedEntities = [];
+        foreach((EntityKey Key, Entity Entity__) in World_Entities){
+            Entity Entity = Entity__;
+
+            bool UpdateEntity = false;
+            
             if(Info_Entity_CanFlow(Entity.ID)){
                 Block Floor = World_GetBlock(Entity.X, Entity.Y, Relative: true);
                 if(Floor.ID is T_Block.Water){
                     Entity.X += WL.Math.RoundProbabilistic(World_Flow.X);
                     Entity.Y += WL.Math.RoundProbabilistic(World_Flow.Y);
-                    World_Entities[KVP.Key] = Entity;
+                    UpdateEntity = true;
                 }
             }
 
-            if(Entity.ID is T_Entity.Table or T_Entity.Spikes or T_Entity.Tree || (Entity.ID == T_Entity.Mob_Spider && Entity.Health > 0)){
-                if(Entity.ID == T_Entity.Mob_Spider){
-                    World_Entities[KVP.Key] = World_AI_Spider(Entity);
-                }
+            if(Entity is{ ID: T_Entity.Mob_Spider, Health: > 0 }){
+                World_AI_Spider(ref Entity);
+                UpdateEntity = true;
+            }
+
+            switch(Entity.ID){
+                case T_Entity.Table:
+                case T_Entity.Tree: AddCollider(Entity, 12, CollisionLayer.L1); break;
                 
-                uint SizeX = 16;
-                uint SizeY = 16;
-                if(Entity.ID is T_Entity.Table or T_Entity.Tree){
-                    SizeX = SizeY = 4;
-                }
+                case T_Entity.Spikes: AddCollider(Entity, 0, CollisionLayer.L2); break;
+                
+                case T_Entity.Mob_Spider: AddCollider(Entity, 0, CollisionLayer.L3 | CollisionLayer.L6); break;
+                
+                case T_Entity.Crate: AddCollider(Entity, 4, CollisionLayer.L5); break;
+                
+                case T_Entity.TrashBag:
+                case T_Entity.Cardboard: AddCollider(Entity, 4, CollisionLayer.L6); break;
+                
+                case T_Entity.Window: AddCollider(Entity, 0, CollisionLayer.L1 | CollisionLayer.L6); break;
+                
+                case T_Entity.Door: if(Entity.Info is 0 or 2){ AddCollider(Entity, 0, CollisionLayer.L1); } break;
+            }
 
-                CollisionLayer Layer = CollisionLayer.L1;
-                if(Entity.ID == T_Entity.Spikes){
-                    Layer = CollisionLayer.L2;
-                }else if(Entity.ID == T_Entity.Mob_Spider){
-                    Layer = CollisionLayer.L3 | CollisionLayer.L6;
-                }
-                Game.AddCollider(new Collider(Coordinates_World.X + Entity.X + (int)((16 - SizeX)/2), Coordinates_World.Y + Entity.Y + (int)((16 - SizeY)/2), SizeX, SizeY, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, Layer));
+            if(UpdateEntity){
+                __UpdatedEntities[Key] = Entity;
             }
-            
-            if(Entity.ID is T_Entity.Crate){
-                Game.AddCollider(new Collider(Coordinates_World.X + Entity.X + 2, Coordinates_World.Y + Entity.Y + 2, 12, 12, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L5));
-            }
-            
-            if(Entity.ID is T_Entity.TrashBag or T_Entity.Cardboard){
-                Game.AddCollider(new Collider(Coordinates_World.X + Entity.X + 2, Coordinates_World.Y + Entity.Y + 2, 12, 12, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L6));
-            }
-            
-            if(Entity.ID is T_Entity.Window){
-                Game.AddCollider(new Collider(Coordinates_World.X + Entity.X, Coordinates_World.Y + Entity.Y, 16, 16, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L1 | CollisionLayer.L6));
-            }
-            
-            if(Entity.ID is T_Entity.Door && Entity.Info is 0 or 2){
-                Game.AddCollider(new Collider(Coordinates_World.X + Entity.X, Coordinates_World.Y + Entity.Y, 16, 16, 0, KVP.Key.Position, (int)KVP.Key.UniqueID, CollisionLayer.L1));
-            }
+        }
+
+        foreach((EntityKey Key, Entity Entity__) in __UpdatedEntities){
+            World_Entities[Key] = Entity__;
         }
     }
 
@@ -413,7 +417,8 @@ internal static class GOLUWorld_World{
         }
         
         if(Game.Collision(new Collider(Coordinates_Player.X + PlayerOffset, Coordinates_Player.Y + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, CollisionLayer.L3), out Collider? HitEntity)){
-            if(World_Entities.TryGetValue(new EntityKey(HitEntity!.Value.Info2, (uint)HitEntity.Value.Info3), out Entity Entity)){
+            EntityKey __Key = new EntityKey(HitEntity!.Value.Info2, (uint)HitEntity.Value.Info3);
+            if(World_Entities.TryGetValue(__Key, out Entity Entity)){
                 if(Entity.ID == T_Entity.Mob_Spider){
                     if(Entity.Health > 0 && WL.Math.Random.Fast_Bool(0.8f)){
                         Player_Damage((uint)(WL.Math.Random.Fast_0_1() * 20), Player_Dead ? 16 : 0);
@@ -423,7 +428,8 @@ internal static class GOLUWorld_World{
         }
         
         if(Game.Collision(new Collider(Coordinates_Player.X + PlayerOffset, Coordinates_Player.Y + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, CollisionLayer.L4), out Collider? HitBlock)){
-            if(World_Blocks.TryGetValue(HitBlock!.Value.Info2, out Block Block)){
+            Vector2I __Key = HitBlock!.Value.Info2;
+            if(World_Blocks.TryGetValue(__Key, out Block Block)){
                 if(Block.ID == T_Block.Pit){
                     World_GoToWorld(T_World.Industrial);
                     Player_Damage((uint)WL.Math.Random.Fast_Int(25,50), 10);
@@ -451,8 +457,8 @@ internal static class GOLUWorld_World{
     /// <summary>
     /// Интеллект паука
     /// </summary>
-    internal static Entity World_AI_Spider(Entity Entity){
-        if(Entity.Health <= 0){ return Entity; }
+    internal static void World_AI_Spider(ref Entity Entity){
+        if(Entity.Health <= 0){ return; }
         
         int SpiderSpeed = WL.Math.Random.Fast_Bool(0.8f) ? 1 : 0;
                     
@@ -501,8 +507,6 @@ internal static class GOLUWorld_World{
                 DY < 0 ? TextureRotation.Rotate180 :
                 TextureRotation.None;
         }
-        
-        return Entity;
     }
     
     /// <summary>
@@ -581,6 +585,7 @@ internal static class GOLUWorld_World{
         }
 
         Vector2I Key = new Vector2I(Block__.X, Block__.Y);
+
         if(World_Blocks.ContainsKey(Key)){
             if(Block__.ID == T_Block.Empty){
                 World_Blocks.Remove(Key);
@@ -599,7 +604,8 @@ internal static class GOLUWorld_World{
         }
 
         if(!IgnoreEntities && Info_Block_Collide(Block__.ID)){
-            if(World_Entities.ContainsKey(new EntityKey(Key))){ World_SetEntity(new Entity{ X = Block__.X, Y = Block__.Y }, false, true); }
+            EntityKey Key__ = new EntityKey(Key);
+            if(World_Entities.ContainsKey(Key__)){ World_SetEntity(new Entity{ X = Block__.X, Y = Block__.Y }, false, true); }
         }
     }
 
@@ -617,7 +623,8 @@ internal static class GOLUWorld_World{
             }
         }
 
-        return World_Blocks.GetValueOrDefault(new Vector2I(X, Y), new Block{ ID = T_Block.Empty, X = X, Y = Y });
+        Vector2I Key = new Vector2I(X, Y);
+        return World_Blocks.TryGetValue(Key, out Block Block) ? Block : new Block{ ID = T_Block.Empty, X = X, Y = Y };
     }
 
     internal static int World_FloorTile(int V, int TileSize = 16){
@@ -640,7 +647,8 @@ internal static class GOLUWorld_World{
         __Seed *= (uint)Entity.Y;
         
         if(!IgnoreBlocks){
-            if(World_Blocks.TryGetValue(Key.Position, out Block __Found) && Info_Block_Collide(__Found.ID)){ return; }
+            Block __Block = World_GetBlock(Key.Position.X, Key.Position.Y, SnapToGrid: false);
+            if(Info_Block_Collide(__Block.ID)){ return; }
         }
 
         if(Entity is{ ID: T_Entity.Item, Info: (byte)T_Item.Empty }){
@@ -853,7 +861,8 @@ internal static class GOLUWorld_World{
             }
         }
 
-        return World_Ceilings.GetValueOrDefault(new Vector2I(X, Y), new Ceiling{ ID = T_Ceiling.Empty, X = X, Y = Y });
+        Vector2I Key = new Vector2I(X, Y);
+        return World_Ceilings.TryGetValue(Key, out Ceiling Ceiling) ? Ceiling : new Ceiling{ ID = T_Ceiling.Empty, X = X, Y = Y };
     }
     
     /// <summary>

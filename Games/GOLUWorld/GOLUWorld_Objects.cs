@@ -26,13 +26,17 @@ internal static class GOLUWorld_Objects{
         Chair      = 1,
         Table      = 2,
         Spikes     = 3,
+        /* Моб паук, если Health < 0 то мёртвый */
         Mob_Spider = 4,
+        /* Info == 1 значит это ель */
         Tree       = 5,
+        /* Info отвечает за то какой это предмет (T_Item) */
         Item       = 6,
         Crate      = 7,
         Grass      = 8,
         Bush       = 9,
         Error      = 10,
+        /* Info == 1 значит окно забаррикадированное, если Heatlh < 0 то разбивается */
         Window     = 11,
         TrashBag   = 12,
         Tire       = 13,
@@ -41,6 +45,7 @@ internal static class GOLUWorld_Objects{
         Grave      = 16,
         Door       = 17,
         Cardboard  = 18,
+        /* Info отвечает за номинал (T_Money) */
         Money      = 19,
         Trapdoor   = 20
     }

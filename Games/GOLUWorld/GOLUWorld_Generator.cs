@@ -188,7 +188,7 @@ internal static class GOLUWorld_Generator{
     /// </summary>
     internal static void Generator_GrassPatch(uint Seed){
         Seed += 111125;
-        for(int i = 0; i < 100; i++){
+        for(int i = 0; i < 200; i++){
             Seed -= 161616;
                     
             uint SeedOffset = (uint)i;
