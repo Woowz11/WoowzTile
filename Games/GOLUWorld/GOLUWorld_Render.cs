@@ -9,6 +9,7 @@ using static GOLUWorld.GOLUWorld_Info;
 using static GOLUWorld.GOLUWorld_UI;
 using static GOLUWorld.GOLUWorld_Player;
 using static GOLUWorld.GOLUWorld_World;
+using static GOLUWorld.GOLUWorld_Utility;
 
 namespace GOLUWorld;
 
@@ -41,7 +42,7 @@ internal static class GOLUWorld_Render{
         int Border_U = -BorderOffset;
         int Border_D = (int)C.Height + BorderOffset;
             
-        if(!(R.X < Border_L || R.X > Border_R || R.Y < Border_U || R.Y > Border_D)){
+        if(R.RenderAnyway || !(R.X < Border_L || R.X > Border_R || R.Y < Border_U || R.Y > Border_D)){
             __RenderQueue.Add(R);
 
             if(R.Reflect){
@@ -123,6 +124,11 @@ internal static class GOLUWorld_Render{
         
         __RenderQueue_Water.Add(new Renderable{ X = (int)SunPosition.X, Y = (int)SunPosition.Y, Texture = Texture_Light, Palette = Palette_Alpha, MultiplyColor = new ColorB(255, 255, 200, (byte)(DayAlpha * 255))});
         __RenderQueue_Water.Add(new Renderable{ X = (int)SunPosition.X, Y = (int)SunPosition.Y, Texture = Texture_Circle_16px, Palette = Palette_Alpha, MultiplyColor = new ColorB(255, 255, 255, (byte)(DayAlpha * 255))});
+
+        if(World_Type == T_World.Industrial){
+            Vector2I __Pos = Utility_WorldToScreen(Coordinates_Spawn);
+            Render_RenderQueue_Add(C, new Renderable{ Texture = Texture_Light_Ray, X = __Pos.X - 8, Y = __Pos.Y - 256 + 32, Z = Render_Layer_Object(Coordinates_Spawn.Y + 16), Palette = Palette_Alpha, RenderAnyway = true });
+        }
         
         Render_Ground  (C);
         Render_Decals  (C);
@@ -436,10 +442,13 @@ internal static class GOLUWorld_Render{
         __RenderPlayerPart(PlayerMouth, PlayerColor);
         __RenderPlayerPart(PlayerEyes, PlayerColor, UniqueReflectionTexture: Texture_Player_Eyes_Reflection);
 
+        ColorB RottenBlood = ColorB.Lerp(ColorB.White, ColorB.DarkGreen, WL.Math.Clamp01((Player_Rotting - 2) / 50));
         if(Player_Health < Player_HealthLow * 2){
             Texture PlayerBlood = Player_Health < Player_HealthLow ? Texture_Player_Blood_Strong : Texture_Player_Blood;
-            __RenderPlayerPart(PlayerBlood, ColorB.Lerp(ColorB.White, ColorB.DarkGreen, WL.Math.Clamp01((Player_Rotting - 2) / 50)));
+            __RenderPlayerPart(PlayerBlood, RottenBlood);
         }
+        
+        if(Player_BrokenLeg){ __RenderPlayerPart(Texture_Player_BrokenLeg, RottenBlood); }
     
         if(Player_LastTimeWereTreated_Timer > 0){
             __RenderPlayerPart(Texture_Player_Healed, null);
@@ -509,7 +518,10 @@ internal static class GOLUWorld_Render{
 
                     const int FadeDistance = 128;
 
-                    Result = ColorB.BlendAlpha(Result ?? Color, new ColorB((byte)WL.Math.Random.Fast_Int(128, 255), 0, 0, (byte)(WL.Math.Clamp01((float)Distance / FadeDistance) * 255)));
+                    float D = (float)Distance / FadeDistance;
+                    ColorB ColorFade = new ColorB((byte)WL.Math.Random.Fast_Int(128, 255), 0, 0, (byte)(WL.Math.Clamp01(D) * 255));
+                    if(D <= 0.001f){ ColorFade = __ShaderColor_GlowRed; }
+                    Result = ColorB.BlendAlpha(Result ?? Color, ColorFade);
                 }
 
                 if(DayAlpha == 0){

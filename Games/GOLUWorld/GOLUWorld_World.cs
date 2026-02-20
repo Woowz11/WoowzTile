@@ -44,9 +44,6 @@ internal static class GOLUWorld_World{
         Player_Money = 0;
         
         Player_ClearInventory();
-        Player_Inventory[0] = T_Item.Crowbar;
-        Player_Inventory[1] = T_Item.FirstAidKit;
-        Player_Inventory[2] = T_Item.GPS;
 
         uint __Seed = World_Seed - 17312;
         Player_Character_Mute = WL.Math.Random.Fast_Bool(0.1f, ref __Seed);
@@ -75,7 +72,7 @@ internal static class GOLUWorld_World{
 
         Player_Attack_Timer = 0;
 
-        World_Size = new Vector2U(200, 200);
+        World_Size = new Vector2U(500, 500);
         
         World_UpdatePalette(World);
         
@@ -86,7 +83,7 @@ internal static class GOLUWorld_World{
         bool __FindSpawnLocation = false;
         while(!__FindSpawnLocation){
             uint __Seed2 = UniqueSeed + 2269909;
-            Coordinates_Camera = new Vector2F(WL.Math.Random.Fast_Int(-(int)World_SizeWorld.X, (int)World_SizeWorld.X, ref UniqueSeed), WL.Math.Random.Fast_Int(-(int)World_SizeWorld.Y, (int)World_SizeWorld.Y, ref __Seed2));
+            Coordinates_Camera = new Vector2F(WL.Math.Random.Fast_Int(-(int)World_SizeWorld.X + 3, (int)World_SizeWorld.X - 3, ref UniqueSeed), WL.Math.Random.Fast_Int(-(int)World_SizeWorld.Y + 3, (int)World_SizeWorld.Y - 3, ref __Seed2));
             if(!Info_Block_Collide(World_GetBlock(Coordinates_PlayerWorld.X, Coordinates_PlayerWorld.Y, Relative: true).ID)){
                 __FindSpawnLocation = true;
             }
@@ -172,8 +169,12 @@ internal static class GOLUWorld_World{
     /// </summary>
     internal static void World_UpdateBlocks(){
         foreach(Block Block in World_Blocks.Values){
-            if(Info_Block_Collide(Block.ID)){
-                Game.AddCollider(new Collider(Coordinates_World.X + Block.X, Coordinates_World.Y + Block.Y, 16, 16, Block.Info, new Vector2I(Block.X, Block.Y)));
+            if(Block.ID == T_Block.Pit){
+                Game.AddCollider(new Collider(Coordinates_World.X + Block.X + 4, Coordinates_World.Y + Block.Y + 4, 16 - 4, 16 - 4, Block.Info, new Vector2I(Block.X, Block.Y), Layer: CollisionLayer.L4));
+            }else{
+                if(Info_Block_Collide(Block.ID)){
+                    Game.AddCollider(new Collider(Coordinates_World.X + Block.X, Coordinates_World.Y + Block.Y, 16, 16, Block.Info, new Vector2I(Block.X, Block.Y)));
+                }
             }
         }
     }
@@ -307,6 +308,7 @@ internal static class GOLUWorld_World{
             Player_Running = Game.KeyPressed(Key.Shift);
             uint __Player_Speed = Player_Speed(TD);
             if(Player_Health < Player_HealthLow){ __Player_Speed /= 2; }
+            if(__Player_Speed <= 0){ __Player_Speed = 1; }
 
             bool D = Game.KeyPressed(Key.D);
             bool A = Game.KeyPressed(Key.A);
@@ -410,15 +412,26 @@ internal static class GOLUWorld_World{
             }
         }
         
-        if(Game.Collision(new Collider(Coordinates_Player.X + PlayerOffset, Coordinates_Player.Y + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, CollisionLayer.L3), out Collider? Hit)){
-            bool DoDamage = true;
-
-            if(World_Entities.TryGetValue(new EntityKey(Hit.Value.Info2, (uint)Hit.Value.Info3), out Entity Entity)){
-                DoDamage = Entity.Health > 0;
+        if(Game.Collision(new Collider(Coordinates_Player.X + PlayerOffset, Coordinates_Player.Y + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, CollisionLayer.L3), out Collider? HitEntity)){
+            if(World_Entities.TryGetValue(new EntityKey(HitEntity!.Value.Info2, (uint)HitEntity.Value.Info3), out Entity Entity)){
+                if(Entity.ID == T_Entity.Mob_Spider){
+                    if(Entity.Health > 0 && WL.Math.Random.Fast_Bool(0.8f)){
+                        Player_Damage((uint)(WL.Math.Random.Fast_0_1() * 20), Player_Dead ? 16 : 0);
+                    }
+                }
             }
-            
-            if(DoDamage && WL.Math.Random.Fast_Bool(0.8f)){
-                Player_Damage((uint)(WL.Math.Random.Fast_0_1() * 20), Player_Dead ? 16 : 0);
+        }
+        
+        if(Game.Collision(new Collider(Coordinates_Player.X + PlayerOffset, Coordinates_Player.Y + PlayerOffset, PlayerSize, PlayerSize, 0, Vector2I.Zero, 0, CollisionLayer.L1, CollisionLayer.L4), out Collider? HitBlock)){
+            if(World_Blocks.TryGetValue(HitBlock!.Value.Info2, out Block Block)){
+                if(Block.ID == T_Block.Pit){
+                    World_GoToWorld(T_World.Industrial);
+                    Player_Damage((uint)WL.Math.Random.Fast_Int(25,50), 10);
+                    for(int i = 0; i < 10; i++){
+                        World_SpatterBlood(Coordinates_PlayerWorld.X + WL.Math.Random.Fast_Int(-20, 20), Coordinates_PlayerWorld.Y + WL.Math.Random.Fast_Int(-20, 20));
+                    }
+                    Player_BrokenLeg = true;
+                }
             }
         }
         
@@ -525,10 +538,10 @@ internal static class GOLUWorld_World{
     /// </summary>
     internal static void World_FootStep(){
         if(WL.Math.Random.Fast_Bool(0.1f)){
-            if(Player_Health < Player_HealthLow){
-                World_SpatterBlood(Coordinates_Player.X - Coordinates_World.X, Coordinates_Player.Y - Coordinates_World.Y);
+            if(Player_Health < Player_HealthLow || Player_BrokenLeg){
+                World_SpatterBlood(Coordinates_PlayerWorld.X, Coordinates_PlayerWorld.Y);
             }else{
-                World_AddDecal(new Decal{ X = Coordinates_Player.X - Coordinates_World.X, Y = Coordinates_Player.Y - Coordinates_World.Y, ID = T_Decal.FootStep }, 5);
+                World_AddDecal(new Decal{ X = Coordinates_PlayerWorld.X, Y = Coordinates_PlayerWorld.Y, ID = T_Decal.FootStep }, 5);
             }
         }
     }

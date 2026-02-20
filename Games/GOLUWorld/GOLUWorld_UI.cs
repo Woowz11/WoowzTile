@@ -121,7 +121,7 @@ internal static class GOLUWorld_UI{
             "[B] - ОТКЛЮЧАЕТ ГРАНИЦЫ",
             "[M] - УСКОР. ЦИКЛ ДНЯ И НОЧИ",
             "[HOME] - ТЕЛЕПОРТ В ЦЕНТР",
-            "[F1,F2,F3,F4] - ТЕСТОВОЕ",
+            "[F1,F2,F3,F4,F5] - ТЕСТОВОЕ",
             "",
             "[ДВИЖЕНИЕ + SHIFT] - ДВИГАТЬ ПРЕДМЕТЫ\nВ ИНВЕНТОРЕ"
         ];
@@ -365,8 +365,10 @@ internal static class GOLUWorld_UI{
         
         string Coordinates = Coordinates_Beautiful.X + " : " + Coordinates_Beautiful.Y;
         Vector2U __CoordinatesSize = Font_Default.TextSize(Coordinates);
-        Render_TextColorOutline(C, Coordinates, (int)(GPSOffset.X + GPSSize) - (int)__CoordinatesSize.X - 2, (int)(GPSOffset.Y + GPSSize) - (int)__CoordinatesSize.Y - 2, ColorB.Red, ColorB.Black);
+        Render_TextColorOutline(C, Coordinates, (int)(GPSOffset.X + GPSSize) - (int)__CoordinatesSize.X - 2, (int)(GPSOffset.Y + GPSSize) - 8 - 2, ColorB.Red, ColorB.Black);
 
+        Render_TextColorOutline(C, World_Type.ToString().ToUpper(), GPSOffset.X + 2, (int)(GPSOffset.Y + GPSSize) - 8 - 2, ColorB.Red, ColorB.Black);
+        
         for(int __Y__ = -(int)GPSSize/2; __Y__ < GPSSize/2; __Y__++){
             for(int __X__ = -(int)GPSSize/2; __X__ < GPSSize/2; __X__++){
                 byte Color = (byte)(Player_Energy > 0 ? WL.Math.Random.Fast_Byte() : 0);

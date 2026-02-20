@@ -431,7 +431,7 @@ internal static class GOLUWorld_Info{
                 if(!Info_Block_SupportGrass(B)){ return null; }
                 return B == T_Block.Ground_Sand
                     ? Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Cattail, 0, 10), (T_Entity.Empty, 0, 99)])
-                    : Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Bush, 0, 10), (T_Entity.Item, (byte)T_Item.Rock, 1), (T_Entity.HighGrass, 0, 10), (T_Entity.Grass, 0, 430), (T_Entity.Empty, 0, 320)]);
+                    : Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Bush, 0, 10), (T_Entity.Item, (byte)T_Item.Rock, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.HighGrass, 0, 10), (T_Entity.Grass, 0, 430), (T_Entity.Empty, 0, 320)]);
             }
             case 'т': {
                 Seed += Unique + 8543;

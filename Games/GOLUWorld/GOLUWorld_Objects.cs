@@ -200,6 +200,7 @@ internal static class GOLUWorld_Objects{
         internal ColorB?         MultiplyColor  = null;
         internal bool            Reflect        = false;
         internal Texture?        ReflectTexture = null;
+        internal bool            RenderAnyway   = false;
         
         public override string ToString(){
             return

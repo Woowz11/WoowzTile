@@ -47,6 +47,7 @@ internal static class GOLUWorld_Input{
                     Generator_DebugStructure(Coordinates_PlayerWorld.X / 16, Coordinates_PlayerWorld.Y / 16);
                 }
                 if(Key == Key.F4){ World_Start(); }
+                if(Key == Key.F5){ Player_Inventory[2] = T_Item.GPS; }
 
                 if(Key == Key.Tilde){
                     if(UI_Interface == T_Interface.None){ UI_Interface = T_Interface.Console; }else{

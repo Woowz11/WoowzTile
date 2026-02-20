@@ -200,6 +200,11 @@ internal static class GOLUWorld_Values{
         }
 
         /// <summary>
+        /// Сломана нога?
+        /// </summary>
+        internal static bool Player_BrokenLeg = false;
+        
+        /// <summary>
         /// Когда последний раз лечили
         /// </summary>
         internal static float Player_LastTimeWereTreated_Timer = 0;

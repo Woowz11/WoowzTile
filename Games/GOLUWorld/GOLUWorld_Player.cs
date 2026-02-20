@@ -20,7 +20,7 @@ internal static class GOLUWorld_Player{
     /// <summary>
     /// Скорость игрока
     /// </summary>
-    internal static uint Player_Speed(TickData TD) => (uint)(WL.Math.Max(1, (float)TD.DeltaTimeS * 100 * (Player_Running ? 1.5f : (Game.KeyPressed(Key.Control) ? 0.3f : 1))));
+    internal static uint Player_Speed(TickData TD) => (uint)(WL.Math.Max(1, (float)TD.DeltaTimeS * 100 * (Player_Running ? 1.5f : (Game.KeyPressed(Key.Control) ? 0.3f : 1))) * (Player_BrokenLeg ? 0.5f : 1));
     
     /// <summary>
     /// Очищает инвентарь
@@ -80,7 +80,7 @@ internal static class GOLUWorld_Player{
         
         Player_Health = WL.Math.SubU(Player_Health, Damage);
 
-        World_SpatterBlood(Coordinates_Player.X - Coordinates_World.X + WL.Math.Random.Fast_Int(-Range, Range), Coordinates_Player.Y - Coordinates_World.Y + WL.Math.Random.Fast_Int(-Range, Range));
+        World_SpatterBlood(Coordinates_PlayerWorld.X + WL.Math.Random.Fast_Int(-Range, Range), Coordinates_PlayerWorld.Y + WL.Math.Random.Fast_Int(-Range, Range));
 
         EmotionChange(T_Emotion.Happiness, -(int)Damage * 2);
 
@@ -96,7 +96,7 @@ internal static class GOLUWorld_Player{
         Player_Health += Heal;
         if(Player_Health > Player_Health_Max){ Player_Health = Player_Health_Max; }
 
-        if(FirstAidKit){ Player_LastTimeWereTreated_Timer = 60; SayThoughts(T_Thoughts.Heal); }
+        if(FirstAidKit){ Player_LastTimeWereTreated_Timer = 60; SayThoughts(T_Thoughts.Heal); Player_BrokenLeg = false; }
         
         EmotionChange(T_Emotion.Happiness, (int)(Heal / 2));
     }
