@@ -11,7 +11,7 @@ using static GOLUWorld.GOLUWorld_World;
 namespace GOLUWorld;
 
 internal class GOLUWorld : Game{
-    public override string Name(){ return Game_Name + " " + Game_Version; }
+    public override string Name(){ return Game_Name; }
 
     public override void Start(){
         WL.WoowzLib.OnMessage += __OnMessage;

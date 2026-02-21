@@ -192,8 +192,11 @@ internal static class GOLUWorld_World{
     /// Обновляет сущностей
     /// </summary>
     internal static void World_UpdateEntities(){
-        void AddCollider(Entity Entity, uint SizeOffset, CollisionLayer Layer){
-            Game.AddCollider(new Collider(Entity.X + Coordinates_World.X + (int)(SizeOffset/2), Entity.Y + Coordinates_World.Y + (int)(SizeOffset/2), 16 - SizeOffset, 16 - SizeOffset, 0, new Vector2I(Entity.X, Entity.Y), (int)Entity.UniqueID, Layer));
+        void AddCollider(Entity Entity, int X, int Y, uint W, uint H, CollisionLayer Layer){
+            Game.AddCollider(new Collider(Entity.X + Coordinates_World.X + X, Entity.Y + Coordinates_World.Y + Y, W, H, 0, new Vector2I(Entity.X, Entity.Y), (int)Entity.UniqueID, Layer));
+        }
+        void AddColliderBox(Entity Entity, uint SizeOffset, CollisionLayer Layer){
+            AddCollider(Entity, (int)(SizeOffset/2), (int)(SizeOffset/2), 16 - SizeOffset, 16 - SizeOffset, Layer);
         }
 
         Dictionary<EntityKey, Entity> __UpdatedEntities = [];
@@ -224,23 +227,71 @@ internal static class GOLUWorld_World{
             switch(Entity.ID){
                 case T_Entity.Debris:
                 case T_Entity.Table:
-                case T_Entity.Tree: AddCollider(Entity, 14, CollisionLayer.L1); break;
+                case T_Entity.Tree: AddColliderBox(Entity, 14, CollisionLayer.L1); break;
                 
-                case T_Entity.Spikes: AddCollider(Entity, 0, CollisionLayer.L2); break;
+                case T_Entity.Spikes: AddColliderBox(Entity, 0, CollisionLayer.L2); break;
                 
                 case T_Entity.Mob_Drone:
-                case T_Entity.Mob_Spider: AddCollider(Entity, 0, CollisionLayer.L3 | CollisionLayer.L6); break;
+                case T_Entity.Mob_Spider: if(!Entity.Dead){ AddColliderBox(Entity, 0, CollisionLayer.L3 | CollisionLayer.L6); } break;
                 
-                case T_Entity.Trap: AddCollider(Entity, 8, CollisionLayer.L3); break;
+                case T_Entity.Trap: AddColliderBox(Entity, 8, CollisionLayer.L3); break;
                 
-                case T_Entity.Crate: AddCollider(Entity, 4, CollisionLayer.L5); break;
+                case T_Entity.Crate: AddColliderBox(Entity, 4, CollisionLayer.L5); break;
                 
                 case T_Entity.TrashBag:
-                case T_Entity.Cardboard: AddCollider(Entity, 4, CollisionLayer.L6); break;
+                case T_Entity.Cardboard: AddColliderBox(Entity, 4, CollisionLayer.L6); break;
                 
-                case T_Entity.Window: AddCollider(Entity, 0, CollisionLayer.L1 | CollisionLayer.L6); break;
+                case T_Entity.Window: AddColliderBox(Entity, 0, CollisionLayer.L1 | CollisionLayer.L6); break;
                 
-                case T_Entity.Door: if(Entity.Info is 0 or 2){ AddCollider(Entity, 0, CollisionLayer.L1); } break;
+                case T_Entity.Door: if(Entity.Info is 0 or 2){ AddColliderBox(Entity, 0, CollisionLayer.L1); } break;
+
+                case T_Entity.Fence:{
+                    T_Entity U = World_GetEntity(Entity.X, Entity.Y - 16, SnapToGrid: false).ID;
+                    T_Entity D = World_GetEntity(Entity.X, Entity.Y + 16, SnapToGrid: false).ID;
+                    T_Entity L = World_GetEntity(Entity.X - 16, Entity.Y, SnapToGrid: false).ID;
+                    T_Entity R = World_GetEntity(Entity.X + 16, Entity.Y, SnapToGrid: false).ID;
+                    
+                    if(U == Entity.ID || D == Entity.ID){
+                        if(L == Entity.ID && R == Entity.ID){
+                            if(U == Entity.ID && D == Entity.ID){
+                                AddCollider(Entity, 7, 0, 2, 16, CollisionLayer.L1);
+                                AddCollider(Entity, 0, 7, 16, 2, CollisionLayer.L1);
+                            }else{
+                                if(D != Entity.ID){
+                                    AddCollider(Entity, 0, 7, 16, 2, CollisionLayer.L1);
+                                    AddCollider(Entity, 7, 0, 2 , 7, CollisionLayer.L1);
+                                }else{
+                                    AddCollider(Entity, 0, 7, 16, 2, CollisionLayer.L1);
+                                    AddCollider(Entity, 7, 9, 2 , 7, CollisionLayer.L1);
+                                }
+                            }
+                        }else{
+                            if(L == Entity.ID || R == Entity.ID){
+                                if(R == Entity.ID){
+                                    AddCollider(Entity, 9, 7, 7, 2, CollisionLayer.L1);
+                                }else{
+                                    AddCollider(Entity, 0, 7, 7, 2, CollisionLayer.L1);
+                                }
+
+                                if(D == Entity.ID && U == Entity.ID){
+                                    AddCollider(Entity, 7, 0, 2, 16, CollisionLayer.L1);
+                                }else{
+                                    if(D != Entity.ID){
+                                        AddCollider(Entity, 7, 0, 2, 9, CollisionLayer.L1);
+                                    }else{
+                                        AddCollider(Entity, 7, 7, 2, 9, CollisionLayer.L1);
+                                    }
+                                }
+                            }else{
+                                AddCollider(Entity, 7, 0, 2, 16, CollisionLayer.L1);
+                            }
+                        }
+                    }else{
+                        AddCollider(Entity, 0, 7, 16, 2, CollisionLayer.L1);
+                    }
+                    
+                    break;
+                }
             }
 
             if(UpdateEntity){
@@ -349,7 +400,7 @@ internal static class GOLUWorld_World{
     /// Обновляет игрока
     /// </summary>
     internal static void World_UpdatePlayer(TickData TD){
-        if(Cheat_Immortality){ if(Player_Health < 1){ Player_Health = 1; } }
+        if(Cheat_Immortality){ Player_Health = Player_Health_Max; Player_BrokenLeg = false; Player_Energy = Player_Energy_Max; }
 
         Player_Floor   = World_GetBlock  (Coordinates_PlayerWorld_Center.X, Coordinates_PlayerWorld_Center.Y, Relative: true);
         Player_Ceiling = World_GetCeiling(Coordinates_PlayerWorld_Center.X, Coordinates_PlayerWorld_Center.Y, Relative: true);
@@ -419,7 +470,6 @@ internal static class GOLUWorld_World{
         if(CanMove){
             Player_Running = Game.KeyPressed(Key.Shift);
             uint __Player_Speed = Player_Speed(TD);
-            if(Player_Health < Player_HealthLow){ __Player_Speed /= 2; }
             if(__Player_Speed <= 0){ __Player_Speed = 1; }
 
             bool D = Game.KeyPressed(Key.D);
@@ -675,8 +725,7 @@ internal static class GOLUWorld_World{
             }
         }
 
-        Vector2I Key = new Vector2I(X, Y);
-        return World_Blocks.TryGetValue(Key, out Block Block) ? Block : new Block{ ID = T_Block.Empty, X = X, Y = Y };
+        return World_Blocks.TryGetValue(new Vector2I(X, Y), out Block Block) ? Block : new Block{ ID = T_Block.Empty, X = X, Y = Y };
     }
 
     internal static int World_FloorTile(int V, int TileSize = 16){
@@ -722,10 +771,9 @@ internal static class GOLUWorld_World{
         if(World_Entities.ContainsKey(Key)){
             if(Entity.ID == T_Entity.Empty){
                 World_Entities.Remove(Key);
-            }
-            else{
+            }else{
                 Entity OldEntity = World_Entities[Key];
-                if(OldEntity.ID != Entity.ID){
+                if(OldEntity.ID != Entity.ID && OldEntity.ID != T_Entity.Fence){
                     World_Entities[Key] = Entity;
                 }
             }
@@ -734,6 +782,23 @@ internal static class GOLUWorld_World{
                 World_Entities[Key] = Entity;
             }
         }
+    }
+    
+    /// <summary>
+    /// Получает сущность
+    /// </summary>
+    internal static Entity World_GetEntity(int X, int Y, bool SnapToGrid = true, bool Relative = false, uint UniqueID = 0){
+        if(Relative){
+            X = World_FloorTile(X);
+            Y = World_FloorTile(Y);
+        }else{
+            if(SnapToGrid){
+                X *= 16;
+                Y *= 16;
+            }
+        }
+        
+        return World_Entities.TryGetValue(new EntityKey(new Vector2I(X, Y), UniqueID), out Entity Entity) ? Entity : new Entity{ ID = T_Entity.Empty, X = X, Y = Y };
     }
 
     /// <summary>
@@ -762,6 +827,8 @@ internal static class GOLUWorld_World{
             for(int Y__ = 0; Y__ < H; Y__++){
                 string Line = Lines[Y__];
                 for(int X__ = 0; X__ < W; X__++){
+                    if(X__ >= Line.Length){ continue; }
+                    
                     char C = Line[X__];
                     if(C == '.'){ continue; }
 
@@ -821,6 +888,8 @@ internal static class GOLUWorld_World{
             for(int Y__ = 0; Y__ < H; Y__++){
                 string Line = Lines[Y__];
                 for(int X__ = 0; X__ < W; X__++){
+                    if(X__ >= Line.Length){ continue; }
+                    
                     char C = Line[X__];
                     if(C == '.'){ continue; }
 
@@ -936,6 +1005,8 @@ internal static class GOLUWorld_World{
             for(int Y__ = 0; Y__ < H; Y__++){
                 string Line = Lines[Y__];
                 for(int X__ = 0; X__ < W; X__++){
+                    if(X__ >= Line.Length){ continue; }
+                    
                     char C = Line[X__];
                     if(C == '.'){ continue; }
 

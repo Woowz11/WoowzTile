@@ -20,7 +20,7 @@ internal static class GOLUWorld_Player{
     /// <summary>
     /// Скорость игрока
     /// </summary>
-    internal static uint Player_Speed(TickData TD) => (uint)(WL.Math.Max(1, (float)TD.DeltaTimeS * 100 * (Player_Running ? 1.5f : (Game.KeyPressed(Key.Control) ? 0.3f : 1))) * (Player_BrokenLeg ? 0.5f : 1));
+    internal static uint Player_Speed(TickData TD) => (uint)(WL.Math.Max(1, (float)TD.DeltaTimeS * 100 * (Player_Running ? 1.5f : (Game.KeyPressed(Key.Control) ? 0.3f : 1))) * (Player_BrokenLeg ? 0.5f : 1) * (Player_Health < Player_HealthLow || Player_Energy < 10 ? 0.5f : 1));
     
     /// <summary>
     /// Очищает инвентарь
@@ -116,7 +116,7 @@ internal static class GOLUWorld_Player{
     /// Убавляет энергии
     /// </summary>
     internal static void Player_PowerDown(uint Value){
-        if(Value == 0){ return; }
+        if(Value == 0 || Cheat_Immortality){ return; }
         
         Player_Energy = WL.Math.SubU(Player_Energy, Value);
     }

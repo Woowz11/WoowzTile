@@ -10,7 +10,7 @@ namespace GOLUWorld;
 internal static class GOLUWorld_Values{
     #region Константы игры
 
-        internal const string Game_Version = "1.0";
+        internal const string Game_Version = "1.1";
         internal const string Game_Name    = "GOLUWorld";
 
     #endregion
@@ -273,6 +273,11 @@ internal static class GOLUWorld_Values{
         /// Игрок не может разговаривать?
         /// </summary>
         internal static bool Player_Character_Mute;
+
+        /// <summary>
+        /// Игрок использует читы?
+        /// </summary>
+        internal static bool Player_UseCheats => Cheat_Immortality || Cheat_DisableWorldLimit || Cheat_FastCycleTime || Cheat_FastTime || Cheat_IgnoreColliders || Cheat_RenderColliders;
         
         /// <summary>
         /// Рендерить коллизии?

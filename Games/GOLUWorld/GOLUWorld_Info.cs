@@ -284,32 +284,52 @@ internal static class GOLUWorld_Info{
     /// <summary>
     /// Текстура сущности
     /// </summary>
-    internal static Texture Info_Entity_Texture(Entity E) => E.ID switch{
-        T_Entity.Chair      => Texture_Chair,
-        T_Entity.Table      => Texture_Table,
-        T_Entity.Spikes     => Texture_Spikes,
-        T_Entity.Tree       => E.Info == 2 ? Texture_Tree_Stump : Texture_Tree,
-        T_Entity.Item       => Info_Item_Texture((T_Item)E.Info),
-        T_Entity.Crate      => Texture_Crate,
-        T_Entity.Grass      => Texture_TallGrass,
-        T_Entity.Bush       => Texture_Bush,
-        T_Entity.Error      => Texture_Error,
-        T_Entity.Mob_Spider => E.Health > 0 ? (World_AnimationTimer > 0.5f ? Texture_Spider_Walk : Texture_Spider) : Texture_Spider_Dead,
-        T_Entity.Window     => E.Info == 1 ? Texture_Window_Boarded : Texture_Window,
-        T_Entity.TrashBag   => Texture_TrashBag,
-        T_Entity.Tire       => Texture_Tire,
-        T_Entity.HighGrass  => Texture_TallGrass_High,
-        T_Entity.Cattail    => Texture_Cattail,
-        T_Entity.Grave      => Texture_Grave,
-        T_Entity.Door       => E.Info is 1 or 3 ? Texture_Door_Open : Texture_Door,
-        T_Entity.Cardboard  => Texture_Cardboard,
-        T_Entity.Money      => Info_Money_Texture((T_Money)E.Info),
-        T_Entity.Trapdoor   => Texture_Trapdoor,
-        T_Entity.Trap       => E.Info == 1 ? Texture_Trap_Used : Texture_Trap,
-        T_Entity.Mob_Drone  => E.Health > 0 ? ((World_AnimationTimer % (0.05f * 2) >= 0.05f) ? Texture_Drone_Fly : Texture_Drone) : Texture_Drone_Dead,
-        T_Entity.Debris     => Texture_Debris,
+    internal static (Texture, bool?, bool?) Info_Entity_Texture(Entity E) => E.ID switch{
+        T_Entity.Chair      => (Texture_Chair, null, null),
+        T_Entity.Table      => (Texture_Table, null, null),
+        T_Entity.Spikes     => (Texture_Spikes, null, null),
+        T_Entity.Tree       => (E.Info == 2 ? Texture_Tree_Stump : Texture_Tree, null, null),
+        T_Entity.Item       => (Info_Item_Texture((T_Item)E.Info), null, null),
+        T_Entity.Crate      => (Texture_Crate, null, null),
+        T_Entity.Grass      => (Texture_TallGrass, null, null),
+        T_Entity.Bush       => (Texture_Bush, null, null),
+        T_Entity.Error      => (Texture_Error, null, null),
+        T_Entity.Mob_Spider => (E.Health > 0 ? (World_AnimationTimer > 0.5f ? Texture_Spider_Walk : Texture_Spider) : Texture_Spider_Dead, null, null),
+        T_Entity.Window     => (E.Info == 1 ? Texture_Window_Boarded : Texture_Window, null, null),
+        T_Entity.TrashBag   => (Texture_TrashBag, null, null),
+        T_Entity.Tire       => (Texture_Tire, null, null),
+        T_Entity.HighGrass  => (Texture_TallGrass_High, null, null),
+        T_Entity.Cattail    => (Texture_Cattail, null, null),
+        T_Entity.Grave      => (Texture_Grave, null, null),
+        T_Entity.Door       => (E.Info is 1 or 3 ? Texture_Door_Open : Texture_Door, null, null),
+        T_Entity.Cardboard  => (Texture_Cardboard, null, null),
+        T_Entity.Money      => (Info_Money_Texture((T_Money)E.Info), null, null),
+        T_Entity.Trapdoor   => (Texture_Trapdoor, null, null),
+        T_Entity.Trap       => (E.Info == 1 ? Texture_Trap_Used : Texture_Trap, null, null),
+        T_Entity.Mob_Drone  => (E.Health > 0 ? ((World_AnimationTimer % (0.05f * 2) >= 0.05f) ? Texture_Drone_Fly : Texture_Drone) : Texture_Drone_Dead, null, null),
+        T_Entity.Debris     => (Texture_Debris, null, null),
+        T_Entity.Fence      => ((Func<(Texture, bool?, bool?)>)(() => {
+            Texture Result = Texture_Fence;
+            bool Flip = false;
+
+            T_Entity U = World_GetEntity(E.X, E.Y - 16, SnapToGrid: false).ID;
+            T_Entity D = World_GetEntity(E.X, E.Y + 16, SnapToGrid: false).ID;
+            T_Entity L = World_GetEntity(E.X - 16, E.Y, SnapToGrid: false).ID;
+            T_Entity R = World_GetEntity(E.X + 16, E.Y, SnapToGrid: false).ID;
+            
+            if(U == E.ID || D == E.ID){
+                if(L == E.ID && R == E.ID){
+                    Result = D != E.ID ? Texture_Fence_Corner_T_Bottom : Texture_Fence_Corner_T_Top;   
+                }else{
+                    Result = L == E.ID || R == E.ID ? (D != E.ID ? Texture_Fence_Corner_Bottom : Texture_Fence_Corner_Top) : Texture_Fence_Side;
+                    Flip   = R == E.ID;
+                }
+            }
+            
+            return (Result, Flip, null);
+        }))(),
         
-        var _ => Texture_Error
+        var _ => (Texture_Error, null, null)
     };
 
     /// <summary>
@@ -328,6 +348,7 @@ internal static class GOLUWorld_Info{
         T_Entity.Door       => 0,
         T_Entity.Mob_Drone  => 0,
         T_Entity.Debris     => 0,
+        T_Entity.Fence      => 0,
         
         var _ => null
     };
@@ -426,6 +447,9 @@ internal static class GOLUWorld_Info{
             case 'G':
                 ID = T_Entity.Grave;
                 break;
+            case 'F':
+                ID = T_Entity.Fence;
+                break;
             case 'D':
                 Seed += Unique + 88329;
                 bool Open = WL.Math.Random.Fast_Bool(0.1f, ref Seed);
@@ -463,7 +487,10 @@ internal static class GOLUWorld_Info{
             case 'м':
                 Seed += Unique + 995321154;
                 return Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Empty, 0, 20), (T_Entity.TrashBag, 0, 20), (T_Entity.Cardboard, 0, 20), (T_Entity.Tire, 0, 10), (T_Entity.Trap, 0, 1)]);
-
+            case 'Ƒ':
+                ID = WL.Math.Random.Fast_Bool(ref Seed1) ? T_Entity.Fence : T_Entity.Empty;
+                break;
+            
             case '\r':
             case '\n':
             case '.':

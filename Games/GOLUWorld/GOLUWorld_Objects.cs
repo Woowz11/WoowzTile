@@ -51,7 +51,8 @@ internal static class GOLUWorld_Objects{
         /* Info == 1 значит использованное */
         Trap       = 21,
         Mob_Drone  = 22,
-        Debris     = 23
+        Debris     = 23,
+        Fence      = 24
     }
     
     internal enum T_Ceiling : byte{
@@ -211,23 +212,6 @@ internal static class GOLUWorld_Objects{
         internal bool            Reflect        = false;
         internal Texture?        ReflectTexture = null;
         internal bool            RenderAnyway   = false;
-        
-        public override string ToString(){
-            return
-                $"Renderable(" +
-                $"Type={Type}, " +
-                $"X={X}, Y={Y}, " +
-                $"W={W}, H={H}, " +
-                $"Z={Z}, " +
-                $"Rotation={Rotation}, " +
-                $"FlipX={FlipX}, FlipY={FlipY}, " +
-                $"Reflect={Reflect}, " +
-                $"Palette={(Palette != null ? Palette.GetType().Name : "null")}, " +
-                $"Texture={(Texture != null ? Texture.GetType().Name : "null")}, " +
-                $"ReflectTexture={(ReflectTexture != null ? ReflectTexture.GetType().Name : "null")}, " +
-                $"MultiplyColor={(MultiplyColor.HasValue ? MultiplyColor.Value.ToString() : "null")}" +
-                $")";
-        }
     }
     
     internal struct Structure{

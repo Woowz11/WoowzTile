@@ -62,11 +62,13 @@ new KeyValuePair<byte, ColorB>(14, new ColorB(19, 44, 51, 255)),
 * 'G' - Могила
 * 'w' - Окно
 * 'D' - Дверь
+* 'F' - Забор
 * 'Д' - [ГЕНЕРАТОР] Случайно, дерево или трава или палка или куст или пустота
 * 'д' - [ГЕНЕРАТОР] Случайно, трава или камень или куст или пустота
 * 'т' - [ГЕНЕРАТОР] Случайно, трава или высокая трава или пустота
 * 'М' - [ГЕНЕРАТОР] Случайная мебель, для дома или пустота
 * 'м' - [ГЕНЕРАТОР] Различный мусор или пустота
+* 'Ƒ' - [ГЕНЕРАТОР] Генерирует стену или пол (уникально для структуры), забор или пустоту
 
 ## Карта сущностей
 
@@ -80,6 +82,7 @@ new KeyValuePair<byte, ColorB>(14, new ColorB(19, 44, 51, 255)),
 ['Д'] = 7,
 ['D'] = 8,
 ['s'] = 9,
+['Ƒ'] = 10,
 
 new KeyValuePair<byte, ColorB>(1 , new ColorB(0, 0, 0, 0)),
 new KeyValuePair<byte, ColorB>(2 , new ColorB(109, 196, 255, 255)),
@@ -90,6 +93,7 @@ new KeyValuePair<byte, ColorB>(6 , new ColorB(89, 255, 0, 255)),
 new KeyValuePair<byte, ColorB>(7 , new ColorB(182, 255, 0, 255)),
 new KeyValuePair<byte, ColorB>(8 , new ColorB(255, 144, 0, 255)),
 new KeyValuePair<byte, ColorB>(9 , new ColorB(255, 0, 0, 182)),
+new KeyValuePair<byte, ColorB>(10, new ColorB(159, 255, 142, 182)),
 ```
 
 ## Потолки

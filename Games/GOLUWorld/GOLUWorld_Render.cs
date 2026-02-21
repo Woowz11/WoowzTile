@@ -375,7 +375,9 @@ internal static class GOLUWorld_Render{
 
             if(Entity.ID is T_Entity.Crate or T_Entity.Item){ Z++; }
 
-            Render_RenderQueue_Add(C, new Renderable{ Texture = Info_Entity_Texture(Entity), Palette = Entity.ID is T_Entity.Item or T_Entity.Money ? Palette_Default : Palette_World, X = WorldX + OffsetX, Y = WorldY + OffsetY, Rotation = Rotation, Z = Z, Reflect = __ReflectOffsetY.HasValue, MultiplyColor = Player_ClosestEntity.HasValue && Player_ClosestEntity_Distance < Player_Interact_Distance && Player_ClosestEntity.Value.Key == Entity.Key ? ColorB.Red : null}, __ReflectOffsetY ?? 0);
+            (Texture Texture, bool? FlipX, bool? FlipY) TextureInfo = Info_Entity_Texture(Entity);
+            
+            Render_RenderQueue_Add(C, new Renderable{ Texture = TextureInfo.Texture, Palette = Entity.ID is T_Entity.Item or T_Entity.Money ? Palette_Default : Palette_World, X = WorldX + OffsetX, Y = WorldY + OffsetY, Rotation = Rotation, Z = Z, Reflect = __ReflectOffsetY.HasValue, MultiplyColor = Player_ClosestEntity.HasValue && Player_ClosestEntity_Distance < Player_Interact_Distance && Player_ClosestEntity.Value.Key == Entity.Key ? ColorB.Red : null, FlipX = TextureInfo.FlipX ?? false, FlipY = TextureInfo.FlipY ?? false}, __ReflectOffsetY ?? 0);
 
             if(Entity.ID == T_Entity.Tree){
                 if(Entity.Info == 0){
@@ -411,14 +413,14 @@ internal static class GOLUWorld_Render{
     /// Рендерит игрока
     /// </summary>
     internal static void Render_Player(Image.ImageContext C){
-        Texture PlayerBody  = Texture_Player_Body;
-        Texture PlayerEyes  = Texture_Player_Eyes;
-        Texture PlayerNose  = Texture_Player_Nose;
-        Texture PlayerMouth = (Player_Dead ? Texture_Player_Mouth : Emotion_Happiness < 25 ? Texture_Player_Mouth_Sad : (Emotion_Happiness > 75 ? Texture_Player_Mouth_Happy : Texture_Player_Mouth));
-        if(Player_Character_Mute){ PlayerMouth = Texture_Player_Mouth_Mute; }
+        Texture Body  = Texture_Player_Body;
+        Texture Eyes  = Texture_Player_Eyes;
+        Texture Nose  = Texture_Player_Nose;
+        Texture Mouth = (Player_Dead ? Texture_Player_Mouth : Emotion_Happiness < 25 ? Texture_Player_Mouth_Sad : (Emotion_Happiness > 75 ? Texture_Player_Mouth_Happy : Texture_Player_Mouth));
+        if(Player_Character_Mute){ Mouth = Texture_Player_Mouth_Mute; }
         
         if(Player_BlinkTimer > 3 || Player_Dead){
-            PlayerEyes = Texture_Player_Eyes_Blink;
+            Eyes = Texture_Player_Eyes_Blink;
             if(Player_BlinkTimer > 3.25f){
                 Player_BlinkTimer = 0;
             }
@@ -429,8 +431,8 @@ internal static class GOLUWorld_Render{
         }
         
         int __PlayerZ = 0;
-        void __RenderPlayerPart(Texture T, ColorB? Color, int OffsetX = 0, int OffsetY = 0, Texture? UniqueReflectionTexture = null, TextureRotation Rotation = TextureRotation.None, int? ReflectOffsetY = null){
-            Render_RenderQueue_Add(C, new Renderable{ Texture = T, Palette = Palette_Default, X = Coordinates_Player.X + OffsetX, Y = Coordinates_Player.Y, FlipX = Player_TextureFlipped, MultiplyColor = Color, Z = Render_Layer_Object(Coordinates_Player.Y - Coordinates_World.Y + 1) + __PlayerZ, Reflect = true, ReflectTexture = UniqueReflectionTexture, Rotation = Rotation}, OffsetY, ReflectOffsetY);
+        void __RenderPlayerPart(Texture T, ColorB? Color, int OffsetX = 0, int OffsetY = 0, Texture? UniqueReflectionTexture = null, TextureRotation Rotation = TextureRotation.None, int? ReflectOffsetY = null, int TextureSize = 16){
+            Render_RenderQueue_Add(C, new Renderable{ Texture = T, Palette = Palette_Default, X = Coordinates_Player.X + OffsetX, Y = Coordinates_Player.Y, FlipX = Player_TextureFlipped, MultiplyColor = Color, Z = Render_Layer_Object(Coordinates_Player.Y - Coordinates_World.Y + 1) + __PlayerZ, Reflect = true, ReflectTexture = UniqueReflectionTexture, Rotation = Rotation}, OffsetY, ReflectOffsetY ?? OffsetY - (16 - TextureSize));
             __PlayerZ++;
         }
         
@@ -472,20 +474,25 @@ internal static class GOLUWorld_Render{
             __RenderPlayerPart(ItemTexture, null, __OffsetX, __OffsetY, Rotation: RotateItem, ReflectOffsetY: __OffsetY + ((int)ItemTexture.Height - 16));
         }
     
-        ColorB PlayerColor = ColorB.Lerp(ColorB.White, ColorB.DarkRed, WL.Math.Clamp01((Player_Rotting - 2) / 50));
+        ColorB BodyColor = ColorB.Lerp(ColorB.White, ColorB.DarkRed, WL.Math.Clamp01((Player_Rotting - 2) / 50));
         
-        __RenderPlayerPart(PlayerBody, PlayerColor);
-        __RenderPlayerPart(PlayerNose, PlayerColor);
-        __RenderPlayerPart(PlayerMouth, PlayerColor);
-        __RenderPlayerPart(PlayerEyes, PlayerColor, UniqueReflectionTexture: Texture_Player_Eyes_Reflection);
+        __RenderPlayerPart(Body, BodyColor);
+        __RenderPlayerPart(Nose, BodyColor);
+        __RenderPlayerPart(Mouth, BodyColor);
 
-        ColorB RottenBlood = ColorB.Lerp(ColorB.White, ColorB.DarkGreen, WL.Math.Clamp01((Player_Rotting - 2) / 50));
+        Texture EyesReflection = Texture_Player_Eyes_Reflection;
+        if(Player_UseCheats){
+            (EyesReflection, Eyes) = (Eyes, EyesReflection);
+        }
+        __RenderPlayerPart(Eyes, BodyColor, UniqueReflectionTexture: EyesReflection);
+
+        ColorB BloodColor = ColorB.Lerp(ColorB.White, ColorB.DarkGreen, WL.Math.Clamp01((Player_Rotting - 2) / 50));
         if(Player_Health < Player_HealthLow * 2){
             Texture PlayerBlood = Player_Health < Player_HealthLow ? Texture_Player_Blood_Strong : Texture_Player_Blood;
-            __RenderPlayerPart(PlayerBlood, RottenBlood);
+            __RenderPlayerPart(PlayerBlood, BloodColor);
         }
         
-        if(Player_BrokenLeg){ __RenderPlayerPart(Texture_Player_BrokenLeg, RottenBlood, -8, -8); }
+        if(Player_BrokenLeg){ __RenderPlayerPart(Texture_Player_BrokenLeg, BloodColor, -8, -8, TextureSize: 32); }
     
         if(Player_LastTimeWereTreated_Timer > 0){
             __RenderPlayerPart(Texture_Player_Healed, null);

@@ -454,7 +454,7 @@ internal static class GOLUWorld_UI{
     /// <summary>
     /// Название окна
     /// </summary>
-    internal static string UI_WindowTitle => Player_ClosestEntity?.ID + " | " + Player_ClosestEntity_Distance;
+    internal static string UI_WindowTitle => Game_Version;
 
     /// <summary>
     /// Финальный UI рендер
