@@ -438,5 +438,15 @@ internal static class GOLUWorld_Values{
         /// </summary>
         internal static byte UI_MenuSelectedButton = 0;
 
-    #endregion
+        /// <summary>
+        /// Открытая сущность
+        /// </summary>
+        internal static Entity? UI_OpenEntity = null;
+
+        /// <summary>
+        /// Выбранный слот
+        /// </summary>
+        internal static byte UI_SelectedSlot = 0;
+
+        #endregion
 }

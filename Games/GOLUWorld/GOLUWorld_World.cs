@@ -61,7 +61,7 @@ internal static class GOLUWorld_World{
     /// Запускает указанный уровень
     /// </summary>
     internal static void World_GoToWorld(T_World World){
-        Logger.Info("Добро пожаловать в " + World.ToString() + "!");
+        Logger.Info("Добро пожаловать в " + World + "!");
         
         Game.SpecialRender((C) => {
             Texture_Loading.Render(C, Palette_Default);
@@ -236,7 +236,7 @@ internal static class GOLUWorld_World{
                 
                 case T_Entity.Trap: AddColliderBox(Entity, 8, CollisionLayer.L3); break;
                 
-                case T_Entity.Crate: AddColliderBox(Entity, 4, CollisionLayer.L5); break;
+                case T_Entity.Crate: AddColliderBox(Entity, 4, CollisionLayer.L5 | CollisionLayer.L6); break;
                 
                 case T_Entity.TrashBag:
                 case T_Entity.Cardboard: AddColliderBox(Entity, 4, CollisionLayer.L6); break;
@@ -454,7 +454,7 @@ internal static class GOLUWorld_World{
                 float DY = Entity.Y - Coordinates_PlayerWorld_Center.Y;
                 float DistanceSquare = WL.Math.Sqr(DX) + WL.Math.Sqr(DY);
 
-                if(Info_Entity_Interacting(Entity.ID) && DistanceSquare < Player_ClosestEntity_Distance){
+                if(Info_Entity_Interacting(Entity) && DistanceSquare < Player_ClosestEntity_Distance){
                     Player_ClosestEntity_Distance = DistanceSquare;
                     Player_ClosestEntity = Entity;
                 }
@@ -1069,7 +1069,9 @@ internal static class GOLUWorld_World{
                 World_SpatterBlood(Entity.X, Entity.Y);
                 break;
             
-            case T_Entity.Window when Entity.Info == 0:{
+            case T_Entity.Crate: if(Entity.Dead){ Entity.Info = 1; Entity.InfoData[2] = (byte)T_Item.Mushroom; Entity.InfoData[11] = (byte)T_Item.Pipe; } break;
+            
+            case T_Entity.Window when Entity.Info == 0: {
                 DoRemove = true;
                 for(int i = 0; i < 6; i++){
                     World_AddDecal(new Decal{ ID = T_Decal.Glass, X = Entity.X, Y = Entity.Y}, 16, true);
@@ -1083,7 +1085,7 @@ internal static class GOLUWorld_World{
                 break;
             }
             
-            case T_Entity.TrashBag or T_Entity.Cardboard when Entity.Dead:{
+            case T_Entity.TrashBag or T_Entity.Cardboard when Entity.Dead: {
                 DoRemove = true;
                 for(int i = 0; i < 6; i++){
                     World_AddDecal(new Decal{ ID = Info_Decal_RandomTrash(), X = Entity.X, Y = Entity.Y}, 16, true);

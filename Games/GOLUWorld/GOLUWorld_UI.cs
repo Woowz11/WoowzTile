@@ -62,7 +62,7 @@ internal static class GOLUWorld_UI{
     /// Рендерит задний фон главного меню
     /// </summary>
     internal static void UI_RenderMainMenu_Background(Image.ImageContext C, TickData TD){
-        Texture_GOLU.RenderTiles(C, Palette_Default, -(int)(WL.Math.DCos((float)TD.DeltaTick / 2) * 128), -(int)(WL.Math.DSin((float)TD.DeltaTick / 2) * 128), 3, 3, MultiplyColor: ColorB.White.SetA(64));
+        Texture_GOLU.RenderTiles(C, Palette_Default, -(int)(WL.Math.DCos((float)TD.DeltaTick / 2) * 128 * 4), -(int)(WL.Math.DSin((float)TD.DeltaTick / 2) * 128 * 4), 6, 6, MultiplyColor: ColorB.Random.SetA(5));
     }
     
     /// <summary>
@@ -84,15 +84,15 @@ internal static class GOLUWorld_UI{
         Font_Default.Render(C, Palette_Default, Game_Version, 3, (int)(C.Height - 8 - 3));
 
         void RenderGOLU(float SinOffset, ColorB MultiplyColor){
-            Texture_G.Render(C, Palette_Default, (int)(C.Width / 2f - Texture_G.Width / 2f - Texture_G.Width * 1.5f), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2     + SinOffset) * 10), MultiplyColor: MultiplyColor);
-            Texture_O.Render(C, Palette_Default, (int)(C.Width / 2f - Texture_G.Width / 2f - Texture_G.Width /   2f), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 1 + SinOffset) * 10), MultiplyColor: MultiplyColor);
-            Texture_L.Render(C, Palette_Default, (int)(C.Width / 2f - Texture_G.Width / 2f + Texture_G.Width /   2f), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 2 + SinOffset) * 10), MultiplyColor: MultiplyColor);
-            Texture_U.Render(C, Palette_Default, (int)(C.Width / 2f - Texture_G.Width / 2f + Texture_G.Width * 1.5f), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 3 + SinOffset) * 10), MultiplyColor: MultiplyColor);
+            Texture_G.Render(C, Palette_Default, (int)(C.Width / 2f - Texture_G.Width / 2f - Texture_G.Width * 1.5f) + (byte)(WL.Math.DCos((float)TD.DeltaTick * 2     + SinOffset) * 10), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2     + SinOffset) * 10), MultiplyColor: MultiplyColor);
+            Texture_O.Render(C, Palette_Default, (int)(C.Width / 2f - Texture_G.Width / 2f - Texture_G.Width /   2f) + (byte)(WL.Math.DCos((float)TD.DeltaTick * 2 + 1 + SinOffset) * 10), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 1 + SinOffset) * 10), MultiplyColor: MultiplyColor);
+            Texture_L.Render(C, Palette_Default, (int)(C.Width / 2f - Texture_G.Width / 2f + Texture_G.Width /   2f) + (byte)(WL.Math.DCos((float)TD.DeltaTick * 2 + 2 + SinOffset) * 10), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 2 + SinOffset) * 10), MultiplyColor: MultiplyColor);
+            Texture_U.Render(C, Palette_Default, (int)(C.Width / 2f - Texture_G.Width / 2f + Texture_G.Width * 1.5f) + (byte)(WL.Math.DCos((float)TD.DeltaTick * 2 + 3 + SinOffset) * 10), 30 + (byte)(WL.Math.DSin((float)TD.DeltaTick * 2 + 3 + SinOffset) * 10), MultiplyColor: MultiplyColor);
         }
-        RenderGOLU(-0.2f, ColorB.Black.SetA((byte)(255 * 0.2f)));
-        RenderGOLU(-0.4f, ColorB.Black.SetA((byte)(255 * 0.2f)));
-        RenderGOLU(-0.6f, ColorB.Black.SetA((byte)(255 * 0.2f)));
-        RenderGOLU(-0.8f, ColorB.Black.SetA((byte)(255 * 0.2f)));
+
+        for(int i = 0; i < 10; i++){
+            RenderGOLU(-0.1f * i, ColorB.Black.SetA((byte)(255 * 0.1f)));
+        }
         RenderGOLU(0, ColorB.White);
 
         C.Fill((int)(C.Width / 2f - Texture_G.Width / 2f - Texture_G.Width * 1.5F), 75, 127, 2, ColorB.Black);
@@ -198,32 +198,54 @@ internal static class GOLUWorld_UI{
             Info_Item_Icon(Item).Render(C, Palette_Default, X + 1, Y + 1);
         }
     }
+
+    /// <summary>
+    /// Рендерит кол-во денег
+    /// </summary>
+    internal static void UI_RenderMoney(Image.ImageContext C){
+        string Money = Player_Money.ToString();
+        int MoneyX = (int)(C.Width - Font_Default.TextSize(Money).X) - 10;
+        Render_TextColorOutline(C, Money, MoneyX, 5, ColorB.Red, ColorB.White);
+        Texture_Money.Render(C, Palette_Default, MoneyX - 17, 2);
+    }
+
+    /// <summary>
+    /// Рендерит слоты хранилища 12
+    /// </summary>
+    internal static void UI_RenderSlots_Storage12(Image.ImageContext C, int X, int Y, T_Item Item1, T_Item Item2, T_Item Item3, T_Item Item4, T_Item Item5, T_Item Item6, T_Item Item7, T_Item Item8, T_Item Item9, T_Item Item10, T_Item Item11, T_Item Item12, int SelectedSlot){
+        void RenderSlot(Image.ImageContext C, byte ID, int X__, int Y__, T_Item Item, bool Selected) => UI_RenderSlot(C, X + X__ * 36, Y + Y__ * 36, Item, Selected);
+        
+        RenderSlot(C, 0 , 0, 0, Item1 , SelectedSlot == 0 );
+        RenderSlot(C, 1 , 1, 0, Item2 , SelectedSlot == 1 );
+        RenderSlot(C, 2 , 2, 0, Item3 , SelectedSlot == 2 );
+        RenderSlot(C, 3 , 3, 0, Item4 , SelectedSlot == 3 );
+        RenderSlot(C, 4 , 4, 0, Item5 , SelectedSlot == 4 );
+        RenderSlot(C, 5 , 5, 0, Item6 , SelectedSlot == 5 );
+                
+        RenderSlot(C, 6 , 0, 1, Item7 , SelectedSlot == 6 );
+        RenderSlot(C, 7 , 1, 1, Item8 , SelectedSlot == 7 );
+        RenderSlot(C, 8 , 2, 1, Item9 , SelectedSlot == 8 );
+        RenderSlot(C, 9 , 3, 1, Item10, SelectedSlot == 9 );
+        RenderSlot(C, 10, 4, 1, Item11, SelectedSlot == 10);
+        RenderSlot(C, 11, 5, 1, Item12, SelectedSlot == 11);
+    }
+    
+    /// <summary>
+    /// Рендерит слоты инвентаря
+    /// </summary>
+    internal static void UI_RenderSlots_Inventory(Image.ImageContext C, int X, int Y) => UI_RenderSlots_Storage12(C, X, Y, Player_Inventory[0], Player_Inventory[1], Player_Inventory[2], Player_Inventory[3], Player_Inventory[4], Player_Inventory[5], Player_Inventory[6], Player_Inventory[7], Player_Inventory[8], Player_Inventory[9], Player_Inventory[10], Player_Inventory[11], Player_InventorySelectedSlot);
     
     /// <summary>
     /// Рендерит инвентарь
     /// </summary>
     internal static void UI_RenderInventory(Image.ImageContext C){
-        void RenderSlot(Image.ImageContext C, byte ID, int X, int Y) => UI_RenderSlot(C, 20 + X * 36, 30 + Y * 36, Player_Inventory[ID], Player_InventorySelectedSlot == ID);
-        
         C.Fill(10, 20, C.Width - 20, C.Height - 40, ColorB.LightGray);
         C.Border(10, 20, C.Width - 20, C.Height - 40, 1, ColorB.Black);
-                
-        RenderSlot(C, 0 , 0, 0);
-        RenderSlot(C, 1 , 1, 0);
-        RenderSlot(C, 2 , 2, 0);
-        RenderSlot(C, 3 , 3, 0);
-        RenderSlot(C, 4 , 4, 0);
-        RenderSlot(C, 5 , 5, 0);
-                
-        RenderSlot(C, 6 , 0, 1);
-        RenderSlot(C, 7 , 1, 1);
-        RenderSlot(C, 8 , 2, 1);
-        RenderSlot(C, 9 , 3, 1);
-        RenderSlot(C, 10, 4, 1);
-        RenderSlot(C, 11, 5, 1);
 
-        C.Fill(20, 110, C.Width - 40, C.Height - 140, ColorB.Gray);
-        C.Border(20, 110, C.Width - 40, C.Height - 140, 1, ColorB.Black);
+        UI_RenderSlots_Inventory(C, 20, 30);
+
+        C.Fill(20, 110, C.Width - 42, C.Height - 140, ColorB.Gray);
+        C.Border(20, 110, C.Width - 42, C.Height - 140, 1, ColorB.Black);
         
         T_Item Item = Player_ItemInHands;
         
@@ -232,24 +254,62 @@ internal static class GOLUWorld_UI{
                     
             Font_Default.Render(C, Palette_Default, Name, 20 + 2, 110 + 2);
             string ItemID = "[" + (byte)Item + "]";
-            Font_Default.Render(C, Palette_Default, ItemID, (int)C.Width - 22 - (int)Font_Default.TextSize(ItemID).X, 110 + 2);
+            Font_Default.Render(C, Palette_Default, ItemID, (int)C.Width - 24 - (int)Font_Default.TextSize(ItemID).X, 110 + 2);
                     
-            C.Fill(20, 110 + 11, C.Width - 40, 1, ColorB.Black);
+            C.Fill(20, 110 + 11, C.Width - 42, 1, ColorB.Black);
                     
             Font_Default.Render(C, Palette_Default, Info_Item_Description(Item), 20 + 2, 110 + 2 + 11);
         }
 
-        string Money = Player_Money.ToString();
-        int MoneyX = (int)(C.Width - Font_Default.TextSize(Money).X) - 10;
-        Render_TextColorOutline(C, Money, MoneyX, 5, ColorB.Red, ColorB.White);
-        Texture_Money.Render(C, Palette_Default, MoneyX - 17, 2);
+        UI_RenderMoney(C);
     }
 
     /// <summary>
     /// Рендерит хранилище
     /// </summary>
     internal static void UI_RenderStorage(Image.ImageContext C){
+        C.Fill(10, 20, C.Width - 20, C.Height - 40, ColorB.LightGray);
+        C.Border(10, 20, C.Width - 20, C.Height - 40, 1, ColorB.Black);
+
+        Data StorageData = UI_OpenEntity!.Value.InfoData;
         
+        UI_RenderSlots_Storage12(C, 20, 30,
+            (T_Item)StorageData[0 ],
+            (T_Item)StorageData[1 ],
+            (T_Item)StorageData[2 ],
+            (T_Item)StorageData[3 ],
+            (T_Item)StorageData[4 ],
+            (T_Item)StorageData[5 ],
+            (T_Item)StorageData[6 ],
+            (T_Item)StorageData[7 ],
+            (T_Item)StorageData[8 ],
+            (T_Item)StorageData[9 ],
+            (T_Item)StorageData[10],
+            (T_Item)StorageData[11],
+            UI_SelectedSlot - 12);
+
+        C.Fill(20, 99 + 2 + 2, C.Width - 20 - 20 - 2, 1, ColorB.Black);
+        
+        UI_RenderSlots_Inventory(C, 20, 99 + 2 + 4 + 2);
+
+        C.Fill(20, 179, C.Width - 42, 53, ColorB.Gray);
+        C.Border(20, 179, C.Width - 42, 53, 1, ColorB.Black);
+        
+        T_Item Item = UI_SelectedSlot > 12 ? (T_Item)StorageData[UI_SelectedSlot - 12] : Player_ItemInHands;
+        
+        if(Item != T_Item.Empty){
+            string Name = Info_Item_Name(Item);
+                    
+            Font_Default.Render(C, Palette_Default, Name, 20 + 2, 179 + 2);
+            string ItemID = "[" + (byte)Item + "]";
+            Font_Default.Render(C, Palette_Default, ItemID, (int)C.Width - 24 - (int)Font_Default.TextSize(ItemID).X, 179 + 2);
+                    
+            C.Fill(20, 179 + 11, C.Width - 42, 1, ColorB.Black);
+                    
+            Font_Default.Render(C, Palette_Default, Info_Item_Description(Item), 20 + 2, 179 + 2 + 11);
+        }
+        
+        UI_RenderMoney(C);
     }
 
     /// <summary>

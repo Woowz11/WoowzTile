@@ -46,7 +46,7 @@ internal static class GOLUWorld_Input{
                     case Key.F2: UpdSeed(); World_GoToWorld(T_World.Industrial); break;
                     case Key.F3: Generator_DebugStructure(Coordinates_PlayerWorld.X / 16, Coordinates_PlayerWorld.Y / 16); break;
                     case Key.F4: World_Start(); break;
-                    case Key.F5: Player_Inventory[2] = T_Item.GPS; break;
+                    case Key.F5: Player_Inventory[1] = T_Item.Destroyer; Player_Inventory[2] = T_Item.GPS; break;
                     case Key.F6: World_SetBlock(new Block{ ID = T_Block.Bricks, X = Coordinates_PlayerWorld.X/16, Y = (Coordinates_PlayerWorld.Y)/16 + 1}); break;
                 }
 
@@ -140,27 +140,15 @@ internal static class GOLUWorld_Input{
                     
                     if(__Right){
                         switch(Player_InventorySelectedSlot){
-                            case > 5:{
-                                if(Player_InventorySelectedSlot < 11){ Player_InventorySelectedSlot++; }
-                                break;
-                            }
-                            
-                            case < 5:
-                                Player_InventorySelectedSlot++;
-                                break;
+                            case > 5: if(Player_InventorySelectedSlot < 11){ Player_InventorySelectedSlot++; } break;
+                            case < 5: Player_InventorySelectedSlot++; break;
                         }
                     }
 
                     if(__Left){
                         switch(Player_InventorySelectedSlot){
-                            case > 5:{
-                                if(Player_InventorySelectedSlot > 6){ Player_InventorySelectedSlot--; }
-                                break;
-                            }
-                            
-                            case > 0:
-                                Player_InventorySelectedSlot--;
-                                break;
+                            case > 5: if(Player_InventorySelectedSlot > 6){ Player_InventorySelectedSlot--; } break;
+                            case > 0: Player_InventorySelectedSlot--; break;
                         }
                     }
 
@@ -191,6 +179,111 @@ internal static class GOLUWorld_Input{
                     }
                 }else if(UI_Interface == T_Interface.Console){
                     Player_Console(Key);
+                }else if(UI_Interface == T_Interface.Storage12){
+                    const byte Columns = 6;
+                    const byte Rows = 4;
+
+                    byte GetRow(byte Index) => Index >= 12 ? (byte)((Index - 12) / Columns) : (byte)((Index / Columns) + 2);
+                    byte GetCol(byte Index) => (byte)(Index % Columns);
+                    byte FromRowCol(byte Row, byte Col) => Row < 2 ? (byte)(12 + Row * Columns + Col) : (byte)((Row - 2) * Columns + Col);
+
+                    void MoveSelectedSlot(ref byte Slot, int DRow, int DCol){
+                        byte Row = GetRow(Slot);
+                        byte Col = GetCol(Slot);
+
+                        int NewRow = Row + DRow;
+                        int NewCol = Col + DCol;
+
+                        NewCol = WL.Math.ClampI(NewCol, 0, Columns - 1);
+                        NewRow = WL.Math.ClampI(NewRow, 0, Rows - 1);
+
+                        Slot = FromRowCol((byte)NewRow, (byte)NewCol);
+                    }
+                    
+                    void MoveInventory(ref byte Slot, byte SelectedSlot, byte PreviousSelectedSlot, int DRow, int DCol){
+                        if(SelectedSlot >= 12){ return; }
+
+                        if (PreviousSelectedSlot >= 12){
+                            Slot = FromRowCol(GetRow(Slot), GetCol(SelectedSlot));
+                            return;
+                        }
+
+                        byte RowSlot = GetRow(Slot);
+                        byte ColSlot = GetCol(Slot);
+
+                        int NewRow = RowSlot + DRow;
+                        int NewCol = ColSlot + DCol;
+
+                        NewRow = WL.Math.ClampI(NewRow, 2, 3);
+                        NewCol = WL.Math.ClampI(NewCol, 0, Columns - 1);
+
+                        Slot = FromRowCol((byte)NewRow, (byte)NewCol);
+                    }
+
+                    byte OldSlot = UI_SelectedSlot;
+                    T_Item OldItem;
+                    if(OldSlot < 12){
+                        OldItem = Player_Inventory[OldSlot];
+                    }else{
+                        OldItem = (T_Item)UI_OpenEntity!.Value.InfoData[OldSlot - 12];
+                    }
+                    
+                    byte PreviousUI = UI_SelectedSlot;
+
+                    if(__Right){
+                        MoveSelectedSlot(ref UI_SelectedSlot, 0, 1);
+                        MoveInventory(ref Player_InventorySelectedSlot, UI_SelectedSlot, PreviousUI, 0, 1);
+                    }
+                    
+                    if(__Left){
+                        MoveSelectedSlot(ref UI_SelectedSlot, 0, -1);
+                        MoveInventory(ref Player_InventorySelectedSlot, UI_SelectedSlot, PreviousUI, 0, -1);
+                    }
+                    
+                    if(__Down){
+                        MoveSelectedSlot(ref UI_SelectedSlot, 1, 0);
+                        MoveInventory(ref Player_InventorySelectedSlot, UI_SelectedSlot, PreviousUI, 1, 0);
+                    }
+                    
+                    if(__Up){
+                        MoveSelectedSlot(ref UI_SelectedSlot, -1, 0);
+                        MoveInventory(ref Player_InventorySelectedSlot, UI_SelectedSlot, PreviousUI, -1, 0);
+                    }
+
+
+                    if(Game.KeyPressed(Key.Shift)){
+                        T_Item NewItem;
+                        if(UI_SelectedSlot < 12){
+                            NewItem = Player_Inventory[UI_SelectedSlot];
+                        }else{
+                            NewItem = (T_Item)UI_OpenEntity!.Value.InfoData[UI_SelectedSlot - 12];
+                        }
+
+                        Entity OpenEntity = UI_OpenEntity!.Value;
+                        
+                        switch(UI_SelectedSlot){
+                            case < 12:
+                                Player_Inventory[UI_SelectedSlot] = OldItem;
+                                break;
+                            
+                            case >= 12:
+                                OpenEntity.InfoData[UI_SelectedSlot - 12] = (byte)OldItem;
+                                break;
+                        }
+
+                        switch(OldSlot){
+                            case < 12:
+                                Player_Inventory[OldSlot] = NewItem;
+                                break;
+                            
+                            case >= 12:
+                                OpenEntity.InfoData[OldSlot - 12] = (byte)NewItem;
+                                break;
+                        }
+
+                        World_Entities[OpenEntity.Key] = OpenEntity;
+                        UI_OpenEntity = OpenEntity;
+                    }
                 }
             }
         }

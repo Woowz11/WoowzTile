@@ -290,7 +290,7 @@ internal static class GOLUWorld_Info{
         T_Entity.Spikes     => (Texture_Spikes, null, null),
         T_Entity.Tree       => (E.Info == 2 ? Texture_Tree_Stump : Texture_Tree, null, null),
         T_Entity.Item       => (Info_Item_Texture((T_Item)E.Info), null, null),
-        T_Entity.Crate      => (Texture_Crate, null, null),
+        T_Entity.Crate      => (E.Info == 1 ? Texture_Crate_Open : Texture_Crate, null, null),
         T_Entity.Grass      => (Texture_TallGrass, null, null),
         T_Entity.Bush       => (Texture_Bush, null, null),
         T_Entity.Error      => (Texture_Error, null, null),
@@ -356,8 +356,20 @@ internal static class GOLUWorld_Info{
     /// <summary>
     /// Взаимодействующие сущности
     /// </summary>
-    internal static bool Info_Entity_Interacting(T_Entity E) => E is T_Entity.Item or T_Entity.Door or T_Entity.Money or T_Entity.Trapdoor;
+    internal static bool Info_Entity_Interacting(Entity E) => E.ID is T_Entity.Item or T_Entity.Door or T_Entity.Money or T_Entity.Trapdoor || E is{ ID: T_Entity.Crate, Info: 1 };
 
+    /// <summary>
+    /// Отображаемый текст у взаимодействующих сущностей
+    /// </summary>
+    internal static string? Info_Entity_InteractText(Entity E) => E.ID switch{
+        T_Entity.Item when E.Info != (byte)T_Item.Empty => Info_Item_Name((T_Item)E.Info),
+        T_Entity.Money => Info_Money_Cost((T_Money)E.Info) + "g",
+        T_Entity.Trapdoor => "СПУСТИТСЯ? (БЕЗВОЗВРАТНО)",
+        T_Entity.Door => E.Info is 0 or 2 ? "ОТКРЫТЬ" : "ЗАКРЫТЬ",
+        T_Entity.Crate => "ОСМОТР",
+        var _ => null
+    };
+    
     /// <summary>
     /// Случайная позиция для спавна сущности?
     /// </summary>

@@ -32,6 +32,7 @@ internal static class GOLUWorld_Objects{
         Tree       = 5,
         /* Info отвечает за то какой это предмет (T_Item) */
         Item       = 6,
+        /* Info == 1 значит ящик открытый */
         Crate      = 7,
         Grass      = 8,
         Bush       = 9,
@@ -178,6 +179,7 @@ internal static class GOLUWorld_Objects{
         internal T_Entity        ID         = T_Entity.Empty;
         internal byte            Info       = 0;
         internal Vector2I        InfoVector = Vector2I.Zero;
+        internal Data            InfoData   = new Data();
         internal TextureRotation Rotation   = TextureRotation.None;
         internal uint            Health     = 100;
         internal bool            Dead       => Health == 0;
@@ -186,12 +188,53 @@ internal static class GOLUWorld_Objects{
         internal EntityKey Key => new EntityKey(new Vector2I(X, Y), UniqueID);
     }
     
+    internal struct Data{
+        public Data(){}
+
+        internal long I1 = 0;
+        internal long I2 = 0;
+        internal long I3 = 0;
+        internal long I4 = 0;
+
+        internal byte this[int Index]{
+            get{
+                if((uint)Index >= 32){ throw new Exception("Вышло [" + Index + "] за пределы Data при получении!"); }
+                int Block = Index >> 3;
+                int Shift = (Index & 7) << 3;
+
+                long Value = Block switch{
+                    0     => I1,
+                    1     => I2,
+                    2     => I3,
+                    var _ => I4
+                };
+
+                return (byte)((Value >> Shift) & 0xFFL);
+            }
+            set{
+                if ((uint)Index >= 32){ throw new Exception("Вышло [" + Index + "] за пределы Data при установке!"); }
+
+                int Block = Index >> 3;
+                int Shift = (Index & 7) << 3;
+
+                long Mask = 0xFFL << Shift;
+
+                switch (Block){
+                    case  0: I1 = (I1 & ~Mask) | ((long)value << Shift); break;
+                    case  1: I2 = (I2 & ~Mask) | ((long)value << Shift); break;
+                    case  2: I3 = (I3 & ~Mask) | ((long)value << Shift); break;
+                    default: I4 = (I4 & ~Mask) | ((long)value << Shift); break;
+                }
+            }
+        }
+    }
+    
     internal struct Decal{
         public Decal(){}
 
         internal int             X        = 0;
         internal int             Y        = 0;
-        internal T_Decal        ID        = T_Decal.FootStep;
+        internal T_Decal         ID       = T_Decal.FootStep;
         internal TextureRotation Rotation = TextureRotation.None;
     }
     

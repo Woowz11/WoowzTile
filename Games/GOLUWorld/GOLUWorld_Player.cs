@@ -293,6 +293,15 @@ internal static class GOLUWorld_Player{
         
         return false;
     }
+
+    /// <summary>
+    /// Открывает хранилище у сущности
+    /// </summary>
+    internal static void Player_OpenStorage(Entity E){
+        UI_OpenEntity = E;
+        UI_SelectedSlot = Player_InventorySelectedSlot;
+        UI_Interface = T_Interface.Storage12;
+    }
     
     /// <summary>
     /// Взаимодействует с сущностью
@@ -301,7 +310,7 @@ internal static class GOLUWorld_Player{
         if(Player_ClosestEntity != null && Player_ClosestEntity_Distance < Player_Interact_Distance){
             Entity Entity = Player_ClosestEntity.Value;
             switch(Entity.ID){
-                case T_Entity.Item:{
+                case T_Entity.Item: {
                     T_Item Item = (T_Item)Entity.Info;
                     if(Item != T_Item.Empty){
                         if(AddToInventory(Item)){ World_RemoveEntity(Entity); }
@@ -315,7 +324,7 @@ internal static class GOLUWorld_Player{
                         0 => 1,
                         1 => 0,
                         2 => 3,
-                        3 => 2
+                        3 => 2,
                     };
                     World_Entities[Entity.Key] = Entity;
                     break;
@@ -325,9 +334,9 @@ internal static class GOLUWorld_Player{
                     World_Entities.Remove(Entity.Key);
                     break;
                 
-                case T_Entity.Trapdoor:
-                    World_GoToWorld(T_World.Industrial);
-                    break;
+                case T_Entity.Trapdoor: World_GoToWorld(T_World.Industrial); break;
+                
+                case T_Entity.Crate: Player_OpenStorage(Player_ClosestEntity.Value); break;
             }
         }
     }

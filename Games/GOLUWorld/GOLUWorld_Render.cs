@@ -609,14 +609,9 @@ internal static class GOLUWorld_Render{
     /// Рендерит информацию об взаимодействующем объекте
     /// </summary>
     internal static void Render_InteractInfo(Image.ImageContext C){
-        if(Player_ClosestEntity != null && Player_ClosestEntity_Distance < Player_Interact_Distance && Player_ClosestEntity.Value.ID is T_Entity.Item or T_Entity.Money or T_Entity.Trapdoor){
-            string? Text = Player_ClosestEntity.Value.ID switch{
-                T_Entity.Item when Player_ClosestEntity.Value.Info != (byte)T_Item.Empty => Info_Item_Name((T_Item)Player_ClosestEntity.Value.Info),
-                T_Entity.Money => Info_Money_Cost((T_Money)Player_ClosestEntity.Value.Info) + "g",
-                T_Entity.Trapdoor => "СПУСТИТСЯ? (БЕЗВОЗВРАТНО)",
-                var _ => null
-            };
-
+        if(Player_ClosestEntity != null && Player_ClosestEntity_Distance < Player_Interact_Distance){
+            string? Text = Info_Entity_InteractText(Player_ClosestEntity.Value);
+            
             if(Text != null){
                 Vector2U TextSize = Font_Default.TextSize(Text);
                 int X__ = Player_ClosestEntity.Value.X + Coordinates_World.X - (int)(TextSize.X / 2) + (16 / 2);
