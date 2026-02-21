@@ -28,7 +28,7 @@ internal static class GOLUWorld_Input{
                     }
 
                     if(__Down){
-                        if(UI_MenuSelectedButton < 3){ UI_MenuSelectedButton += 1; }
+                        if(UI_MenuSelectedButton < 4){ UI_MenuSelectedButton += 1; }
                     }
                 }
             }else{
@@ -73,12 +73,16 @@ internal static class GOLUWorld_Input{
                     if(!Player_Dead){
                         if(Key == Key.Home){ Player_Teleport(Coordinates_Spawn.X, Coordinates_Spawn.Y); }
                     
-                        if(Key is Key.Right or Key.Left or Key.Up or Key.Down){
+                        if(Key is Key.Right or Key.Left or Key.Up or Key.Down or Key.N2 or Key.N4 or Key.N6 or Key.N8){
                             Player_ItemUse(Key switch{
                                 Key.Right => Direction4.Right,
                                 Key.Left  => Direction4.Left,
                                 Key.Up    => Direction4.Up,
-                                Key.Down  => Direction4.Down
+                                Key.Down  => Direction4.Down,
+                                Key.N6    => Direction4.Right,
+                                Key.N4    => Direction4.Left,
+                                Key.N8    => Direction4.Up,
+                                Key.N2    => Direction4.Down
                             });
                         }
                         
@@ -177,11 +181,11 @@ internal static class GOLUWorld_Input{
                     }
 
                     if(__Down){
-                        if(UI_MenuSelectedButton < 1){ UI_MenuSelectedButton += 1; }
+                        if(UI_MenuSelectedButton < 2){ UI_MenuSelectedButton += 1; }
                     }
 
                     if(__Enter){
-                        if(UI_MenuSelectedButton == 1){
+                        if(UI_MenuSelectedButton == 2){
                             UI_GoToMainMenu();
                         }
                     }

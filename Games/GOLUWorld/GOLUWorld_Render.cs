@@ -16,17 +16,6 @@ using static GOLUWorld.GOLUWorld_Utility;
 namespace GOLUWorld;
 
 internal static class GOLUWorld_Render{
-    /// <summary>
-    /// Рендер простой кнопки (просто текст и обводка)
-    /// </summary>
-    internal static void UI_EasyButton(Image.ImageContext C, byte ButtonID, string ButtonText, int X, int Y, bool Always = false){
-        if(UI_MenuSelectedButton == ButtonID || Always){
-            Render_TextColorOutline(C, ButtonText, X, Y, ColorB.White, ColorB.Red);
-        }else{
-            Render_TextColorOutline(C, ButtonText, X, Y, ColorB.Black, ColorB.White);   
-        }
-    }
-
     internal static int Render_CameraClip_L(Image.ImageContext C, int Offset) => -Offset;
     internal static int Render_CameraClip_R(Image.ImageContext C, int Offset) => (int)C.Width + Offset;
     internal static int Render_CameraClip_U(Image.ImageContext C, int Offset) => -Offset;

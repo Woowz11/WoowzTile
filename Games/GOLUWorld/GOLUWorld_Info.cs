@@ -377,8 +377,8 @@ internal static class GOLUWorld_Info{
     /// Стартовое здоровье сущности
     /// </summary>
     internal static uint Info_Entity_Health(T_Entity E) => E switch{
-        T_Entity.Window => 50,
-        T_Entity.TrashBag => 30,
+        T_Entity.Window    => 50,
+        T_Entity.TrashBag  => 30,
         T_Entity.Cardboard => 30,
         T_Entity.Mob_Drone => 200,
         
@@ -395,16 +395,16 @@ internal static class GOLUWorld_Info{
     /// </summary>
     internal static (T_Entity, byte) Info_Entity_Loot_TrashBag(uint Seed) => Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [
         (T_Entity.Empty, 0, 100),
-        (T_Entity.Item, (byte)T_Item.Battery, 10),
-        (T_Entity.Item, (byte)T_Item.Clock, 1),
-        (T_Entity.Item, (byte)T_Item.FirstAidKit, 2),
-        (T_Entity.Item, (byte)T_Item.Crowbar, 1),
-        (T_Entity.Item, (byte)T_Item.Pipe, 3),
+        (T_Entity.Item , (byte)T_Item.Battery, 10),
+        (T_Entity.Item , (byte)T_Item.Clock, 1),
+        (T_Entity.Item , (byte)T_Item.FirstAidKit, 10),
+        (T_Entity.Item , (byte)T_Item.Crowbar, 1),
+        (T_Entity.Item , (byte)T_Item.Pipe, 3),
         (T_Entity.Money, (byte)T_Money.M1, 50),
         (T_Entity.Money, (byte)T_Money.M5, 10),
         (T_Entity.Money, (byte)T_Money.M10, 1),
-        (T_Entity.Item, (byte)T_Item.Mushroom, 2),
-        (T_Entity.Trap, 0, 1),
+        (T_Entity.Item , (byte)T_Item.Mushroom, 2),
+        (T_Entity.Trap , 0, 1),
     ]);
     
     /// <summary>

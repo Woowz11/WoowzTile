@@ -31,14 +31,9 @@ internal static class GOLUWorld_UI{
             switch(UI_MenuSelectedButton){
                 case 0:
                 case 1: World_Start(); break;
-                case 2:{
-                    UI_Interface = (T_Interface)1;
-                    break;
-                }
-                case 3:{
-                    Game.Quit();
-                    break;
-                }
+                case 2: UI_Interface = (T_Interface)1; break;
+                case 3: break;
+                case 4: Game.Quit(); break;
             }
         }else{
             UI_Interface = T_Interface.None;
@@ -69,6 +64,17 @@ internal static class GOLUWorld_UI{
     internal static void UI_RenderMainMenu_Background(Image.ImageContext C, TickData TD){
         Texture_GOLU.RenderTiles(C, Palette_Default, -(int)(WL.Math.DCos((float)TD.DeltaTick / 2) * 128), -(int)(WL.Math.DSin((float)TD.DeltaTick / 2) * 128), 3, 3, MultiplyColor: ColorB.White.SetA(64));
     }
+    
+    /// <summary>
+    /// Рендер простой кнопки (просто текст и обводка)
+    /// </summary>
+    internal static void UI_EasyButton(Image.ImageContext C, byte ButtonID, string ButtonText, int X, int Y, bool Always = false, bool Disabled = false){
+        if(UI_MenuSelectedButton == ButtonID || Always){
+            Render_TextColorOutline(C, ButtonText, X, Y, Disabled ? ColorB.Gray : ColorB.White, ColorB.Red);
+        }else{
+            Render_TextColorOutline(C, ButtonText, X, Y, ColorB.Black, Disabled ? ColorB.Gray : ColorB.White);
+        }
+    }
 
     /// <summary>
     /// Рендерит меню главного меню
@@ -96,11 +102,12 @@ internal static class GOLUWorld_UI{
         UI_EasyButton(C, 0, "ЗАГРУЗИТЬ", (int)(C.Width / 2 - Font_Default.TextSize("ЗАГРУЗИТЬ").X / 2), 150 + (0 * 13));
         UI_EasyButton(C, 1, "НОВАЯ", (int)(C.Width / 2 - Font_Default.TextSize("НОВАЯ").X / 2), 150 + (1 * 13));
         UI_EasyButton(C, 2, "ПОМОЩЬ", (int)(C.Width / 2 - Font_Default.TextSize("ПОМОЩЬ").X / 2), 150 + (2 * 13));
-        UI_EasyButton(C, 3, "ВЫЙТИ", (int)(C.Width / 2 - Font_Default.TextSize("ВЫЙТИ").X / 2), 150 + (3 * 13));
+        UI_EasyButton(C, 3, "НАСТРОЙКИ", (int)(C.Width / 2 - Font_Default.TextSize("НАСТРОЙКИ").X / 2), 150 + (3 * 13), Disabled: true);
+        UI_EasyButton(C, 4, "ВЫЙТИ", (int)(C.Width / 2 - Font_Default.TextSize("ВЫЙТИ").X / 2), 150 + (4 * 13));
     }
 
     /// <summary>
-    /// Рендерит информацию об управлении в гланом меню
+    /// Рендерит информацию об управлении в главном меню
     /// </summary>
     /// <param name="C"></param>
     internal static void UI_RenderMainMenu_Help(Image.ImageContext C){
@@ -167,58 +174,59 @@ internal static class GOLUWorld_UI{
         if(UI_Interface != T_Interface.None){ C.Fill(ColorB.Black.SetA(128), ImageBlend.Alpha); }
         
         switch(UI_Interface){
-            case T_Interface.Inventory: UI_RenderInventory(C, Item); break;
-            case T_Interface.Menu     : UI_RenderMenu(C); break;
-            case T_Interface.Console  : UI_RenderConsole(C, TD); break;
+            case T_Interface.Inventory: UI_RenderInventory(C    ); break;
+            case T_Interface.Menu     : UI_RenderMenu     (C    ); break;
+            case T_Interface.Console  : UI_RenderConsole  (C, TD); break;
+            case T_Interface.Storage12: UI_RenderStorage  (C    ); break;
         }
         
         UI_RenderFinal(C, TD);
     }
 
     /// <summary>
+    /// Рендерит слот с предметом
+    /// </summary>
+    internal static void UI_RenderSlot(Image.ImageContext C, int X, int Y, T_Item Item, bool Selected){
+        C.Fill(X, Y, 34, 34, Selected ? ColorB.Red : ColorB.Black);
+        Texture_Slot.Render(C, Palette_Default, X + 1, Y + 1, MultiplyColor: Selected ? ColorB.Lerp(ColorB.Gray, ColorB.Red, 0.5f) : ColorB.Gray);
+
+        if(Selected){
+            C.Border(X - 1, Y - 1, 34 + 2, 34 + 2, 1, ColorB.Red.SetA(128), ImageBlend.Alpha);
+        }
+
+        if(Item != 0){
+            Info_Item_Icon(Item).Render(C, Palette_Default, X + 1, Y + 1);
+        }
+    }
+    
+    /// <summary>
     /// Рендерит инвентарь
     /// </summary>
-    internal static void UI_RenderInventory(Image.ImageContext C, T_Item Item){
-        void RenderSlot(Image.ImageContext C, byte ID, int X, int Y){
-            int X__ = 20 + X * 36;
-            int Y__ = 30 + Y * 36;
-            C.Fill(X__, Y__, 34, 34, Player_InventorySelectedSlot == ID ? ColorB.Lerp(ColorB.Gray, ColorB.Red, 0.5f) : ColorB.Gray);
-            C.Fill(X__ + 4, Y__ + 4, 34 - 4 * 2, 34 - 4 * 2, ColorB.Black.SetA(64), ImageBlend.Alpha);
-            C.Fill(X__ + 8, Y__ + 8, 34 - 8 * 2, 34 - 8 * 2, ColorB.Black.SetA(64), ImageBlend.Alpha);
-            C.Fill(X__ + 12, Y__ + 12, 34 - 12 * 2, 34 - 12 * 2, ColorB.Black.SetA(64), ImageBlend.Alpha);
-            C.Border(X__, Y__, 34, 34, 1, Player_InventorySelectedSlot == ID ? ColorB.Red : ColorB.Black);
-
-            if(Player_InventorySelectedSlot == ID){
-                C.Border(X__ - 1, Y__ - 1, 34 + 2, 34 + 2, 1, ColorB.Red.SetA(128), ImageBlend.Alpha);
-            }
-
-            T_Item Item = Player_Inventory[ID];
-    
-            if(Item != 0){
-                Info_Item_Icon(Item).Render(C, Palette_Default, X__ + 1, Y__ + 1);
-            }
-        }
+    internal static void UI_RenderInventory(Image.ImageContext C){
+        void RenderSlot(Image.ImageContext C, byte ID, int X, int Y) => UI_RenderSlot(C, 20 + X * 36, 30 + Y * 36, Player_Inventory[ID], Player_InventorySelectedSlot == ID);
         
-        C.Fill(10, 20, C.Width - 20, C.Height - 40);
+        C.Fill(10, 20, C.Width - 20, C.Height - 40, ColorB.LightGray);
         C.Border(10, 20, C.Width - 20, C.Height - 40, 1, ColorB.Black);
                 
-        RenderSlot(C, 0, 0, 0);
-        RenderSlot(C, 1, 1, 0);
-        RenderSlot(C, 2, 2, 0);
-        RenderSlot(C, 3, 3, 0);
-        RenderSlot(C, 4, 4, 0);
-        RenderSlot(C, 5, 5, 0);
+        RenderSlot(C, 0 , 0, 0);
+        RenderSlot(C, 1 , 1, 0);
+        RenderSlot(C, 2 , 2, 0);
+        RenderSlot(C, 3 , 3, 0);
+        RenderSlot(C, 4 , 4, 0);
+        RenderSlot(C, 5 , 5, 0);
                 
-        RenderSlot(C, 6, 0, 1);
-        RenderSlot(C, 7, 1, 1);
-        RenderSlot(C, 8, 2, 1);
-        RenderSlot(C, 9, 3, 1);
+        RenderSlot(C, 6 , 0, 1);
+        RenderSlot(C, 7 , 1, 1);
+        RenderSlot(C, 8 , 2, 1);
+        RenderSlot(C, 9 , 3, 1);
         RenderSlot(C, 10, 4, 1);
         RenderSlot(C, 11, 5, 1);
 
         C.Fill(20, 110, C.Width - 40, C.Height - 140, ColorB.Gray);
         C.Border(20, 110, C.Width - 40, C.Height - 140, 1, ColorB.Black);
-                
+        
+        T_Item Item = Player_ItemInHands;
+        
         if(Item != T_Item.Empty){
             string Name = Info_Item_Name(Item);
                     
@@ -238,11 +246,19 @@ internal static class GOLUWorld_UI{
     }
 
     /// <summary>
+    /// Рендерит хранилище
+    /// </summary>
+    internal static void UI_RenderStorage(Image.ImageContext C){
+        
+    }
+
+    /// <summary>
     /// Рендерит меню
     /// </summary>
     internal static void UI_RenderMenu(Image.ImageContext C){
         UI_EasyButton(C, 0, "ПРОДОЛЖИТЬ",15, 120 + (0 * 13));
-        UI_EasyButton(C, 1, "ВЫЙТИ",15, 120 + (1 * 13));
+        UI_EasyButton(C, 1, "НАСТРОЙКИ",15, 120 + (1 * 13), Disabled: true);
+        UI_EasyButton(C, 2, "ВЫЙТИ",15, 120 + (2 * 13));
     }
 
     /// <summary>

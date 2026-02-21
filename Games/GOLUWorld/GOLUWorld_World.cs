@@ -71,7 +71,7 @@ internal static class GOLUWorld_World{
         
         World_Size = new Vector2U(200, 200);
         
-        World_Decals  .Clear();
+        World_Decals.Clear();
 
         World_Blocks   = new Dictionary<Vector2I , Block  >((int)(World_Size.X * World_Size.Y * 2));
         World_Ceilings = new Dictionary<Vector2I , Ceiling>((int)(World_Size.X * World_Size.Y * 2));
@@ -92,7 +92,7 @@ internal static class GOLUWorld_World{
         bool __FindSpawnLocation = false;
         while(!__FindSpawnLocation){
             uint __Seed2 = UniqueSeed + 2269909;
-            Coordinates_Camera = new Vector2F(WL.Math.Random.Fast_Int(-(int)World_SizeWorld.X + 3, (int)World_SizeWorld.X - 3, ref UniqueSeed), WL.Math.Random.Fast_Int(-(int)World_SizeWorld.Y + 3, (int)World_SizeWorld.Y - 3, ref __Seed2));
+            Coordinates_Camera = new Vector2F(WL.Math.Random.Fast_Int(-(int)World_SizeWorld.X + 3 * 16, (int)World_SizeWorld.X - 3 * 16, ref UniqueSeed), WL.Math.Random.Fast_Int(-(int)World_SizeWorld.Y + 3 * 16, (int)World_SizeWorld.Y - 3 * 16, ref __Seed2));
             if(!Info_Block_Collide(World_GetBlock(Coordinates_PlayerWorld.X, Coordinates_PlayerWorld.Y, Relative: true).ID)){
                 __FindSpawnLocation = true;
             }

@@ -108,7 +108,8 @@ internal static class GOLUWorld_Objects{
         None      = 0,
         Inventory = 1,
         Menu      = 2,
-        Console   = 3
+        Console   = 3,
+        Storage12 = 4
     }
 
     internal enum T_Emotion : byte{
