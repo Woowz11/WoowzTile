@@ -22,7 +22,13 @@ internal class GOLUWorld : Game{
         WL.WoowzLib.OnMessage -= __OnMessage;
     }
     private static void __OnMessage(Logger.MessageType MessageType, object[]? Message){
-        __Messages.Add((MessageType, WL.String.Join(Message)));
+        if(Message == null){ return; }
+
+        foreach(string Line in WL.String.Join(Message).Split('\n')){
+            if(string.IsNullOrEmpty(Line)){ continue; }
+            __Messages.Add((MessageType, Line));
+        }
+        
         Player_ConsoleOffset = 0;
     }
     internal static readonly List<(Logger.MessageType, string Content)> __Messages = [];

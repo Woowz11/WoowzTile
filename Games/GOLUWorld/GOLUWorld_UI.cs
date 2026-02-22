@@ -128,7 +128,7 @@ internal static class GOLUWorld_UI{
             "[B] - ОТКЛЮЧАЕТ ГРАНИЦЫ",
             "[M] - УСКОР. ЦИКЛ ДНЯ И НОЧИ",
             "[HOME] - ТЕЛЕПОРТ В ЦЕНТР",
-            "[F1-F6] - ТЕСТОВОЕ",
+            "[F1-F7] - ТЕСТОВОЕ",
             "",
             "[ДВИЖЕНИЕ + SHIFT] - ДВИГАТЬ ПРЕДМЕТЫ\nВ ИНВЕНТОРЕ"
         ];
@@ -366,9 +366,46 @@ internal static class GOLUWorld_UI{
             }
         }
     }
+
+    /// <summary>
+    /// Обновляет карту
+    /// </summary>
+    internal static void UI_UpdateMap(){
+        int MapSize = (int)Texture_Dynamic_Map.Width;
+        
+        Texture_Dynamic_Map.Clear();
+
+        int WW = (int)World_Size.X * 2;
+        int WH = (int)World_Size.Y * 2;
+        if(WW <= 0 || WH <= 0){ return; }
+
+        foreach(Block Block in World_Blocks.Values){
+            int MX = ((Block.X / 16 + (int)World_Size.X) * (MapSize - 1)) / WW;
+            int MY = ((Block.Y / 16 + (int)World_Size.Y) * (MapSize - 1)) / WH;
+            
+            if(MX < 0 || MX >= MapSize || MY < 0 || MY >= MapSize){ continue; }
+
+            byte Color = MapBlocksColor.GetValueOrDefault(Block.ID, (byte)0);
+
+            if(Color == 0){ continue; }
+            Texture_Dynamic_Map[(uint)MX, (uint)MY] = Color;
+        }
+    }
+
+    /// <summary>
+    /// Рендерит карту
+    /// </summary>
+    /// <param name="C"></param>
+    internal static void UI_RenderMap(Image.ImageContext C){
+        if(!(Player_ItemInHands == T_Item.Map && UI_Interface is T_Interface.None or T_Interface.Menu && !Player_Dead)){ return; }
+        
+        Texture_Map_Overlay.Render(C, Palette_Default);
+        
+        Texture_Dynamic_Map.Render(C, Palette_Default, 54, 54);
+    }
     
     /// <summary>
-    /// Рендерит GPS UI
+    /// Рендерит GPS
     /// </summary>
     internal static void UI_RenderGPS(Image.ImageContext C){
         if(!(Player_ItemInHands == T_Item.GPS && UI_Interface is T_Interface.None or T_Interface.Menu && !Player_Dead)){ return; }

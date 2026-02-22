@@ -10,7 +10,7 @@ namespace GOLUWorld;
 internal static class GOLUWorld_Values{
     #region Константы игры
 
-        internal const string Game_Version = "1.1";
+        internal const string Game_Version = "1.2";
         internal const string Game_Name    = "GOLUWorld";
 
     #endregion

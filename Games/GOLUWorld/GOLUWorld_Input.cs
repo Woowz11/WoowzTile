@@ -48,6 +48,7 @@ internal static class GOLUWorld_Input{
                     case Key.F4: World_Start(); break;
                     case Key.F5: Player_Inventory[1] = T_Item.Destroyer; Player_Inventory[2] = T_Item.GPS; break;
                     case Key.F6: World_SetBlock(new Block{ ID = T_Block.Bricks, X = Coordinates_PlayerWorld.X/16, Y = (Coordinates_PlayerWorld.Y)/16 + 1}); break;
+                    case Key.F7: Logger.Debug("1\n2\n3\n4\n5"); break;
                 }
 
                 if(Key == Key.Tilde){

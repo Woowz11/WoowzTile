@@ -53,7 +53,8 @@ internal static class GOLUWorld_Objects{
         Trap       = 21,
         Mob_Drone  = 22,
         Debris     = 23,
-        Fence      = 24
+        Fence      = 24,
+        Nightstand = 25
     }
     
     internal enum T_Ceiling : byte{
@@ -76,7 +77,8 @@ internal static class GOLUWorld_Objects{
         Clock       = 8,
         Mushroom    = 9,
         Battery     = 10,
-        Pipe        = 11
+        Pipe        = 11,
+        Map         = 12
     }
     
     internal enum T_Money : byte{
@@ -315,7 +317,7 @@ internal static class GOLUWorld_Objects{
     internal struct EntityKey{
         internal EntityKey(Vector2I Position, bool HasUniqueID = false){
             this.Position = Position;
-            UniqueID = HasUniqueID ? __TotalUniqueID++ : 0;
+            UniqueID = HasUniqueID ? ++__TotalUniqueID : 0;
         }
         
         internal EntityKey(Vector2I Position, uint UniqueID){
@@ -326,10 +328,7 @@ internal static class GOLUWorld_Objects{
         internal readonly Vector2I Position;
         internal readonly uint     UniqueID;
         
-        public bool Equals(EntityKey other)
-        {
-            return Position.Equals(other.Position) && UniqueID == other.UniqueID;
-        }
+        public bool Equals(EntityKey other) => Position.Equals(other.Position) && UniqueID == other.UniqueID;
 
         public override bool Equals(object? Obj) => Obj is EntityKey other && Equals(other);
 
@@ -338,6 +337,8 @@ internal static class GOLUWorld_Objects{
         public static bool operator ==(EntityKey L, EntityKey R) => L.Equals(R);
 
         public static bool operator !=(EntityKey L, EntityKey R) => !L.Equals(R);
+
+        public override string ToString() => "EntityKey(" + Position.ToShortString() + ", " + UniqueID + ")";
     }
     internal static uint __TotalUniqueID = 1;
 }

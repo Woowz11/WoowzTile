@@ -26,6 +26,7 @@ internal static class GOLUWorld_Info{
             T_Item.Mushroom    => Texture_Mushroom,
             T_Item.Battery     => Texture_Battery,
             T_Item.Pipe        => Texture_Pipe,
+            T_Item.Map         => Texture_Map,
             
             var _ => Texture_Error
         };
@@ -48,6 +49,7 @@ internal static class GOLUWorld_Info{
             T_Item.Mushroom    => Texture_Mushroom_Icon,
             T_Item.Battery     => Texture_Battery_Icon,
             T_Item.Pipe        => Texture_Pipe_Icon,
+            T_Item.Map         => Texture_Map_Icon,
                     
             var _ => Texture_Error_Icon
         };
@@ -71,6 +73,7 @@ internal static class GOLUWorld_Info{
             T_Item.Mushroom    => "ГРИБ",
             T_Item.Battery     => "БАТАРЕЙКА",
             T_Item.Pipe        => "ТРУБА",
+            T_Item.Map         => "КАРТА",
             
             var _ => "ПРЕДМЕТ [" + (byte)I + "]"
         };
@@ -84,7 +87,7 @@ internal static class GOLUWorld_Info{
         
         return I switch{
             T_Item.FirstAidKit => "ЛЕЧИТ БЕДНЫЙ КУБИК ГУЛУ (+с50)",
-            T_Item.GPS => "ЕСЛИ ДЕРЖАТЬ В РУКАХ,\nПОКАЗЫВАЕТ КАРТУ",
+            T_Item.GPS => "ЕСЛИ ДЕРЖАТЬ В РУКАХ,\nПОКАЗЫВАЕТ КАРТУ\n...DYNAMIC...",
             T_Item.Stick => "ИЗБЕЙ ВСЕХ ВЕТКОЙ (у10)",
             T_Item.Crowbar => "ЛОМ (у30)",
             T_Item.Rock => "МОЖНО ЗАВАЛИВАТЬ ЯМЫ",
@@ -93,6 +96,7 @@ internal static class GOLUWorld_Info{
             T_Item.Mushroom => "НЕЧТО (+с10, +э10)",
             T_Item.Battery => "ЗАРЯЖАЕТ (+э100)",
             T_Item.Pipe => "УБИЙСТВО (у25)",
+            T_Item.Map => "ПОКАЗЫВАЕТ CONST КАРТУ",
             
             var _ => "О БОЖЕ, ЧТО ЭТО ТАКОЕ?"
         };
@@ -141,7 +145,7 @@ internal static class GOLUWorld_Info{
     /// <summary>
     /// Возвращает случайную мусорную декаль
     /// </summary>
-    internal static T_Decal Info_Decal_RandomTrash() => Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(), [(T_Decal.PlasticBag, 0, 1), (T_Decal.Glass, 0, 1), (T_Decal.Paper, 0, 1), (T_Decal.BrokenTrashBag, 0, 1)]).Item1;
+    internal static T_Decal Info_Decal_RandomTrash() => Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(), [(T_Decal.PlasticBag, 1), (T_Decal.Glass, 1), (T_Decal.Paper,  1), (T_Decal.BrokenTrashBag, 1)]);
 
     /// <summary>
     /// Текстура блока
@@ -249,7 +253,7 @@ internal static class GOLUWorld_Info{
                 break;
             case 'Д':
                 Seed += Unique + 121;
-                return Utility_SelectWeightedObject(
+                return Utility_SelectWeightedObject_WithInfo(
                     WL.Math.Random.Fast_0_1(ref Seed),
                     [(T_Block.Ground_Grass, 0, 1), (T_Block.Empty, 0, 1)]
                 );
@@ -257,7 +261,7 @@ internal static class GOLUWorld_Info{
                 T_Block B = World_GetBlock(X, Y).ID;
                 if(Info_Block_Water(B)){ return null; }
                 Seed += Unique + 774743;
-                return Utility_SelectWeightedObject(
+                return Utility_SelectWeightedObject_WithInfo(
                     WL.Math.Random.Fast_0_1(ref Seed),
                     [(T_Block.Ground_Sand, 0, 1), (T_Block.Empty, 0, 1)]
                 );
@@ -328,6 +332,7 @@ internal static class GOLUWorld_Info{
             
             return (Result, Flip, null);
         }))(),
+        T_Entity.Nightstand => (Texture_Nightstand, null, null),
         
         var _ => (Texture_Error, null, null)
     };
@@ -349,6 +354,8 @@ internal static class GOLUWorld_Info{
         T_Entity.Mob_Drone  => 0,
         T_Entity.Debris     => 0,
         T_Entity.Fence      => 0,
+        T_Entity.Crate      => 0,
+        T_Entity.Nightstand => 0,
         
         var _ => null
     };
@@ -356,7 +363,7 @@ internal static class GOLUWorld_Info{
     /// <summary>
     /// Взаимодействующие сущности
     /// </summary>
-    internal static bool Info_Entity_Interacting(Entity E) => E.ID is T_Entity.Item or T_Entity.Door or T_Entity.Money or T_Entity.Trapdoor || E is{ ID: T_Entity.Crate, Info: 1 };
+    internal static bool Info_Entity_Interacting(Entity E) => E.ID is T_Entity.Item or T_Entity.Door or T_Entity.Money or T_Entity.Trapdoor or T_Entity.Nightstand || E is{ ID: T_Entity.Crate, Info: 1 };
 
     /// <summary>
     /// Отображаемый текст у взаимодействующих сущностей
@@ -367,6 +374,7 @@ internal static class GOLUWorld_Info{
         T_Entity.Trapdoor => "СПУСТИТСЯ? (БЕЗВОЗВРАТНО)",
         T_Entity.Door => E.Info is 0 or 2 ? "ОТКРЫТЬ" : "ЗАКРЫТЬ",
         T_Entity.Crate => "ОСМОТР",
+        T_Entity.Nightstand => "ОСМОТР",
         var _ => null
     };
     
@@ -405,18 +413,33 @@ internal static class GOLUWorld_Info{
     /// <summary>
     /// Случайный лут из мусорного мешка
     /// </summary>
-    internal static (T_Entity, byte) Info_Entity_Loot_TrashBag(uint Seed) => Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [
+    internal static (T_Entity, byte) Info_Entity_Loot_TrashBag(uint Seed) => Utility_SelectWeightedObject_WithInfo(WL.Math.Random.Fast_0_1(ref Seed), [
         (T_Entity.Empty, 0, 100),
         (T_Entity.Item , (byte)T_Item.Battery, 10),
         (T_Entity.Item , (byte)T_Item.Clock, 1),
         (T_Entity.Item , (byte)T_Item.FirstAidKit, 10),
         (T_Entity.Item , (byte)T_Item.Crowbar, 1),
         (T_Entity.Item , (byte)T_Item.Pipe, 3),
+        (T_Entity.Item , (byte)T_Item.Map, 2),
         (T_Entity.Money, (byte)T_Money.M1, 50),
         (T_Entity.Money, (byte)T_Money.M5, 10),
         (T_Entity.Money, (byte)T_Money.M10, 1),
         (T_Entity.Item , (byte)T_Item.Mushroom, 2),
         (T_Entity.Trap , 0, 1),
+    ]);
+    
+    /// <summary>
+    /// Случайный лут из ящика
+    /// </summary>
+    internal static T_Item Info_Entity_Loot_Crate(uint Seed) => Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [
+        (T_Item.Empty, 1000),
+        (T_Item.Battery, 100),
+        (T_Item.Clock, 10),
+        (T_Item.FirstAidKit, 100),
+        (T_Item.Crowbar, 10),
+        (T_Item.Pipe, 30),
+        (T_Item.Map, 10),
+        (T_Item.GPS, 5),
     ]);
     
     /// <summary>
@@ -475,8 +498,8 @@ internal static class GOLUWorld_Info{
                 T_Block B = World_GetBlock(X, Y).ID;
                 if(!Info_Block_SupportGrass(B)){ return null; }
                 return B == T_Block.Ground_Sand
-                    ? Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Item, (byte)T_Item.Rock, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Empty, 0, 99)])
-                    : Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed),
+                    ? Utility_SelectWeightedObject_WithInfo(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Item, (byte)T_Item.Rock, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Empty, 0, 99)])
+                    : Utility_SelectWeightedObject_WithInfo(WL.Math.Random.Fast_0_1(ref Seed),
                         [(T_Entity.Tree, (byte)(WL.Math.Random.Fast_Bool(0.1f, ref Seed2) ? 2 : (WL.Math.Random.Fast_Bool(ref Seed1) ? 1 : 0)), 20), (T_Entity.Item, (byte)T_Item.Rock, 10), (T_Entity.Item, (byte)T_Item.Mushroom, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.Bush, 0, 5), (T_Entity.Grass, 0, 43), (T_Entity.Empty, 0, 32)]);
             }
             case 'д': {
@@ -484,21 +507,21 @@ internal static class GOLUWorld_Info{
                 T_Block B = World_GetBlock(X, Y).ID;
                 if(!Info_Block_SupportGrass(B)){ return null; }
                 return B == T_Block.Ground_Sand
-                    ? Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Cattail, 0, 10), (T_Entity.Empty, 0, 99)])
-                    : Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Bush, 0, 10), (T_Entity.Item, (byte)T_Item.Rock, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.HighGrass, 0, 10), (T_Entity.Grass, 0, 430), (T_Entity.Empty, 0, 320)]);
+                    ? Utility_SelectWeightedObject_WithInfo(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Grass, 0, 1), (T_Entity.Cattail, 0, 10), (T_Entity.Empty, 0, 99)])
+                    : Utility_SelectWeightedObject_WithInfo(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Bush, 0, 10), (T_Entity.Item, (byte)T_Item.Rock, 1), (T_Entity.Item, (byte)T_Item.Stick, 1), (T_Entity.HighGrass, 0, 10), (T_Entity.Grass, 0, 430), (T_Entity.Empty, 0, 320)]);
             }
             case 'т': {
                 Seed += Unique + 8543;
                 T_Block B = World_GetBlock(X, Y).ID;
                 if(!Info_Block_SupportGrass(B) || B is T_Block.Ground_Sand){ return null; }
-                return Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Grass, 0, 1), (T_Entity.HighGrass, 0, 5), (T_Entity.Empty, 0, 1)]);
+                return Utility_SelectWeightedObject_WithInfo(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Grass, 0, 1), (T_Entity.HighGrass, 0, 5), (T_Entity.Empty, 0, 1)]);
             }
             case 'М':
                 Seed += Unique + 99533221;
-                return Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Empty, 0, 1), (T_Entity.Chair, 0, 1), (T_Entity.Table, 0, 1), (T_Entity.Crate, 0, 1), (T_Entity.Debris, 0, 1)]);
+                return Utility_SelectWeightedObject_WithInfo(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Empty, 0, 1), (T_Entity.Chair, 0, 1), (T_Entity.Table, 0, 1), (T_Entity.Nightstand, 0, 1), (T_Entity.Crate, 0, 1), (T_Entity.Debris, 0, 1)]);
             case 'м':
                 Seed += Unique + 995321154;
-                return Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Empty, 0, 20), (T_Entity.TrashBag, 0, 20), (T_Entity.Cardboard, 0, 20), (T_Entity.Tire, 0, 10), (T_Entity.Trap, 0, 1)]);
+                return Utility_SelectWeightedObject_WithInfo(WL.Math.Random.Fast_0_1(ref Seed), [(T_Entity.Empty, 0, 20), (T_Entity.TrashBag, 0, 20), (T_Entity.Cardboard, 0, 20), (T_Entity.Tire, 0, 10), (T_Entity.Trap, 0, 1)]);
             case 'Ƒ':
                 ID = WL.Math.Random.Fast_Bool(ref Seed1) ? T_Entity.Fence : T_Entity.Empty;
                 break;

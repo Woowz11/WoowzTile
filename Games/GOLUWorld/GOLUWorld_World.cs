@@ -236,7 +236,7 @@ internal static class GOLUWorld_World{
                 
                 case T_Entity.Trap: AddColliderBox(Entity, 8, CollisionLayer.L3); break;
                 
-                case T_Entity.Crate: AddColliderBox(Entity, 4, CollisionLayer.L5 | CollisionLayer.L6); break;
+                case T_Entity.Crate: AddColliderBox(Entity, 4, Entity.Dead ? CollisionLayer.L5 : CollisionLayer.L5 | CollisionLayer.L6); break;
                 
                 case T_Entity.TrashBag:
                 case T_Entity.Cardboard: AddColliderBox(Entity, 4, CollisionLayer.L6); break;
@@ -432,7 +432,7 @@ internal static class GOLUWorld_World{
                         Player_PowerDown(1);
                     }
                 }else{
-                    Player_Damage((uint)(WL.Math.Random.Fast_Bool(0.001f) ? 1 : 0), Comment: false);
+                    Player_Damage((uint)(WL.Math.Random.Fast_Bool(0.05f) ? 1 : 0), Comment: false);
                 }
             }
             
@@ -450,8 +450,8 @@ internal static class GOLUWorld_World{
             
             Player_ClosestEntity_Distance = WL.Math.MaxValue;
             foreach(Entity Entity in World_Entities.Values){
-                float DX = Entity.X - Coordinates_PlayerWorld_Center.X;
-                float DY = Entity.Y - Coordinates_PlayerWorld_Center.Y;
+                float DX = Entity.X - Coordinates_PlayerWorld.X;
+                float DY = Entity.Y - Coordinates_PlayerWorld.Y;
                 float DistanceSquare = WL.Math.Sqr(DX) + WL.Math.Sqr(DY);
 
                 if(Info_Entity_Interacting(Entity) && DistanceSquare < Player_ClosestEntity_Distance){
@@ -1058,7 +1058,9 @@ internal static class GOLUWorld_World{
     /// Нанести урон сущности
     /// </summary>
     internal static void World_DamageEntity(EntityKey Key, uint Damage){
-        Entity Entity = World_Entities[Key];
+        if(!World_Entities.TryGetValue(Key, out Entity Entity)){
+            throw new Exception("Не получилось нанести урон сущности! Сущность [" + Key + "] не найдена!");
+        }
         Entity.Health = WL.Math.SubU(Entity.Health, Damage);
 
         bool DoRemove = false;
@@ -1069,7 +1071,13 @@ internal static class GOLUWorld_World{
                 World_SpatterBlood(Entity.X, Entity.Y);
                 break;
             
-            case T_Entity.Crate: if(Entity.Dead){ Entity.Info = 1; Entity.InfoData[2] = (byte)T_Item.Mushroom; Entity.InfoData[11] = (byte)T_Item.Pipe; } break;
+            case T_Entity.Crate: {
+                if(Entity.Dead){
+                    Entity.Info = 1;
+                }
+                
+                break;
+            }
             
             case T_Entity.Window when Entity.Info == 0: {
                 DoRemove = true;

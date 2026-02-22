@@ -2,15 +2,17 @@
 using WoowzTile;
 using WoowzTile.Objects;
 using static GOLUWorld.GOLUWorld_Values;
+using static GOLUWorld.GOLUWorld_Objects;
+using static GOLUWorld.GOLUWorld_Info;
 
 namespace GOLUWorld;
 
 internal static class GOLUWorld_Utility{
     /// <summary>
-    /// Берёт случайный элемент с учётом весов
+    /// Берёт случайный элемент с учётом весов (с информацией)
     /// </summary>
     /// <param name="RandomValue">от 0 до 1</param>
-    internal static (T, byte) Utility_SelectWeightedObject<T>(float RandomValue, ReadOnlySpan<(T Value, byte Info, int Weight)> Variants){
+    internal static (T, byte) Utility_SelectWeightedObject_WithInfo<T>(float RandomValue, ReadOnlySpan<(T Value, byte Info, int Weight)> Variants){
         int TotalWeight = 0;
 
         for(int i = 0; i < Variants.Length; i++){ TotalWeight += Variants[i].Weight; }
@@ -26,15 +28,36 @@ internal static class GOLUWorld_Utility{
 
         return (Variants[^1].Value, Variants[^1].Info);
     }
+    
+    /// <summary>
+    /// Берёт случайный элемент с учётом весов
+    /// </summary>
+    /// <param name="RandomValue">от 0 до 1</param>
+    internal static T Utility_SelectWeightedObject<T>(float RandomValue, ReadOnlySpan<(T Value, int Weight)> Variants){
+        int TotalWeight = 0;
+
+        for(int i = 0; i < Variants.Length; i++){ TotalWeight += Variants[i].Weight; }
+
+        int Scaled = (int)(RandomValue * TotalWeight);
+
+        if(Scaled >= TotalWeight){ Scaled = TotalWeight - 1; }
+
+        for(int i = 0; i < Variants.Length; i++){
+            if(Scaled < Variants[i].Weight){ return Variants[i].Value; }
+            Scaled -= Variants[i].Weight;
+        }
+
+        return Variants[^1].Value;
+    }
 
     /// <summary>
     /// Случайный поворот
     /// </summary>
-    internal static TextureRotation Utility_RandomRotation(uint Seed) => Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(TextureRotation.None, 0, 1), (TextureRotation.Rotate90, 0, 1), (TextureRotation.Rotate180, 0, 1), (TextureRotation.Rotate270, 0, 1)]).Item1;
+    internal static TextureRotation Utility_RandomRotation(uint Seed) => Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(ref Seed), [(TextureRotation.None, 1), (TextureRotation.Rotate90, 1), (TextureRotation.Rotate180, 1), (TextureRotation.Rotate270, 1)]);
     /// <summary>
     /// Случайный поворот
     /// </summary>
-    internal static TextureRotation Utility_RandomRotation() => Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(), [(TextureRotation.None, 0, 1), (TextureRotation.Rotate90, 0, 1), (TextureRotation.Rotate180, 0, 1), (TextureRotation.Rotate270, 0, 1)]).Item1;
+    internal static TextureRotation Utility_RandomRotation() => Utility_SelectWeightedObject(WL.Math.Random.Fast_0_1(), [(TextureRotation.None, 1), (TextureRotation.Rotate90, 1), (TextureRotation.Rotate180, 1), (TextureRotation.Rotate270, 1)]);
 
     /// <summary>
     /// Поворот горизонтальный?
@@ -60,6 +83,11 @@ internal static class GOLUWorld_Utility{
 
         return Hash;
     }
+    
+    /// <summary>
+    /// Уникальный сид для сущности
+    /// </summary>
+    internal static uint Utility_SeedEntity(EntityKey Key) => World_Seed + (Key.UniqueID == 0 ? Utility_SeedXY(Key.Position.X, Key.Position.Y) : Key.UniqueID);
 
     /// <summary>
     /// Вычисляет поворот относительно двух точек

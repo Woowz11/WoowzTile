@@ -12,6 +12,8 @@ public enum TextureRotation{
 }
 
 public class Texture{
+    public Texture(uint Width, uint Height) : this(Width, Height, new byte[Width * Height]){}
+
     public Texture(uint Width, uint Height, byte[] Pixels){
         this.Width  = Width;
         this.Height = Height;
@@ -56,6 +58,8 @@ public class Texture{
         get => Pixels[Y * Width + X];
         set => Pixels[Y * Width + X] = value;
     }
+
+    public void Clear() => Array.Clear(Pixels, 0, Pixels.Length);
 
     public void Render(Image.ImageContext C, Palette Palette, int X = 0, int Y = 0, int SrcX = 0, int SrcY = 0, uint SrcW = 0, uint SrcH = 0, uint DstW = 0, uint DstH = 0, bool FlipX = false, bool FlipY = false, TextureRotation Rotation = TextureRotation.None, ColorB? MultiplyColor = null){
         try{

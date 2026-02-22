@@ -1,4 +1,5 @@
-﻿using WL;
+﻿using System.Runtime.InteropServices;
+using WL;
 using WLO;
 using WoowzTile;
 using WoowzTile.Objects;
@@ -190,6 +191,8 @@ internal static class GOLUWorld_Player{
     internal static void Player_ItemUse(Direction4? Direction = null){
         if(Player_Attack_Timer > 0 || Player_Dead){ return; }
 
+        bool InInterface = UI_Interface != T_Interface.None;
+        
         Direction4 Direction__ = Direction ?? Player_LastDirection;
         
         T_Item Item = Player_ItemInHands;
@@ -212,28 +215,31 @@ internal static class GOLUWorld_Player{
                 case T_Item.Destroyer:
                 case T_Item.Crowbar:
                 case T_Item.Stick: {
-                    Player_AttackMelee(Direction__);
+                    if(!InInterface){ Player_AttackMelee(Direction__); }
                     break;
                 }
 
                 case T_Item.Rock:{
-                    int OffsetX = Direction__ switch{
-                        Direction4.Left  => -1,
-                        Direction4.Right => 1,
-                        var _ => 0
-                    };
-                    int OffsetY = Direction__ switch{
-                        Direction4.Up   => -1,
-                        Direction4.Down => 1,
-                        var _ => 0
-                    };
+                    if(!InInterface){
+                        int OffsetX = Direction__ switch{
+                            Direction4.Left => -1,
+                            Direction4.Right => 1,
+                            var _ => 0
+                        };
 
-                    Block Block = World_GetBlock(Coordinates_PlayerWorld_Center.X + OffsetX * 16, Coordinates_PlayerWorld_Center.Y + OffsetY * 16, Relative: true);
-                    if(Info_Block_Pit(Block.ID)){
-                        World_SetBlock(new Block{ X = Block.X, Y = Block.Y, ID = T_Block.Ground_Cobblestone, Info = (byte)(Block.ID == T_Block.Water ? 1 : 0) }, SnapToGrid: false);
-                        RemoveItem = true;
+                        int OffsetY = Direction__ switch{
+                            Direction4.Up => -1,
+                            Direction4.Down => 1,
+                            var _ => 0
+                        };
+
+                        Block Block = World_GetBlock(Coordinates_PlayerWorld_Center.X + OffsetX * 16, Coordinates_PlayerWorld_Center.Y + OffsetY * 16, Relative: true);
+                        if(Info_Block_Pit(Block.ID)){
+                            World_SetBlock(new Block{ X = Block.X, Y = Block.Y, ID = T_Block.Ground_Cobblestone, Info = (byte)(Block.ID == T_Block.Water ? 1 : 0) }, SnapToGrid: false);
+                            RemoveItem = true;
+                        }
                     }
-                    
+
                     break;
                 }
                 
@@ -253,7 +259,7 @@ internal static class GOLUWorld_Player{
                 default: Used = false; break;
             }
             
-            if(Used){ Player_PowerDown(1); }
+            if(Used && WL.Math.Random.Fast_Bool(0.5f)){ Player_PowerDown(1); }
 
             if(RemoveItem){
                 Player_Inventory[Player_InventorySelectedSlot] = 0;
@@ -297,8 +303,78 @@ internal static class GOLUWorld_Player{
     /// <summary>
     /// Открывает хранилище у сущности
     /// </summary>
-    internal static void Player_OpenStorage(Entity E){
-        UI_OpenEntity = E;
+    internal static void Player_OpenStorage(Entity Entity){
+        switch(Entity.ID){
+            case T_Entity.Crate: {
+                if(Entity.InfoData[12] != 1){
+                    Entity.InfoData[12] = 1;
+                    
+                    uint EntitySeed = Utility_SeedEntity(Entity.Key) + 7128821;
+                    if(WL.Math.Random.Fast_Bool(0.05f, ref EntitySeed)){
+                        byte Item = 0;
+                        uint i__ = 0;
+                        while(Item == 0){
+                            Item = (byte)Info_Entity_Loot_Crate(EntitySeed + 83225 + i__++);
+                        }
+
+                        Entity.InfoData[0 ] = Item;
+                        Entity.InfoData[1 ] = Item;
+                        Entity.InfoData[2 ] = Item;
+                        Entity.InfoData[3 ] = Item;
+                        Entity.InfoData[4 ] = Item;
+                        Entity.InfoData[5 ] = Item;
+                        Entity.InfoData[6 ] = Item;
+                        Entity.InfoData[7 ] = Item;
+                        Entity.InfoData[8 ] = Item;
+                        Entity.InfoData[9 ] = Item;
+                        Entity.InfoData[10] = Item;
+                        Entity.InfoData[11] = Item;
+                    }
+                    else{
+                        Entity.InfoData[0 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 256);
+                        Entity.InfoData[1 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 712);
+                        Entity.InfoData[2 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 112);
+                        Entity.InfoData[3 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 812);
+                        Entity.InfoData[4 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 884);
+                        Entity.InfoData[5 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 909);
+                        Entity.InfoData[6 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 132);
+                        Entity.InfoData[7 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 662);
+                        Entity.InfoData[8 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 773);
+                        Entity.InfoData[9 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 223);
+                        Entity.InfoData[10] = (byte)Info_Entity_Loot_Crate(EntitySeed + 881);
+                        Entity.InfoData[11] = (byte)Info_Entity_Loot_Crate(EntitySeed + 199);
+                    }
+                }
+
+                break;
+            }
+
+            case T_Entity.Nightstand: {
+                if(Entity.InfoData[12] != 1){
+                    Entity.InfoData[12] = 1;
+
+                    uint EntitySeed = Utility_SeedEntity(Entity.Key) + 7128821;
+
+                    Entity.InfoData[0 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 256);
+                    Entity.InfoData[1 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 712);
+                    Entity.InfoData[2 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 112);
+                    Entity.InfoData[3 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 812);
+                    Entity.InfoData[4 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 884);
+                    Entity.InfoData[5 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 909);
+                    Entity.InfoData[6 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 132);
+                    Entity.InfoData[7 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 662);
+                    Entity.InfoData[8 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 773);
+                    Entity.InfoData[9 ] = (byte)Info_Entity_Loot_Crate(EntitySeed + 223);
+                    Entity.InfoData[10] = (byte)Info_Entity_Loot_Crate(EntitySeed + 881);
+                    Entity.InfoData[11] = (byte)Info_Entity_Loot_Crate(EntitySeed + 199);
+                }
+
+                break;
+            }
+        }
+
+        World_Entities[Entity.Key] = Entity;
+        UI_OpenEntity = Entity;
         UI_SelectedSlot = Player_InventorySelectedSlot;
         UI_Interface = T_Interface.Storage12;
     }
@@ -336,6 +412,7 @@ internal static class GOLUWorld_Player{
                 
                 case T_Entity.Trapdoor: World_GoToWorld(T_World.Industrial); break;
                 
+                case T_Entity.Nightstand:
                 case T_Entity.Crate: Player_OpenStorage(Player_ClosestEntity.Value); break;
             }
         }
@@ -358,51 +435,48 @@ internal static class GOLUWorld_Player{
     /// Работа консоли
     /// </summary>
     internal static void Player_Console(Key Key){
-        if(Key is >= Key.A and <= Key.Z){
-            Player_ConsoleCommand += Key.ToString();
-        }else if(Key is >= Key.D0 and <= WL.Key.D9){
-            Player_ConsoleCommand += (char)((int)'0' + (Key - Key.D0));
-        }else if(Key == Key.Space){
-            Player_ConsoleCommand += " ";
-        }else if(Key == Key.Backspace && Player_ConsoleCommand.Length > 0){
-            Player_ConsoleCommand = Player_ConsoleCommand[..^1];
-        }else if(Key == Key.Up){
-            if(GOLUWorld.__Messages.Count > 23 && Player_ConsoleOffset - 1 < GOLUWorld.__Messages.Count - 23){ Player_ConsoleOffset++; }
-        }else if(Key == Key.Down){
-            if(Player_ConsoleOffset > 0){ Player_ConsoleOffset--; }
-        }else if(Key == Key.Enter){
-            string[] Parts = Player_ConsoleCommand.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if(Parts.Length == 0){ return; }
+        switch(Key){
+            case >= Key.A and <= Key.Z: Player_ConsoleCommand += Key.ToString(); break;
+            case >= Key.D0 and <= Key.D9: Player_ConsoleCommand += (char)('0' + (Key - Key.D0)); break;
+            case Key.Space: Player_ConsoleCommand += " "; break;
+            case Key.Backspace when Player_ConsoleCommand.Length > 0: Player_ConsoleCommand = Player_ConsoleCommand[..^1]; break;
+            case Key.Up: { if(GOLUWorld.__Messages.Count > 23 && Player_ConsoleOffset - 1 < GOLUWorld.__Messages.Count - 23){ Player_ConsoleOffset++; } break; }
+            case Key.Down: { if(Player_ConsoleOffset > 0){ Player_ConsoleOffset--; } break; }
+            
+            case Key.Enter:{
+                string[] Parts = Player_ConsoleCommand.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if(Parts.Length == 0){ return; }
 
-            string Command = Parts[0];
-            string[] Args = Parts.Length > 1 ? Parts[1..] : [];
+                string Command = Parts[0];
+                string[] Args = Parts.Length > 1 ? Parts[1..] : [];
 
-            switch(Command){
-                case "HELP": {
-                    Logger.Info("--- HELP ---");
+                switch(Command){
+                    case "HELP": {
+                        Logger.Info("--- HELP ---");
                     
-                    Logger.Info("HELP - ПОКАЗАТЬ ЭТОТ СПИСОК");
-                    Logger.Info("CLEAR - ОЧИСТИТЬ КОНСОЛЬ");
-                    Logger.Info("SEED - СИД МИРА");
-                    Logger.Info("SUICIDE - САМОУБИЙСТВО");
+                        Logger.Info("HELP - ПОКАЗАТЬ ЭТОТ СПИСОК");
+                        Logger.Info("CLEAR - ОЧИСТИТЬ КОНСОЛЬ");
+                        Logger.Info("SEED - СИД МИРА");
+                        Logger.Info("SUICIDE - САМОУБИЙСТВО");
                     
-                    Logger.Info("------------");
-                    break;
+                        Logger.Info("------------");
+                        break;
+                    }
+
+                    case "CLEAR": GOLUWorld.__Messages.Clear(); break;
+
+                    case "SEED": Logger.Info("СИД: " + World_Seed); break;
+                
+                    case "SUICIDE": Player_Damage(uint.MaxValue, Comment: false); break;
+                
+                    default:
+                        Logger.Error("Команды [\"" + Command + "\"] не существует!\nИспользуйте [\"HELP\"]");
+                        break;
                 }
 
-                case "CLEAR": GOLUWorld.__Messages.Clear(); break;
-
-                case "SEED": Logger.Info("СИД: " + World_Seed); break;
-                
-                case "SUICIDE": Player_Damage(uint.MaxValue, Comment: false); break;
-                
-                default:
-                    Logger.Error("Команды [\"" + Command + "\"] не существует!");
-                    Logger.Error("Используйте [\"HELP\"]");
-                    break;
+                Player_ConsoleCommand = "";
+                break;
             }
-
-            Player_ConsoleCommand = "";
         }
     }
 }

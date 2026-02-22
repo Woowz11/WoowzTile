@@ -1,11 +1,11 @@
-﻿using WLO;
-using WoowzTile.Objects;
+﻿using WoowzTile.Objects;
 using static GOLUWorld.GOLUWorld_Values;
 using static GOLUWorld.GOLUWorld_Objects;
 using static GOLUWorld.GOLUWorld_World;
 using static GOLUWorld.GOLUWorld_Resources;
 using static GOLUWorld.GOLUWorld_Info;
 using static GOLUWorld.GOLUWorld_Utility;
+using static GOLUWorld.GOLUWorld_UI;
 
 namespace GOLUWorld;
 
@@ -82,6 +82,8 @@ internal static class GOLUWorld_Generator{
     /// Генерирует уровень
     /// </summary>
     internal static void Generator_World(T_World World, uint Seed){
+        __TotalUniqueID = 0;
+        
         void GenerateCalm(uint Seed){
             Generator_Water(Seed);
             
@@ -108,6 +110,8 @@ internal static class GOLUWorld_Generator{
             case T_World.Calm      : GenerateCalm(Seed); break;
             case T_World.Industrial: GenerateIndustrial(Seed); break;
         }
+        
+        UI_UpdateMap();
     }
     
     /// <summary>
@@ -241,7 +245,7 @@ internal static class GOLUWorld_Generator{
                  Seed2 = Seed + SeedOffset * 21964724;
             uint Seed3 = Seed + SeedOffset * 1223512125;
 
-            Generator_Structure(WL.Math.Random.Fast_Int(Generator_Border_L, Generator_Border_R, ref Seed1), WL.Math.Random.Fast_Int(Generator_Border_U, Generator_Border_D, ref Seed2), Utility_SelectWeightedObject<Structure>(WL.Math.Random.Fast_0_1(ref Seed3), Structure_Trash).Item1, Seed + SeedOffset);
+            Generator_Structure(WL.Math.Random.Fast_Int(Generator_Border_L, Generator_Border_R, ref Seed1), WL.Math.Random.Fast_Int(Generator_Border_U, Generator_Border_D, ref Seed2), Utility_SelectWeightedObject<Structure>(WL.Math.Random.Fast_0_1(ref Seed3), Structure_Trash), Seed + SeedOffset);
         }
         
         for(int i = 0; i < 1000; i++){

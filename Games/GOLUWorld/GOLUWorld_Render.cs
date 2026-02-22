@@ -142,6 +142,7 @@ internal static class GOLUWorld_Render{
         Render_Thoughts(C);
 
         UI_RenderGPS(C);
+        UI_RenderMap(C);
         UI_RenderClock(C);
         
         UI_Render(C, TD);
