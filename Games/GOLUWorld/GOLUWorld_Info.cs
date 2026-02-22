@@ -163,6 +163,7 @@ internal static class GOLUWorld_Info{
         T_Block.Concrete           => Texture_Concrete_Beam,
         T_Block.Ground_Cobblestone => B.Info == 1 ? Texture_Cobblestone_Water : Texture_Cobblestone,
         T_Block.Pit                => World_GetBlock(B.X, B.Y - 16, SnapToGrid: false).ID == B.ID ? (World_GetBlock(B.X, B.Y - 32, SnapToGrid: false).ID == B.ID ? Texture_Black : Texture_Pit) : Texture_Pit_Top,
+        T_Block.Ground_Tiles       => Texture_Tiles,
         
         var _ => Texture_Error
     };
@@ -175,12 +176,12 @@ internal static class GOLUWorld_Info{
     /// <summary>
     /// Блок рендерится как пол?
     /// </summary>
-    internal static bool Info_Block_Ground(T_Block B) => B is T_Block.Ground_Planks or T_Block.Ground_Asphalt or T_Block.Ground_Sand or T_Block.Water or T_Block.Ground_Grass or T_Block.Ground_Cobblestone or T_Block.Pit;
+    internal static bool Info_Block_Ground(T_Block B) => B is T_Block.Ground_Planks or T_Block.Ground_Asphalt or T_Block.Ground_Sand or T_Block.Water or T_Block.Ground_Grass or T_Block.Ground_Cobblestone or T_Block.Pit or T_Block.Ground_Tiles;
 
     /// <summary>
     /// Отзеркаливать блок?
     /// </summary>
-    internal static bool Info_Block_Reflect(T_Block B) => Info_Block_Collide(B) && !Info_Block_Water(B);
+    internal static bool Info_Block_Reflect(T_Block B) => Info_Block_Collide(B) && !Info_Block_Pit(B);
 
     /// <summary>
     /// Блок вода?
@@ -230,7 +231,7 @@ internal static class GOLUWorld_Info{
             case 'B':
                 ID = T_Block.Bricks;
                 break;
-            case 'S':{
+            case 'S': {
                 T_Block B = World_GetBlock(X, Y).ID;
                 if(Info_Block_Water(B)){ return null; }
                 ID = T_Block.Ground_Sand;
@@ -250,6 +251,9 @@ internal static class GOLUWorld_Info{
                 break;
             case 'p':
                 ID = T_Block.Pit;
+                break;
+            case 'T':
+                ID = T_Block.Ground_Tiles;
                 break;
             case 'Д':
                 Seed += Unique + 121;
@@ -271,6 +275,12 @@ internal static class GOLUWorld_Info{
                 break;
             case 'ũ':
                 ID = WL.Math.Random.Fast_Bool(ref Seed2) ? T_Block.Ground_Planks : T_Block.Bricks;
+                break;
+            case 'ɨ':
+                ID = WL.Math.Random.Fast_Bool(ref Seed1) ? T_Block.Ground_Tiles : T_Block.Bricks;
+                break;
+            case 'ɩ':
+                ID = WL.Math.Random.Fast_Bool(ref Seed2) ? T_Block.Ground_Tiles : T_Block.Bricks;
                 break;
             
             case '\r':
@@ -485,10 +495,16 @@ internal static class GOLUWorld_Info{
             case 'F':
                 ID = T_Entity.Fence;
                 break;
-            case 'D':
+            case 'D': {
                 Seed += Unique + 88329;
                 bool Open = WL.Math.Random.Fast_Bool(0.1f, ref Seed);
                 return (T_Entity.Door, (byte)(Utility_Vertical(Rotation) ? (Open ? 1 : 0) : (Open ? 3 : 2)));
+            }
+            case 'd': {
+                Seed += Unique + 88329;
+                bool Open = WL.Math.Random.Fast_Bool(0.1f, ref Seed);
+                return (T_Entity.Door, (byte)(Utility_Vertical(Rotation) ? (Open ? 3 : 2) : (Open ? 1 : 0)));
+            }
             case 'w':
                 Seed += Unique + 88555;
                 return (T_Entity.Window, (byte)WL.Math.Random.Fast_Int(0, 1, ref Seed));

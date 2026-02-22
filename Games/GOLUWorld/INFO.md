@@ -10,10 +10,13 @@
 * '^' - Трава (пол)
 * 'C' - Бетонная балка (блок)
 * 'p' - Яма (блок)
+* 'T' - Плитка (пол)
 * 'Д' - [ГЕНЕРАТОР] Случайно, трава или пустота
 * 'П' - [ГЕНЕРАТОР] Случайно, песок или пустота
 * 'Ũ' - [ГЕНЕРАТОР] Генерирует стену или пол (уникально для структуры), доски или кирпичи
 * 'ũ' - [ГЕНЕРАТОР] Генерирует стену или пол (уникально для структуры), доски или кирпичи (2-й вариант)
+* 'ɨ' - [ГЕНЕРАТОР] Генерирует стену или пол (уникально для структуры), плитка или кирпичи
+* 'ɩ' - [ГЕНЕРАТОР] Генерирует стену или пол (уникально для структуры), плитка или кирпичи (2-й вариант)
 
 ## Карта блоков
 
@@ -32,6 +35,9 @@
 ['Ũ'] = 12,
 ['ũ'] = 13,
 ['p'] = 14,
+['T'] = 15,
+['ɨ'] = 16,
+['ɩ'] = 17,
 
 new KeyValuePair<byte, ColorB>(1 , new ColorB(0, 0, 0, 0)),
 new KeyValuePair<byte, ColorB>(2 , new ColorB(0, 0, 0, 255)),
@@ -47,6 +53,9 @@ new KeyValuePair<byte, ColorB>(11, new ColorB(196, 149, 100, 255)),
 new KeyValuePair<byte, ColorB>(12, new ColorB(161, 137, 113, 255)),
 new KeyValuePair<byte, ColorB>(13, new ColorB(148, 133, 118, 255)),
 new KeyValuePair<byte, ColorB>(14, new ColorB(19, 44, 51, 255)),
+new KeyValuePair<byte, ColorB>(15, new ColorB(84, 107, 102, 255)),
+new KeyValuePair<byte, ColorB>(16, new ColorB(98, 113, 110, 255)),
+new KeyValuePair<byte, ColorB>(17, new ColorB(113, 120, 119, 255)),
 ```
 
 ## Сущности
@@ -83,6 +92,7 @@ new KeyValuePair<byte, ColorB>(14, new ColorB(19, 44, 51, 255)),
 ['D'] = 8,
 ['s'] = 9,
 ['Ƒ'] = 10,
+['d'] = 11,
 
 new KeyValuePair<byte, ColorB>(1 , new ColorB(0, 0, 0, 0)),
 new KeyValuePair<byte, ColorB>(2 , new ColorB(109, 196, 255, 255)),
@@ -94,6 +104,7 @@ new KeyValuePair<byte, ColorB>(7 , new ColorB(182, 255, 0, 255)),
 new KeyValuePair<byte, ColorB>(8 , new ColorB(255, 144, 0, 255)),
 new KeyValuePair<byte, ColorB>(9 , new ColorB(255, 0, 0, 182)),
 new KeyValuePair<byte, ColorB>(10, new ColorB(159, 255, 142, 182)),
+new KeyValuePair<byte, ColorB>(11, new ColorB(255, 190, 0, 255)),
 ```
 
 ## Потолки

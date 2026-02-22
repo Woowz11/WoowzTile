@@ -18,7 +18,8 @@ internal static class GOLUWorld_Objects{
         Error              = 9,
         Concrete           = 10,
         Ground_Cobblestone = 11,
-        Pit                = 12
+        Pit                = 12,
+        Ground_Tiles       = 13
     }
 
     internal enum T_Entity : byte{

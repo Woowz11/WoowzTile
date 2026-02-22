@@ -57,7 +57,7 @@ public class Program{
                     if(Timer > 0.25f){ __FPS = WL.Math.Round((float)TD.FPS, 2); Timer = 0; }
 
                     try{
-                        __Window.Title = WL.WoowzLib.ProjectInfo.Name + " [" + __FPS + "] [" + (LoadedGame?.WindowTitle() ?? "Игра не загружена!") + "]";
+                        __Window.Title = (LoadedGame?.Name() ?? WL.WoowzLib.ProjectInfo.Name) + " [" + __FPS + "] [" + (LoadedGame?.WindowTitle() ?? "Игра не загружена!") + "]";
                         
                         LoadedGame?.Update(TD);
                     }catch(Exception e){
