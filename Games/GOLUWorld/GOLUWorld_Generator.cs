@@ -96,6 +96,8 @@ internal static class GOLUWorld_Generator{
             Generator_GrassLand(Seed);
             
             Generator_GrassPatch(Seed);
+
+            //__FOR_VIDEO.FUNC2(Generator_Border_L, Generator_Border_U, 256, 256, Seed);
             
             Generator_Trash(Seed);
         }
